@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use the Kairos Gate protocol, please cite this repository."
+title: "Kairos Gate for X-Cell"
+type: software
+authors:
+  - family-names: "Safonov"
+    given-names: "Aleksei"
+repository-code: "https://github.com/safal207/Kairos-Gate-for-X-Cell"
+version: 0.1.0
+date-released: 2026-07-21
+license: MIT
