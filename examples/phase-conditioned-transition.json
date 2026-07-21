@@ -1,0 +1,66 @@
+{
+  "schema": "kairos.transition.v0.1",
+  "transition_id": "demo-cell-cycle-g1-gene-x-001",
+  "subject": {
+    "cell_context": "synthetic-demo-cell-context",
+    "source_dataset": "illustrative-only",
+    "sample_id": "sample-001"
+  },
+  "observed_at": "2026-07-21T09:00:00Z",
+  "current_state": {
+    "embedding_ref": "sha256:state-placeholder",
+    "cell_identity": "illustrative-progenitor-cell",
+    "quality": 0.91
+  },
+  "phase_context": {
+    "cell_cycle": {
+      "status": "inferred",
+      "label": "G1",
+      "confidence": 0.84,
+      "method": "illustrative phase-score classifier"
+    },
+    "calcium": {"status": "unobserved"},
+    "membrane_potential": {"status": "unobserved"},
+    "metabolic": {"status": "unobserved"},
+    "circadian": {"status": "unobserved"}
+  },
+  "perturbation": {
+    "kind": "CRISPRi",
+    "target": "GENE_X_DEMO",
+    "dose": "dataset-defined",
+    "duration_hours": 24
+  },
+  "target_state": {
+    "description": "demonstration target expression profile",
+    "marker_set_ref": "markers:demo-v0"
+  },
+  "forecast": {
+    "horizon_hours": 24,
+    "response_ref": "sha256:forecast-placeholder",
+    "target_reachability": 0.74
+  },
+  "gate_assessment": {
+    "effectiveness": 0.74,
+    "identity_preservation": 0.88,
+    "toxicity_risk": 0.12,
+    "reversibility": 0.72,
+    "evidence_quality": 0.68,
+    "timing_confidence": 0.71
+  },
+  "decision": "CANDIDATE_WINDOW",
+  "justification": [
+    "At least one measurable phase variable is present with confidence above the minimum threshold.",
+    "Identity-preservation and toxicity constraints remain within research-only candidate bounds.",
+    "The record is illustrative and requires external biological validation."
+  ],
+  "provenance": {
+    "model": "illustrative-predictor",
+    "model_version": "0.0-demo",
+    "code_commit": "unreleased-demo",
+    "data_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "limitations": [
+    "Synthetic example; not derived from X-Cell or X-Atlas/Pisces.",
+    "No wet-lab, therapeutic, aging, or safety conclusion is supported."
+  ]
+}
