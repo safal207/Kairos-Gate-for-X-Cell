@@ -143,10 +143,11 @@ class KairosValidatorTests(unittest.TestCase):
                 validate_path(path)
 
     def test_validate_path_rejects_nan(self) -> None:
-        raw = EXAMPLE.read_text(encoding="utf-8").replace('"quality": 0.93', '"quality": NaN')
+        record = copy.deepcopy(self.base)
+        record["current_state"]["quality"] = float("nan")
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "record.json"
-            path.write_text(raw, encoding="utf-8")
+            path.write_text(json.dumps(record, allow_nan=True), encoding="utf-8")
             with self.assertRaisesRegex(ValidationError, "non-finite JSON constant"):
                 validate_path(path)
 
