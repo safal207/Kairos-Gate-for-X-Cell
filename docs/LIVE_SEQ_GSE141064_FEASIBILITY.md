@@ -62,16 +62,37 @@ Cell_type == Raw264.7_G9
 treatment == not_treated
 Batch == 8_8
 mCherry.log.intercept > 0
-mCherry.log.slope is finite
 ```
 
-It only reads the count-matrix header. No expression modelling occurs.
+Cohort membership is frozen **without consulting `mCherry.log.slope`**. Only after selection does the auditor check whether every selected cell has a finite downstream response label.
+
+This separation prevents the outcome from silently changing the study population. Missing response labels produce `BLOCKED_MISSING_RESPONSE_LABELS`; they do not remove cells from the cohort.
+
+The auditor only reads the count-matrix header. No expression modelling occurs.
+
+## Real-input result
+
+For the pinned inputs audited on July 22, 2026:
+
+```text
+metadata rows:                1012
+count-matrix sample columns:  1012
+identifier sets match:        yes
+selected cohort:              17
+response-complete cells:      17
+missing response labels:      0
+declared replicate groups:    0
+status:                       BLOCKED_INSUFFICIENT_REPLICATES
+```
+
+The exact result is recorded in [`evidence/live-seq-gse141064/feasibility.real.v0.1.json`](../evidence/live-seq-gse141064/feasibility.real.v0.1.json).
 
 ## Fail-closed outcomes
 
 ```text
 READY_FOR_PREREGISTRATION
 BLOCKED_MISSING_CELL_LINKAGE
+BLOCKED_MISSING_RESPONSE_LABELS
 BLOCKED_INSUFFICIENT_REPLICATES
 BLOCKED_LICENSE_UNCLEAR
 BLOCKED_DATA_INTEGRITY
@@ -91,6 +112,8 @@ The future real-data protocol must exclude from predictors:
 - any feature-processing decision fitted using held-out cells.
 
 Repeated measurements or double extractions from one cell must remain in the same split. A replicate-aware split must be fixed before reporting performance.
+
+A random cell split is not accepted as evidence of experimental generalization.
 
 ## Authority
 
