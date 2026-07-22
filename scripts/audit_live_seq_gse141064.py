@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Iterator, TextIO
 
 RESULT_SCHEMA = "kairos.live-seq-feasibility-result.v0.1"
+RESPONSE_FIELD = "mCherry.log.slope"
 REQUIRED_COLUMNS = {
     "sample_ID",
     "sample_name",
@@ -34,7 +35,7 @@ REQUIRED_COLUMNS = {
     "uniquely.mapped",
     "nCount_RNA",
     "mCherry.log.intercept",
-    "mCherry.log.slope",
+    RESPONSE_FIELD,
     "mCherry.AUC",
     "double_extraction",
     "double_extraction_order",
@@ -80,7 +81,7 @@ def _finite_number(value: Any) -> float | None:
 
 
 def _load_metadata(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-    """Load metadata and enforce the fields required by the preregistered cohort."""
+    """Load metadata and enforce fields required by the preregistered cohort."""
     try:
         with _open_text(path) as handle:
             reader = csv.DictReader(handle)
@@ -117,11 +118,10 @@ def _load_count_columns(path: Path) -> list[str]:
 
 
 def _selected_recorded_cells(rows: list[dict[str, str]]) -> list[dict[str, str]]:
-    """Apply the authors' recorded-cell cohort rule before any future modelling."""
+    """Apply the upstream cohort rule without consulting the response label."""
     selected: list[dict[str, str]] = []
     for row in rows:
         intercept = _finite_number(row.get("mCherry.log.intercept"))
-        slope = _finite_number(row.get("mCherry.log.slope"))
         if (
             row.get("sampling_type") == "Live_seq"
             and row.get("Cell_type") == "Raw264.7_G9"
@@ -129,7 +129,6 @@ def _selected_recorded_cells(rows: list[dict[str, str]]) -> list[dict[str, str]]
             and row.get("Batch") == "8_8"
             and intercept is not None
             and intercept > 0
-            and slope is not None
         ):
             selected.append(row)
     return selected
@@ -153,6 +152,15 @@ def audit(
 
     selected = _selected_recorded_cells(rows)
     selected_ids = [row["sample_ID"] for row in selected]
+    response_complete = [
+        row for row in selected if _finite_number(row.get(RESPONSE_FIELD)) is not None
+    ]
+    missing_response_ids = [
+        row["sample_ID"]
+        for row in selected
+        if _finite_number(row.get(RESPONSE_FIELD)) is None
+    ]
+
     count_set = set(count_columns)
     missing_selected = sorted(set(selected_ids) - count_set)
 
@@ -166,7 +174,8 @@ def audit(
     repeated_measurement_rows = sum(
         1
         for row in selected
-        if str(row.get("double_extraction", "")).strip().upper() not in {"", "NA", "N/A"}
+        if str(row.get("double_extraction", "")).strip().upper()
+        not in {"", "NA", "N/A"}
     )
 
     integrity_errors: list[str] = []
@@ -183,6 +192,8 @@ def audit(
         status = "BLOCKED_MISSING_CELL_LINKAGE"
     elif integrity_errors:
         status = "BLOCKED_DATA_INTEGRITY"
+    elif missing_response_ids:
+        status = "BLOCKED_MISSING_RESPONSE_LABELS"
     elif len(replicate_groups) < 2:
         status = "BLOCKED_INSUFFICIENT_REPLICATES"
     elif data_reuse_status != "clear":
@@ -214,8 +225,12 @@ def audit(
             "data_reuse_status": data_reuse_status,
         },
         "cohort": {
+            "selection_uses_response_label": False,
+            "response_field": RESPONSE_FIELD,
             "selected_recorded_cells": len(selected),
+            "response_complete_cells": len(response_complete),
             "selected_sample_ids": selected_ids,
+            "missing_response_sample_ids": missing_response_ids,
             "missing_selected_sample_ids": missing_selected,
             "replicate_groups": replicate_groups,
             "repeated_measurement_rows": repeated_measurement_rows,
@@ -229,6 +244,7 @@ def audit(
         "next_action": {
             "READY_FOR_PREREGISTRATION": "Freeze the real-data model protocol before fitting any model.",
             "BLOCKED_MISSING_CELL_LINKAGE": "Resolve selected metadata IDs absent from the count matrix.",
+            "BLOCKED_MISSING_RESPONSE_LABELS": "Resolve or explicitly exclude missing downstream labels before defining the modelling cohort.",
             "BLOCKED_INSUFFICIENT_REPLICATES": "Define or recover an auditable replicate-aware split.",
             "BLOCKED_LICENSE_UNCLEAR": "Document dataset reuse terms before redistributing derived inputs.",
             "BLOCKED_DATA_INTEGRITY": "Resolve metadata/count-matrix integrity failures before modelling.",
