@@ -10,16 +10,22 @@
       "role": "authoritative dataset record"
     },
     "count_matrix": {
-      "url": "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE141064&format=file&file=GSE141064%5Fcount%2Efinal%2Ecsv%2Egz",
+      "url": "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE141064&file=GSE141064_count.final.csv.gz&format=file",
       "published_size": "10.4 MB",
-      "sha256": null,
-      "digest_status": "COMPUTE_AFTER_DOWNLOAD"
+      "sha256": "sha256:0e8a07d36a4b06bc8ced881bf97114adc2b55681b5ccf00d29e4f80e05107b22",
+      "digest_status": "VERIFIED_BY_GITHUB_ACTIONS"
     },
     "geo_metadata": {
       "url": "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE141064&file=GSE141064_Meta_data.xls.gz&format=file",
       "published_size": "141.7 KB",
       "sha256": null,
-      "digest_status": "COMPUTE_AFTER_DOWNLOAD"
+      "digest_status": "NOT_USED_BY_V0.1_AUDIT"
+    },
+    "analysis_metadata_csv": {
+      "url": "https://raw.githubusercontent.com/DeplanckeLab/Live-seq/6633d4d468f56031ea197474e09921088d878512/data/meta.final.csv",
+      "repository_commit": "6633d4d468f56031ea197474e09921088d878512",
+      "sha256": "sha256:dcce9bea9444857a6a042fc64be3a5c7b31a00095a21eabc1488e516abd689c8",
+      "digest_status": "VERIFIED_BY_GITHUB_ACTIONS"
     },
     "analysis_repository": {
       "repository": "https://github.com/DeplanckeLab/Live-seq",
@@ -36,6 +42,19 @@
       "doi": "10.1038/s41586-022-05046-9",
       "pmid": "35978187"
     }
+  },
+  "real_input_audit": {
+    "auditor_commit": "8c596c2d4e2532cc16091f755e37e3cbe303140e",
+    "workflow_run": 29895105751,
+    "artifact_name": "live-seq-real-audit-8c596c2d4e2532cc16091f755e37e3cbe303140e",
+    "artifact_digest": "sha256:ca19fc3d6459b3c97b2b0341a17e8718e264dce7af4129b9632af7bb118e74f5",
+    "metadata_rows": 1012,
+    "count_matrix_sample_columns": 1012,
+    "full_id_sets_match": true,
+    "selected_recorded_cells": 17,
+    "missing_selected_sample_ids": [],
+    "declared_replicate_groups": [],
+    "status": "BLOCKED_INSUFFICIENT_REPLICATES"
   },
   "reuse_boundary": {
     "software_license_verified": true,
