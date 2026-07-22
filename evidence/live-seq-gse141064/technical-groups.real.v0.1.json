@@ -1,0 +1,89 @@
+{
+  "schema": "kairos.live-seq-technical-group-evidence.v0.1",
+  "dataset_id": "GSE141064",
+  "generated_at": "2026-07-22T06:03:31Z",
+  "generator_commit": "bc9fd201edeb023265cedf9bfd7cb434866c98ab",
+  "workflow": {
+    "run_id": 29895562392,
+    "artifact_name": "live-seq-technical-groups-bc9fd201edeb023265cedf9bfd7cb434866c98ab",
+    "artifact_digest": "sha256:6b5f76367f954b5b0930b5079150fb806a482e857d5dc17fe5340a7ba2ce3664",
+    "retention_days": 30
+  },
+  "metadata": {
+    "source": "https://raw.githubusercontent.com/DeplanckeLab/Live-seq/6633d4d468f56031ea197474e09921088d878512/data/meta.final.csv",
+    "sha256": "sha256:dcce9bea9444857a6a042fc64be3a5c7b31a00095a21eabc1488e516abd689c8",
+    "rows": 1012
+  },
+  "cohort": {
+    "selection_uses_response_label": false,
+    "selected_cells": 17,
+    "sample_ids": [
+      "sample372",
+      "sample378",
+      "sample386",
+      "sample404",
+      "sample405",
+      "sample416",
+      "sample421",
+      "sample441",
+      "sample452",
+      "sample454",
+      "sample459",
+      "sample466",
+      "sample468",
+      "sample486",
+      "sample498",
+      "sample499",
+      "sample505"
+    ]
+  },
+  "technical_group_candidates": {
+    "plate_like_prefix": {
+      "plate1": 7,
+      "plate3": 4,
+      "plate4": 6
+    },
+    "original_name_prefix": {
+      "exp8": 17
+    },
+    "sequencing_run": {
+      "NXT0590": 17
+    },
+    "date": {
+      "<missing>": 17
+    },
+    "probe": {
+      "<missing>": 17
+    },
+    "unique_i5_indexes": 12,
+    "unique_i7_indexes": 11,
+    "unique_index_pairs": 17
+  },
+  "interpretation": {
+    "technical_diversity_present": true,
+    "independent_replicates_established": false,
+    "plate_semantics_established": false,
+    "sequencing_run_separation_available": false,
+    "declared_date_or_probe_groups_available": false,
+    "index_pairs_are_sample_identifiers_not_replicates": true
+  },
+  "decision": {
+    "classification": "EXPLORATORY_ONLY_TECHNICAL_GROUPING",
+    "status": "BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED",
+    "replicate_semantics_verified": false,
+    "confirmatory_preregistration_unlocked": false,
+    "next_action": "Find source-backed experimental-unit semantics for plate1, plate3, and plate4 or request clarification from the dataset authors."
+  },
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "experiment_authorization": false,
+    "clinical_authorization": false,
+    "merge_authorization": false
+  },
+  "limitations": [
+    "All 17 cells share one sequencing run and one original experiment prefix.",
+    "Distinct plates and index pairs do not establish independent cultures or experiments.",
+    "No random cell or plate split is approved as confirmatory evidence.",
+    "No model fitting, biological claim, or experiment authorization follows from this map."
+  ]
+}
