@@ -113,6 +113,19 @@ class KairosValidatorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "not valid under any"):
             validate_record(record)
 
+    def test_packaged_schema_matches_repository_schema(self) -> None:
+        from importlib.resources import files
+
+        packaged = files("kairos_gate.schemas").joinpath(
+            "kairos-transition.schema.json"
+        ).read_text(encoding="utf-8")
+        repository = (
+            Path(__file__).resolve().parents[1]
+            / "schemas"
+            / "kairos-transition.schema.json"
+        ).read_text(encoding="utf-8")
+        self.assertEqual(json.loads(packaged), json.loads(repository))
+
     def test_validate_path_runs_full_schema_validation(self) -> None:
         record = copy.deepcopy(self.base)
         record["forecast"] = {"horizon_hours": 24}
