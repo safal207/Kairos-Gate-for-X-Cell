@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -47,6 +48,96 @@ def _git_head() -> str:
     return completed.stdout.strip() if completed.returncode == 0 else "unavailable"
 
 
+def _wheel_smoke() -> dict[str, Any]:
+    """Build a wheel, install it outside the checkout, and run the packaged CLI."""
+    with tempfile.TemporaryDirectory() as directory:
+        temp = Path(directory)
+        wheel_dir = temp / "wheel"
+        target = temp / "target"
+        wheel_dir.mkdir()
+        target.mkdir()
+
+        build = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "wheel",
+                ".",
+                "--no-deps",
+                "--no-build-isolation",
+                "-w",
+                str(wheel_dir),
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        wheels = list(wheel_dir.glob("kairos_gate-*.whl"))
+        if build.returncode != 0 or len(wheels) != 1:
+            return {
+                "command": ["pip", "wheel", "."],
+                "status": "FAIL",
+                "exit_code": build.returncode,
+                "stdout": build.stdout[-8000:],
+                "stderr": build.stderr[-8000:],
+            }
+
+        install = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "--no-deps",
+                "--target",
+                str(target),
+                str(wheels[0]),
+            ],
+            cwd=temp,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if install.returncode != 0:
+            return {
+                "command": ["pip", "install", "wheel"],
+                "status": "FAIL",
+                "exit_code": install.returncode,
+                "stdout": install.stdout[-8000:],
+                "stderr": install.stderr[-8000:],
+            }
+
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(target)
+        smoke = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "kairos_gate",
+                str(ROOT / "examples" / "phase-conditioned-transition.json"),
+            ],
+            cwd=temp,
+            env=environment,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        passed = (
+            smoke.returncode == 0
+            and "classification=CANDIDATE_WINDOW" in smoke.stdout
+            and "NOT EXPERIMENT AUTHORIZATION" in smoke.stdout
+        )
+        return {
+            "command": ["wheel-install", "python -m kairos_gate"],
+            "status": "PASS" if passed else "FAIL",
+            "exit_code": smoke.returncode,
+            "stdout": smoke.stdout[-8000:],
+            "stderr": (build.stderr + install.stderr + smoke.stderr)[-8000:],
+        }
+
+
 def build_evidence() -> dict[str, Any]:
     """Run technical validation stages and write exact-head evidence."""
     requested = os.environ.get("KAIROS_EXACT_HEAD")
@@ -68,6 +159,7 @@ def build_evidence() -> dict[str, Any]:
         "compile": _run(
             [sys.executable, "-m", "compileall", "-q", "kairos_gate", "tests", "scripts"]
         ),
+        "installed_wheel": _wheel_smoke(),
     }
 
     all_stages_pass = all(stage["status"] == "PASS" for stage in stages.values())
@@ -128,6 +220,7 @@ def enforce_evidence() -> int:
         evidence.get("authority", {}).get("classification") == "RESEARCH_ONLY",
         evidence.get("authority", {}).get("experiment_authorization") is False,
         evidence.get("canonical_classification") == "CANDIDATE_WINDOW",
+        evidence.get("stages", {}).get("installed_wheel", {}).get("status") == "PASS",
     ]
     if not all(checks):
         print(json.dumps(evidence, indent=2), file=sys.stderr)
