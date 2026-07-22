@@ -61,7 +61,7 @@ def _exact_binding_matches(
 
 
 def _wheel_smoke() -> dict[str, Any]:
-    """Build a wheel, install it outside the checkout, and run the packaged CLI."""
+    """Build a wheel and exercise transition and handoff APIs outside checkout."""
     with tempfile.TemporaryDirectory() as directory:
         temp = Path(directory)
         wheel_dir = temp / "wheel"
@@ -123,7 +123,7 @@ def _wheel_smoke() -> dict[str, Any]:
 
         environment = os.environ.copy()
         environment["PYTHONPATH"] = str(target)
-        smoke = subprocess.run(
+        transition_smoke = subprocess.run(
             [
                 sys.executable,
                 "-m",
@@ -136,17 +136,42 @@ def _wheel_smoke() -> dict[str, Any]:
             capture_output=True,
             check=False,
         )
+        handoff_smoke = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import sys; from pathlib import Path; "
+                    "from kairos_gate import validate_handoff_path; "
+                    "record=validate_handoff_path(Path(sys.argv[1])); "
+                    "print(record['schema'])"
+                ),
+                str(ROOT / "examples" / "tip-kairos-handoff.json"),
+            ],
+            cwd=temp,
+            env=environment,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
         passed = (
-            smoke.returncode == 0
-            and "classification=CANDIDATE_WINDOW" in smoke.stdout
-            and "NOT EXPERIMENT AUTHORIZATION" in smoke.stdout
+            transition_smoke.returncode == 0
+            and "classification=CANDIDATE_WINDOW" in transition_smoke.stdout
+            and "NOT EXPERIMENT AUTHORIZATION" in transition_smoke.stdout
+            and handoff_smoke.returncode == 0
+            and "tip.kairos.handoff.v0.1" in handoff_smoke.stdout
         )
         return {
-            "command": ["wheel-install", "python -m kairos_gate"],
+            "command": ["wheel-install", "transition-cli", "handoff-api"],
             "status": "PASS" if passed else "FAIL",
-            "exit_code": smoke.returncode,
-            "stdout": smoke.stdout[-8000:],
-            "stderr": (build.stderr + install.stderr + smoke.stderr)[-8000:],
+            "exit_code": max(transition_smoke.returncode, handoff_smoke.returncode),
+            "stdout": (transition_smoke.stdout + handoff_smoke.stdout)[-8000:],
+            "stderr": (
+                build.stderr
+                + install.stderr
+                + transition_smoke.stderr
+                + handoff_smoke.stderr
+            )[-8000:],
         }
 
 
@@ -170,6 +195,9 @@ def build_evidence() -> dict[str, Any]:
         "canonical_example": _run(
             [sys.executable, "-m", "kairos_gate", "examples/phase-conditioned-transition.json"]
         ),
+        "tip_handoff": _run(
+            [sys.executable, "scripts/validate_handoff.py", "examples/tip-kairos-handoff.json"]
+        ),
         "synthetic_benchmark": _run(
             [
                 sys.executable,
@@ -188,6 +216,12 @@ def build_evidence() -> dict[str, Any]:
     canonical_classification = (
         "CANDIDATE_WINDOW"
         if "classification=CANDIDATE_WINDOW" in canonical_output
+        else None
+    )
+    handoff_output = stages["tip_handoff"]["stdout"]
+    handoff_schema = (
+        "tip.kairos.handoff.v0.1"
+        if "schema=tip.kairos.handoff.v0.1" in handoff_output
         else None
     )
     try:
@@ -210,6 +244,7 @@ def build_evidence() -> dict[str, Any]:
         "versions": {
             "software": "0.1.0",
             "transition_schema": "0.1.0",
+            "handoff_schema": "tip.kairos.handoff.v0.1",
             "protocol": "kairos.cell-cycle-ablation.v0.1",
             "dataset": "phase-window-tiny@0.1.0",
             "model": "deterministic-group-mean-demo@0.1",
@@ -220,6 +255,7 @@ def build_evidence() -> dict[str, Any]:
             "clinical_authorization": False,
         },
         "canonical_classification": canonical_classification,
+        "handoff_schema": handoff_schema,
         "synthetic_benchmark": benchmark_result,
         "stages": stages,
         "verdict": (
@@ -227,12 +263,14 @@ def build_evidence() -> dict[str, Any]:
             if exact_head_matches
             and all_stages_pass
             and canonical_classification
+            and handoff_schema
             and benchmark_expected
             else "BLOCKED"
         ),
         "limitations": [
             "Technical CI evidence does not establish biological validity or causality.",
             "The canonical input and benchmark dataset are synthetic and illustrative.",
+            "The TIP handoff transfers research context but authorizes no execution.",
             "No wet-lab, animal, human, or clinical execution is authorized.",
         ],
     }
@@ -259,6 +297,8 @@ def enforce_evidence() -> int:
         evidence.get("authority", {}).get("classification") == "RESEARCH_ONLY",
         evidence.get("authority", {}).get("experiment_authorization") is False,
         evidence.get("canonical_classification") == "CANDIDATE_WINDOW",
+        evidence.get("handoff_schema") == "tip.kairos.handoff.v0.1",
+        evidence.get("stages", {}).get("tip_handoff", {}).get("status") == "PASS",
         evidence.get("stages", {}).get("installed_wheel", {}).get("status") == "PASS",
         evidence.get("stages", {}).get("synthetic_benchmark", {}).get("status") == "PASS",
         benchmark.get("interpretation") == "SUPPORTED_SYNTHETIC_ONLY",
@@ -275,7 +315,8 @@ def enforce_evidence() -> int:
 
     print(
         "Kairos exact-head evidence accepted: TECHNICALLY_REPRODUCIBLE; "
-        "SYNTHETIC_BENCHMARK_ONLY; RESEARCH_ONLY; NOT EXPERIMENT AUTHORIZATION"
+        "TIP_HANDOFF_VALID; SYNTHETIC_BENCHMARK_ONLY; RESEARCH_ONLY; "
+        "NOT EXPERIMENT AUTHORIZATION"
     )
     return 0
 
