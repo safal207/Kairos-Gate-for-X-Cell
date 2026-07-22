@@ -2,7 +2,15 @@
 
 ## Research-only boundary
 
-Kairos Gate is a computational research protocol. A `CANDIDATE_WINDOW` decision means only that a record satisfies the current model-level criteria for additional evaluation. It is not permission to perform a biological experiment and is never a clinical recommendation.
+Kairos Gate is a computational research protocol. A `CANDIDATE_WINDOW`
+classification means only that a schema-valid record satisfies the current
+model-level criteria for additional evaluation. It is not permission to perform
+a biological experiment and is never a clinical recommendation.
+
+Known hard exclusions for toxicity, identity loss, or insufficient
+reversibility are evaluated before phase or evidence sufficiency. Missing
+evidence cannot soften a known high-risk record into
+`INSUFFICIENT_EVIDENCE`.
 
 ## Explicit non-claims
 
@@ -18,7 +26,10 @@ This project does not claim that it:
 
 ## Interpretation of philosophical language
 
-Terms such as *Kairos*, *inner light*, *harmony*, and *orchestra* may appear in origin documents as design metaphors. They are not accepted as biological variables until translated into measurable quantities and tested against controls.
+Terms such as *Kairos*, *inner light*, *harmony*, and *orchestra* may appear in
+origin documents as design metaphors. They are not accepted as biological
+variables. The v0.1 schema permits only versioned, supported phase keys with
+measured or inferred evidence.
 
 Examples:
 
@@ -29,7 +40,8 @@ Examples:
 
 ## Identity and oncogenic risk
 
-A transition toward a target expression profile is not sufficient evidence of rejuvenation or safety. Evaluation must include, where appropriate:
+A transition toward a target expression profile is not sufficient evidence of
+rejuvenation or safety. Evaluation must include, where appropriate:
 
 - preservation of cell-type identity;
 - proliferation and oncogenic-signature checks;
@@ -40,4 +52,7 @@ A transition toward a target expression profile is not sufficient evidence of re
 
 ## Human and animal research
 
-Any future wet-lab, animal, or human research requires qualified investigators, institutional oversight, applicable ethics approval, biosafety review, and domain-specific risk assessment. This repository does not provide those approvals.
+Any future wet-lab, animal, or human research requires qualified investigators,
+institutional oversight, applicable ethics approval, biosafety review, and
+domain-specific risk assessment. This repository does not provide those
+approvals.
