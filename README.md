@@ -39,7 +39,8 @@ biological phases. Candidate examples include:
 - experimentally controlled circadian phase.
 
 The v0.1 record accepts only versioned supported phase keys. Philosophical
-metaphors are not admitted as biological variables.
+metaphors are not admitted as biological variables. Qualifying phase evidence
+must be timestamped at or before the transition record time.
 
 ## Research-only classifications
 
@@ -54,30 +55,40 @@ cannot be softened into `INSUFFICIENT_EVIDENCE`.
 ## Current v0.1 components
 
 - strict Draft 2020-12 transition schema;
-- complete date-time format validation;
+- complete date-time format and pre-intervention timestamp validation;
+- strict JSON loading that rejects `NaN` and `Infinity`;
 - deterministic research-only validator;
-- canonical synthetic example;
-- regression tests for safety, schema, and authority boundaries;
+- canonical synthetic transition example;
+- FAIR-oriented reproducibility, Model Card, and Data Card templates;
+- preregistered synthetic phase-ablation and shuffle-control benchmark;
+- versioned TIP-to-Kairos handoff schema, example, negative fixtures, and validator;
+- regression tests for safety, schema, provenance, and authority boundaries;
 - exact-head CI evidence artifact;
-- installed-wheel smoke test outside the repository checkout;
-- causal graph and minimal benchmark design;
-- safety, ethics, non-claims, citation, and contribution documentation.
+- installed-wheel smoke tests outside the repository checkout;
+- causal graph, safety, non-claims, citation, and contribution documentation.
 
 ## Repository layout
 
 ```text
 README.md
-kairos_gate/                 deterministic reference validator
-kairos_gate/schemas/         packaged runtime JSON Schema
-schemas/                     public mirror of the transition schema
+CHANGELOG.md
+kairos_gate/                 deterministic validators
+kairos_gate/schemas/         packaged runtime JSON Schemas
+schemas/                     public schema mirrors
 examples/                    canonical research records
+protocols/                   preregistered research protocols
+testdata/                    synthetic and negative fixtures
 tests/                       regression tests
-scripts/                     exact-head CI evidence runner
+scripts/                     benchmark, handoff, and exact-head evidence runners
 docs/
   RESEARCH_QUESTION.md
   MINIMAL_EXPERIMENT.md
   HYPOTHESIS_MAP.md
   CAUSAL_GRAPH.md
+  REPRODUCIBILITY.md
+  MODEL_CARD_TEMPLATE.md
+  DATA_CARD_TEMPLATE.md
+  TIP_HANDOFF.md
   SAFETY_AND_NON_CLAIMS.md
   PHILOSOPHICAL_ORIGIN.md
   ECOSYSTEM_BRIDGE.md
@@ -93,13 +104,18 @@ Install the package and its runtime dependency first:
 python -m pip install -e .
 python -m unittest discover -s tests -v
 python -m kairos_gate examples/phase-conditioned-transition.json
+python scripts/validate_handoff.py examples/tip-kairos-handoff.json
+python scripts/run_phase_benchmark.py testdata/phase-window-tiny.json
 ```
 
-Expected successful CLI shape:
+Expected transition CLI shape:
 
 ```text
 RESEARCH_ONLY ... classification=CANDIDATE_WINDOW; NOT EXPERIMENT AUTHORIZATION
 ```
+
+The synthetic benchmark must label itself `SUPPORTED_SYNTHETIC_ONLY`; this is a
+pipeline-control result and not evidence of a biological phase effect.
 
 To reproduce the exact-head evidence flow inside a Git checkout:
 
@@ -110,9 +126,11 @@ python scripts/run_ci_evidence.py --enforce
 ```
 
 The project uses the third-party `jsonschema` package, declared in
-`pyproject.toml`, to enforce the complete Draft 2020-12 contract and date-time
-formats. The schema is packaged with the installed validator and checked against
-the public repository mirror in regression tests.
+`pyproject.toml`, to enforce complete Draft 2020-12 contracts and date-time
+formats. Schemas are packaged with the installed validators and checked against
+the public repository mirrors in regression tests.
+
+See [Reproducibility](docs/REPRODUCIBILITY.md) for version and provenance rules.
 
 ## Relationship to the wider protocol family
 
@@ -124,6 +142,7 @@ TIP: Which transition is justified next?
 Kairos Gate: Is this a candidate phase window for that transition?
 ```
 
+The versioned bridge is documented in [TIP → Kairos Handoff](docs/TIP_HANDOFF.md).
 Additional roles are documented in [Ecosystem Bridge](docs/ECOSYSTEM_BRIDGE.md),
 including T-Trace, CML, LiminalDB, PythiaLabs, ProofPath, LRI, SOMA, and Lifetra.
 
@@ -144,10 +163,11 @@ See [Safety, Ethics, and Non-Claims](docs/SAFETY_AND_NON_CLAIMS.md).
 
 1. Stabilize and review the v0.1 protocol contract.
 2. Publish FAIR model/data-card and reproducibility templates.
-3. Preregister a synthetic phase-ablation and phase-shuffle benchmark.
-4. Evaluate one suitable open perturbation-response dataset.
-5. Test BioNeMo/Geneformer feasibility only after the benchmark contract is stable.
-6. Approach X-Cell and NVIDIA with a narrow, reproducible technical question.
+3. Preregister and execute the synthetic phase-ablation and phase-shuffle pipeline test.
+4. Stabilize the reciprocal TIP-to-Kairos interoperability profile.
+5. Evaluate one suitable open perturbation-response dataset.
+6. Test BioNeMo/Geneformer feasibility only after the open-data benchmark is specified.
+7. Approach X-Cell and NVIDIA with a narrow, reproducible technical question.
 
 See [Roadmap](docs/ROADMAP.md) and [GitHub roadmap issue](https://github.com/safal207/Kairos-Gate-for-X-Cell/issues/11).
 
