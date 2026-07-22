@@ -33,6 +33,13 @@ class KairosValidatorTests(unittest.TestCase):
         self.assertEqual(recommend_decision(record), "INSUFFICIENT_EVIDENCE")
         validate_record(record)
 
+    def test_future_phase_evidence_is_insufficient(self) -> None:
+        record = copy.deepcopy(self.base)
+        record["phase_context"]["cell_cycle"]["observed_at"] = "2026-07-21T11:00:00Z"
+        record["decision"] = "INSUFFICIENT_EVIDENCE"
+        self.assertEqual(recommend_decision(record), "INSUFFICIENT_EVIDENCE")
+        validate_record(record)
+
     def test_high_toxicity_is_excluded(self) -> None:
         record = copy.deepcopy(self.base)
         record["gate_assessment"]["toxicity_risk"] = 0.70
@@ -133,6 +140,14 @@ class KairosValidatorTests(unittest.TestCase):
             path = Path(directory) / "record.json"
             path.write_text(json.dumps(record), encoding="utf-8")
             with self.assertRaisesRegex(ValidationError, "schema violation"):
+                validate_path(path)
+
+    def test_validate_path_rejects_nan(self) -> None:
+        raw = EXAMPLE.read_text(encoding="utf-8").replace('"quality": 0.93', '"quality": NaN')
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "record.json"
+            path.write_text(raw, encoding="utf-8")
+            with self.assertRaisesRegex(ValidationError, "non-finite JSON constant"):
                 validate_path(path)
 
 
