@@ -7,6 +7,7 @@ classification. It does not validate biological truth or authorize experiments.
 from __future__ import annotations
 
 import json
+import math
 from datetime import datetime
 from importlib.resources import files
 from pathlib import Path
@@ -48,13 +49,32 @@ class ValidationError(ValueError):
 
 
 def _score(value: Any, field: str) -> float:
-    """Return a protocol score constrained to the inclusive range [0, 1]."""
+    """Return a finite protocol score constrained to the inclusive range [0, 1]."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValidationError(f"{field} must be a number")
     score = float(value)
+    if not math.isfinite(score):
+        raise ValidationError(f"{field} must be finite")
     if not 0.0 <= score <= 1.0:
         raise ValidationError(f"{field} must be between 0 and 1")
     return score
+
+
+def _validate_finite_numbers(value: Any, path: str = "$") -> None:
+    """Reject NaN and infinities anywhere in an in-memory record."""
+    if isinstance(value, bool) or value is None or isinstance(value, str):
+        return
+    if isinstance(value, (int, float)):
+        if not math.isfinite(float(value)):
+            raise ValidationError(f"{path} must be finite")
+        return
+    if isinstance(value, Mapping):
+        for key, child in value.items():
+            _validate_finite_numbers(child, f"{path}.{key}")
+        return
+    if isinstance(value, (list, tuple)):
+        for index, child in enumerate(value):
+            _validate_finite_numbers(child, f"{path}[{index}]")
 
 
 def _parse_datetime(value: Any) -> datetime:
@@ -164,7 +184,8 @@ def recommend_decision(record: Mapping[str, Any]) -> str:
 
 
 def validate_record(record: Mapping[str, Any]) -> None:
-    """Validate full schema conformance and decision consistency."""
+    """Validate finite values, full schema conformance, and decision consistency."""
+    _validate_finite_numbers(record)
     _validate_schema(record)
 
     assessment = record["gate_assessment"]
