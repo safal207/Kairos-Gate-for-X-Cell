@@ -14,3 +14,6 @@ dependencies = ["jsonschema[format]>=4.22,<5"]
 
 [tool.setuptools.packages.find]
 include = ["kairos_gate*"]
+
+[tool.setuptools.package-data]
+"kairos_gate.schemas" = ["*.json"]
