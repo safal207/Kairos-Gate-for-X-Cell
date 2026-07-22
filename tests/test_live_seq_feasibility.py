@@ -45,7 +45,10 @@ class LiveSeqFeasibilityTests(unittest.TestCase):
         self.assertEqual(result["status"], "READY_FOR_PREREGISTRATION")
         self.assertEqual(result["authority"]["classification"], "RESEARCH_ONLY")
         self.assertFalse(result["authority"]["experiment_authorization"])
+        self.assertFalse(result["cohort"]["selection_uses_response_label"])
         self.assertEqual(result["cohort"]["selected_recorded_cells"], 4)
+        self.assertEqual(result["cohort"]["response_complete_cells"], 4)
+        self.assertEqual(result["cohort"]["missing_response_sample_ids"], [])
         self.assertEqual(len(result["cohort"]["replicate_groups"]), 2)
         self.assertEqual(result["cohort"]["repeated_measurement_rows"], 2)
         self.assertTrue(result["integrity"]["full_id_sets_match"])
@@ -56,6 +59,31 @@ class LiveSeqFeasibilityTests(unittest.TestCase):
         result = json.loads(completed.stdout)
         self.assertEqual(result["status"], "BLOCKED_LICENSE_UNCLEAR")
         self.assertIn("reuse terms", result["next_action"])
+
+    def test_missing_response_does_not_change_selected_cohort(self) -> None:
+        with METADATA.open("r", encoding="utf-8", newline="") as source:
+            reader = csv.DictReader(source)
+            fieldnames = list(reader.fieldnames or [])
+            rows = [dict(row) for row in reader]
+
+        target = next(row for row in rows if row["sample_ID"] == "sampleD")
+        target["mCherry.log.slope"] = ""
+
+        with tempfile.TemporaryDirectory() as directory:
+            metadata_path = Path(directory) / "metadata.csv"
+            with metadata_path.open("w", encoding="utf-8", newline="") as output:
+                writer = csv.DictWriter(output, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(rows)
+            completed = self._run(metadata=metadata_path, reuse_status="clear")
+
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["status"], "BLOCKED_MISSING_RESPONSE_LABELS")
+        self.assertFalse(result["cohort"]["selection_uses_response_label"])
+        self.assertEqual(result["cohort"]["selected_recorded_cells"], 4)
+        self.assertEqual(result["cohort"]["response_complete_cells"], 3)
+        self.assertEqual(result["cohort"]["missing_response_sample_ids"], ["sampleD"])
 
     def test_missing_selected_count_column_blocks_linkage(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
