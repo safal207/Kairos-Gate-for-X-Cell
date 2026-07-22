@@ -90,6 +90,18 @@ class KairosValidatorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "schema violation"):
             validate_record(record)
 
+    def test_validate_record_rejects_nan_outside_gate_assessment(self) -> None:
+        record = copy.deepcopy(self.base)
+        record["current_state"]["quality"] = float("nan")
+        with self.assertRaisesRegex(ValidationError, "current_state.quality must be finite"):
+            validate_record(record)
+
+    def test_validate_record_rejects_infinity(self) -> None:
+        record = copy.deepcopy(self.base)
+        record["forecast"]["horizon_hours"] = float("inf")
+        with self.assertRaisesRegex(ValidationError, "forecast.horizon_hours must be finite"):
+            validate_record(record)
+
     def test_extra_root_property_is_rejected(self) -> None:
         record = copy.deepcopy(self.base)
         record["approval"] = True
