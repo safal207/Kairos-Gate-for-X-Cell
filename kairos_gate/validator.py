@@ -7,6 +7,7 @@ classification. It does not validate biological truth or authorize experiments.
 from __future__ import annotations
 
 import json
+from importlib.resources import files
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -28,11 +29,8 @@ SUPPORTED_PHASES = {
     "circadian",
 }
 
-SCHEMA_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "schemas"
-    / "kairos-transition.schema.json"
-)
+SCHEMA_PACKAGE = "kairos_gate.schemas"
+SCHEMA_NAME = "kairos-transition.schema.json"
 
 ASSESSMENT_FIELDS = {
     "effectiveness",
@@ -59,10 +57,12 @@ def _score(value: Any, field: str) -> float:
 
 
 def _load_schema() -> Mapping[str, Any]:
-    """Load the canonical Draft 2020-12 transition schema."""
+    """Load the canonical packaged Draft 2020-12 transition schema."""
     try:
-        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        schema = json.loads(
+            files(SCHEMA_PACKAGE).joinpath(SCHEMA_NAME).read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError, ModuleNotFoundError) as exc:
         raise ValidationError(f"unable to load transition schema: {exc}") from exc
     if not isinstance(schema, Mapping):
         raise ValidationError("transition schema root must be an object")
@@ -121,8 +121,6 @@ def recommend_decision(record: Mapping[str, Any]) -> str:
     evidence = _score(assessment["evidence_quality"], "evidence_quality")
     timing = _score(assessment["timing_confidence"], "timing_confidence")
 
-    # Hard exclusions take precedence over evidence sufficiency. Missing evidence
-    # must never soften a known high-risk record into INSUFFICIENT_EVIDENCE.
     if toxicity > 0.35 or identity < 0.65 or reversibility < 0.40:
         return "EXCLUDE"
     if not _has_measured_phase(record["phase_context"]) or evidence < 0.60:
