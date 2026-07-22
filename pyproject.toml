@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "safal207"}]
-dependencies = []
+dependencies = ["jsonschema[format]>=4.22,<5"]
 
 [tool.setuptools.packages.find]
 include = ["kairos_gate*"]
