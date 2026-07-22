@@ -1,88 +1,78 @@
 # Kairos Gate for X-Cell
 
-> **X-Cell asks what a perturbation may cause. Kairos Gate asks when that perturbation becomes a justified transition.**
+**Research-only protocol for phase-conditioned cellular transition assessment.**
 
-Kairos Gate is an independent, open research protocol for **phase-conditioned cellular transition prediction**. It explores whether a perturbation model can identify not only a likely response, but also the biological window in which the same intervention is most likely to reach a target state while preserving cell identity and limiting toxicity or irreversible change.
+X-Cell asks what a perturbation may cause. Kairos Gate asks **when** that
+perturbation becomes a justified candidate transition window while preserving
+identity, limiting risk, and exposing uncertainty.
 
-This repository is not affiliated with or endorsed by Xaira Therapeutics. It is designed as a research proposal and interoperability layer that may be evaluated alongside [X-Cell](https://github.com/Xaira-Therapeutics/X-Cell) or other perturbation-prediction systems.
+> `CANDIDATE_WINDOW` is a research classification, not biological authorization.
 
-## Core research question
+## Research question
 
-> Can intervention timing be treated as a causal context variable in X-Cell?
+Does adding a measurable pre-intervention phase variable improve held-out
+cellular perturbation-response prediction relative to a matched static-state
+baseline?
 
-Current formulation:
-
-```text
-cell state + perturbation -> predicted response
-```
-
-Kairos formulation:
+The first proposed comparison is:
 
 ```text
-cell state
-+ measurable dynamic phase
-+ perturbation
-+ intervention history
--> predicted transition trajectory
--> research-only gate assessment
+static baseline:
+cell state + perturbation -> response
+
+phase-conditioned:
+cell state + perturbation + measurable phase -> response
 ```
 
-The central claim is deliberately narrow and falsifiable:
+A positive predictive result does not establish causality. Controlled or valid
+quasi-experimental evidence is required before making a causal timing claim.
 
-> **The same perturbation applied in different measurable cellular phases may constitute a different causal intervention.**
+## Why Kairos
 
-## What "Kairos" means here
+The same perturbation may have different consequences in different measurable
+biological phases. Candidate examples include:
 
-- **Chronos**: elapsed clock time or a fixed timepoint.
-- **Kairos**: a measurable state-dependent window in which an intervention has a different expected benefit-risk profile.
+- cell-cycle phase;
+- calcium-signalling state;
+- membrane-potential state;
+- metabolic-state proxy;
+- experimentally controlled circadian phase.
 
-Kairos is not treated as mysticism or intuition. In this project it must be represented by observable variables such as cell-cycle phase, metabolic state, calcium-signalling state, membrane potential, circadian phase, or recent perturbation history.
+The v0.1 record accepts only versioned supported phase keys. Philosophical
+metaphors are not admitted as biological variables.
 
-## Research-only decisions
+## Research-only classifications
 
-Kairos Gate never authorizes a laboratory or clinical action. It classifies model outputs into research states:
+- `CANDIDATE_WINDOW` — current model-level criteria support further research;
+- `WAIT` — timing or expected effectiveness is below the current threshold;
+- `EXCLUDE` — a hard identity, toxicity, or reversibility boundary is violated;
+- `INSUFFICIENT_EVIDENCE` — supported phase evidence or evidence quality is inadequate.
 
-- `CANDIDATE_WINDOW` — suitable for further validation;
-- `WAIT` — the predicted state is not yet sufficiently favourable;
-- `EXCLUDE` — risk or identity-loss constraints fail;
-- `INSUFFICIENT_EVIDENCE` — the record cannot support a timing claim.
+Hard exclusions take precedence over missing evidence. A known high-risk record
+cannot be softened into `INSUFFICIENT_EVIDENCE`.
 
-## Minimal experiment
+## Current v0.1 components
 
-The first benchmark is intentionally small:
+- strict Draft 2020-12 transition schema;
+- complete date-time format validation;
+- deterministic research-only validator;
+- canonical synthetic example;
+- regression tests for safety, schema, and authority boundaries;
+- exact-head CI evidence artifact;
+- installed-wheel smoke test outside the repository checkout;
+- causal graph and minimal benchmark design;
+- safety, ethics, non-claims, citation, and contribution documentation.
 
-1. Select one cellular context.
-2. Select one or a small number of perturbations.
-3. Represent at least one pre-intervention phase variable, starting with cell-cycle phase.
-4. Compare a baseline perturbation predictor against a phase-conditioned predictor.
-5. Measure response accuracy, target-state reachability, cell-identity preservation, and risk proxies.
-6. Test whether phase conditioning improves held-out prediction.
-
-See [Minimal Experiment](docs/MINIMAL_EXPERIMENT.md) and [Hypothesis Map](docs/HYPOTHESIS_MAP.md).
-
-## Protocol flow
-
-```mermaid
-flowchart TD
-    A[Observed cellular state] --> B[Phase context]
-    B --> C[Proposed perturbation]
-    C --> D[Perturbation-response forecast]
-    D --> E[Kairos assessment]
-    E --> F{Evidence and constraints}
-    F -->|sufficient and bounded| G[CANDIDATE_WINDOW]
-    F -->|timing not ready| H[WAIT]
-    F -->|identity/risk failure| I[EXCLUDE]
-    F -->|missing evidence| J[INSUFFICIENT_EVIDENCE]
-```
-
-## Repository structure
+## Repository layout
 
 ```text
 README.md
 kairos_gate/                 deterministic reference validator
-schemas/                     machine-readable transition record
+kairos_gate/schemas/         packaged runtime JSON Schema
+schemas/                     public mirror of the transition schema
 examples/                    canonical research records
 tests/                       regression tests
+scripts/                     exact-head CI evidence runner
 docs/
   RESEARCH_QUESTION.md
   MINIMAL_EXPERIMENT.md
@@ -97,12 +87,32 @@ docs/
 
 ## Quick start
 
+Install the package and its runtime dependency first:
+
 ```bash
+python -m pip install -e .
 python -m unittest discover -s tests -v
 python -m kairos_gate examples/phase-conditioned-transition.json
 ```
 
-The validator uses only the Python standard library.
+Expected successful CLI shape:
+
+```text
+RESEARCH_ONLY ... classification=CANDIDATE_WINDOW; NOT EXPERIMENT AUTHORIZATION
+```
+
+To reproduce the exact-head evidence flow inside a Git checkout:
+
+```bash
+export KAIROS_EXACT_HEAD="$(git rev-parse HEAD)"
+python scripts/run_ci_evidence.py
+python scripts/run_ci_evidence.py --enforce
+```
+
+The project uses the third-party `jsonschema` package, declared in
+`pyproject.toml`, to enforce the complete Draft 2020-12 contract and date-time
+formats. The schema is packaged with the installed validator and checked against
+the public repository mirror in regression tests.
 
 ## Relationship to the wider protocol family
 
@@ -114,7 +124,8 @@ TIP: Which transition is justified next?
 Kairos Gate: Is this a candidate phase window for that transition?
 ```
 
-Additional roles are documented in [Ecosystem Bridge](docs/ECOSYSTEM_BRIDGE.md), including T-Trace, CML, LiminalDB, PythiaLabs, ProofPath, LRI, SOMA, and Lifetra.
+Additional roles are documented in [Ecosystem Bridge](docs/ECOSYSTEM_BRIDGE.md),
+including T-Trace, CML, LiminalDB, PythiaLabs, ProofPath, LRI, SOMA, and Lifetra.
 
 ## Scope boundary
 
@@ -123,17 +134,24 @@ Kairos Gate does **not** claim to:
 - reverse aging;
 - provide medical advice or treatment;
 - establish that meditation, sound, music, intention, or an undefined information field directly reprograms cells;
-- authorize wet-lab, animal, or human experiments;
-- prove that a predicted transcriptomic state is safe.
+- prove biological safety from transcriptomic prediction;
+- authorize wet-lab, animal, or human experimentation;
+- represent or speak for Xaira Therapeutics or the X-Cell authors.
 
-Philosophical ideas may motivate questions, but every scientific claim in the protocol must be tied to measurable variables, controlled comparisons, provenance, and falsification criteria.
+See [Safety, Ethics, and Non-Claims](docs/SAFETY_AND_NON_CLAIMS.md).
 
-See [Safety and Non-Claims](docs/SAFETY_AND_NON_CLAIMS.md).
+## Roadmap
 
-## Status
+1. Stabilize and review the v0.1 protocol contract.
+2. Publish FAIR model/data-card and reproducibility templates.
+3. Preregister a synthetic phase-ablation and phase-shuffle benchmark.
+4. Evaluate one suitable open perturbation-response dataset.
+5. Test BioNeMo/Geneformer feasibility only after the benchmark contract is stable.
+6. Approach X-Cell and NVIDIA with a narrow, reproducible technical question.
 
-**v0.1 research foundation** — protocol schema, canonical example, deterministic validator, tests, safety boundaries, and outreach draft.
+See [Roadmap](docs/ROADMAP.md) and [GitHub roadmap issue](https://github.com/safal207/Kairos-Gate-for-X-Cell/issues/11).
 
-## License
+## License and citation
 
-MIT. See [LICENSE](LICENSE).
+The repository is licensed under MIT. Citation metadata is provided in
+`CITATION.cff`.
