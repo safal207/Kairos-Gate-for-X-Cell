@@ -1,12 +1,12 @@
 {
   "schema": "kairos.real-input-audit-evidence.v0.1",
   "dataset_id": "GSE141064",
-  "audited_at": "2026-07-22T05:54:24Z",
-  "auditor_commit": "8c596c2d4e2532cc16091f755e37e3cbe303140e",
+  "audited_at": "2026-07-22T05:58:42Z",
+  "auditor_commit": "0c192294de5ccabf8ecc0132e6fa3692ae233729",
   "workflow": {
-    "run_id": 29895105751,
-    "artifact_name": "live-seq-real-audit-8c596c2d4e2532cc16091f755e37e3cbe303140e",
-    "artifact_digest": "sha256:ca19fc3d6459b3c97b2b0341a17e8718e264dce7af4129b9632af7bb118e74f5",
+    "run_id": 29895312004,
+    "artifact_name": "live-seq-real-audit-0c192294de5ccabf8ecc0132e6fa3692ae233729",
+    "artifact_digest": "sha256:1f8e375339785a9d6a9c84b8d8ac75f5c928719b6b4887c7b50c48e166b2a8b4",
     "retention_days": 30
   },
   "inputs": {
@@ -27,7 +27,11 @@
     "full_id_sets_match": true,
     "metadata_ids_unique": true,
     "count_ids_unique": true,
+    "selection_uses_response_label": false,
+    "response_field": "mCherry.log.slope",
     "selected_recorded_cells": 17,
+    "response_complete_cells": 17,
+    "missing_response_sample_ids": [],
     "selected_sample_ids": [
       "sample372",
       "sample378",
@@ -55,6 +59,8 @@
   "interpretation": {
     "data_linkage": "PASS",
     "cohort_recovery": "PASS",
+    "response_availability": "PASS",
+    "target_leakage_at_selection": "REJECTED_BY_CONTRACT",
     "replicate_boundary": "BLOCKED",
     "model_readiness": "NOT_READY",
     "biological_claim": "NONE"
@@ -67,6 +73,7 @@
   },
   "limitations": [
     "The evidence validates exact public-input linkage and cohort recovery only.",
+    "Cohort membership is determined without consulting the downstream response field.",
     "No predictive model was fitted and no phase effect was estimated.",
     "A cell-level random split would not repair missing replicate semantics.",
     "The result is not X-Cell validation, causal evidence, safety evidence, or experiment authorization."
