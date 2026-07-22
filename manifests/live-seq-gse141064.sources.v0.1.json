@@ -44,14 +44,17 @@
     }
   },
   "real_input_audit": {
-    "auditor_commit": "8c596c2d4e2532cc16091f755e37e3cbe303140e",
-    "workflow_run": 29895105751,
-    "artifact_name": "live-seq-real-audit-8c596c2d4e2532cc16091f755e37e3cbe303140e",
-    "artifact_digest": "sha256:ca19fc3d6459b3c97b2b0341a17e8718e264dce7af4129b9632af7bb118e74f5",
+    "auditor_commit": "0c192294de5ccabf8ecc0132e6fa3692ae233729",
+    "workflow_run": 29895312004,
+    "artifact_name": "live-seq-real-audit-0c192294de5ccabf8ecc0132e6fa3692ae233729",
+    "artifact_digest": "sha256:1f8e375339785a9d6a9c84b8d8ac75f5c928719b6b4887c7b50c48e166b2a8b4",
     "metadata_rows": 1012,
     "count_matrix_sample_columns": 1012,
     "full_id_sets_match": true,
+    "selection_uses_response_label": false,
     "selected_recorded_cells": 17,
+    "response_complete_cells": 17,
+    "missing_response_sample_ids": [],
     "missing_selected_sample_ids": [],
     "declared_replicate_groups": [],
     "status": "BLOCKED_INSUFFICIENT_REPLICATES"
