@@ -7,6 +7,7 @@ classification. It does not validate biological truth or authorize experiments.
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from importlib.resources import files
 from pathlib import Path
 from typing import Any, Mapping
@@ -56,6 +57,24 @@ def _score(value: Any, field: str) -> float:
     return score
 
 
+def _parse_datetime(value: Any) -> datetime:
+    """Parse an RFC 3339 timestamp into a timezone-aware datetime."""
+    if not isinstance(value, str):
+        raise ValidationError("timestamp must be a string")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValidationError(f"invalid timestamp: {value}") from exc
+    if parsed.tzinfo is None:
+        raise ValidationError("timestamp must include a timezone")
+    return parsed
+
+
+def _reject_json_constant(value: str) -> None:
+    """Reject non-standard JSON constants such as NaN and Infinity."""
+    raise ValidationError(f"record contains non-finite JSON constant: {value}")
+
+
 def _load_schema() -> Mapping[str, Any]:
     """Load the canonical packaged Draft 2020-12 transition schema."""
     try:
@@ -90,8 +109,15 @@ def _validate_schema(record: Mapping[str, Any]) -> None:
     raise ValidationError(f"schema violation at {location}: {error.message}")
 
 
-def _has_measured_phase(phase_context: Mapping[str, Any]) -> bool:
-    """Return whether a supported phase has complete, confident evidence."""
+def _has_measured_phase(
+    phase_context: Mapping[str, Any], record_observed_at: Any
+) -> bool:
+    """Return whether a supported phase has pre-record, confident evidence."""
+    try:
+        record_time = _parse_datetime(record_observed_at)
+    except ValidationError:
+        return False
+
     for phase_name in SUPPORTED_PHASES:
         value = phase_context.get(phase_name)
         if not isinstance(value, Mapping):
@@ -104,10 +130,14 @@ def _has_measured_phase(phase_context: Mapping[str, Any]) -> bool:
         ):
             continue
         try:
-            if _score(value.get("confidence"), "phase confidence") >= 0.60:
-                return True
+            phase_time = _parse_datetime(value["observed_at"])
+            confidence = _score(value.get("confidence"), "phase confidence")
         except ValidationError:
             continue
+        if phase_time > record_time:
+            continue
+        if confidence >= 0.60:
+            return True
     return False
 
 
@@ -123,7 +153,10 @@ def recommend_decision(record: Mapping[str, Any]) -> str:
 
     if toxicity > 0.35 or identity < 0.65 or reversibility < 0.40:
         return "EXCLUDE"
-    if not _has_measured_phase(record["phase_context"]) or evidence < 0.60:
+    if (
+        not _has_measured_phase(record["phase_context"], record.get("observed_at"))
+        or evidence < 0.60
+    ):
         return "INSUFFICIENT_EVIDENCE"
     if effectiveness < 0.60 or timing < 0.65:
         return "WAIT"
@@ -150,10 +183,10 @@ def validate_record(record: Mapping[str, Any]) -> None:
 
 
 def validate_path(path: Path) -> Mapping[str, Any]:
-    """Load a JSON record from path, validate it, and return the mapping."""
+    """Load a strict JSON record from path, validate it, and return the mapping."""
     try:
         with path.open("r", encoding="utf-8") as handle:
-            record = json.load(handle)
+            record = json.load(handle, parse_constant=_reject_json_constant)
     except json.JSONDecodeError as exc:
         raise ValidationError(f"record is not valid JSON: {exc}") from exc
     if not isinstance(record, Mapping):
