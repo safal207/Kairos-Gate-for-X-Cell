@@ -177,10 +177,12 @@ def audit(
             "full metadata sample_ID set does not exactly match count-matrix sample columns"
         )
 
-    if integrity_errors:
+    if not selected:
         status = "BLOCKED_DATA_INTEGRITY"
     elif missing_selected:
         status = "BLOCKED_MISSING_CELL_LINKAGE"
+    elif integrity_errors:
+        status = "BLOCKED_DATA_INTEGRITY"
     elif len(replicate_groups) < 2:
         status = "BLOCKED_INSUFFICIENT_REPLICATES"
     elif data_reuse_status != "clear":
