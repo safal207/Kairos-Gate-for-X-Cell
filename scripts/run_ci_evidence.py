@@ -170,6 +170,13 @@ def build_evidence() -> dict[str, Any]:
         "canonical_example": _run(
             [sys.executable, "-m", "kairos_gate", "examples/phase-conditioned-transition.json"]
         ),
+        "synthetic_benchmark": _run(
+            [
+                sys.executable,
+                "scripts/run_phase_benchmark.py",
+                "testdata/phase-window-tiny.json",
+            ]
+        ),
         "compile": _run(
             [sys.executable, "-m", "compileall", "-q", "kairos_gate", "tests", "scripts"]
         ),
@@ -183,6 +190,16 @@ def build_evidence() -> dict[str, Any]:
         if "classification=CANDIDATE_WINDOW" in canonical_output
         else None
     )
+    try:
+        benchmark_result = json.loads(stages["synthetic_benchmark"]["stdout"])
+    except (json.JSONDecodeError, TypeError):
+        benchmark_result = None
+    benchmark_expected = bool(
+        isinstance(benchmark_result, Mapping)
+        and benchmark_result.get("interpretation") == "SUPPORTED_SYNTHETIC_ONLY"
+        and benchmark_result.get("authority") == "RESEARCH_ONLY"
+        and benchmark_result.get("experiment_authorization") is False
+    )
 
     evidence = {
         "schema": "kairos.ci-evidence.v0.1",
@@ -193,9 +210,9 @@ def build_evidence() -> dict[str, Any]:
         "versions": {
             "software": "0.1.0",
             "transition_schema": "0.1.0",
-            "protocol": "0.1.0",
-            "dataset": "synthetic-demo-0.1",
-            "model": "illustrative-0.0-demo",
+            "protocol": "kairos.cell-cycle-ablation.v0.1",
+            "dataset": "phase-window-tiny@0.1.0",
+            "model": "deterministic-group-mean-demo@0.1",
         },
         "authority": {
             "classification": "RESEARCH_ONLY",
@@ -203,15 +220,19 @@ def build_evidence() -> dict[str, Any]:
             "clinical_authorization": False,
         },
         "canonical_classification": canonical_classification,
+        "synthetic_benchmark": benchmark_result,
         "stages": stages,
         "verdict": (
             "TECHNICALLY_REPRODUCIBLE"
-            if exact_head_matches and all_stages_pass and canonical_classification
+            if exact_head_matches
+            and all_stages_pass
+            and canonical_classification
+            and benchmark_expected
             else "BLOCKED"
         ),
         "limitations": [
             "Technical CI evidence does not establish biological validity or causality.",
-            "The canonical input is synthetic and illustrative.",
+            "The canonical input and benchmark dataset are synthetic and illustrative.",
             "No wet-lab, animal, human, or clinical execution is authorized.",
         ],
     }
@@ -230,6 +251,7 @@ def enforce_evidence() -> int:
 
     current_requested = os.environ.get("KAIROS_EXACT_HEAD")
     current_checked_out = _git_head()
+    benchmark = evidence.get("synthetic_benchmark", {})
     checks = [
         evidence.get("verdict") == "TECHNICALLY_REPRODUCIBLE",
         evidence.get("exact_head_matches") is True,
@@ -238,18 +260,22 @@ def enforce_evidence() -> int:
         evidence.get("authority", {}).get("experiment_authorization") is False,
         evidence.get("canonical_classification") == "CANDIDATE_WINDOW",
         evidence.get("stages", {}).get("installed_wheel", {}).get("status") == "PASS",
+        evidence.get("stages", {}).get("synthetic_benchmark", {}).get("status") == "PASS",
+        benchmark.get("interpretation") == "SUPPORTED_SYNTHETIC_ONLY",
+        benchmark.get("authority") == "RESEARCH_ONLY",
+        benchmark.get("experiment_authorization") is False,
     ]
     if not all(checks):
         print(json.dumps(evidence, indent=2), file=sys.stderr)
         print(
-            "Evidence is not bound to the current KAIROS_EXACT_HEAD and git HEAD.",
+            "Evidence is not bound to the current exact technical and research-only state.",
             file=sys.stderr,
         )
         return 1
 
     print(
         "Kairos exact-head evidence accepted: TECHNICALLY_REPRODUCIBLE; "
-        "RESEARCH_ONLY; NOT EXPERIMENT AUTHORIZATION"
+        "SYNTHETIC_BENCHMARK_ONLY; RESEARCH_ONLY; NOT EXPERIMENT AUTHORIZATION"
     )
     return 0
 
