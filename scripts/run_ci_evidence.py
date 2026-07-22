@@ -11,7 +11,7 @@ import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT = ROOT / ".artifacts" / "kairos-validation.json"
@@ -46,6 +46,18 @@ def _git_head() -> str:
         check=False,
     )
     return completed.stdout.strip() if completed.returncode == 0 else "unavailable"
+
+
+def _exact_binding_matches(
+    evidence: Mapping[str, Any], requested: str | None, checked_out: str
+) -> bool:
+    """Verify artifact, requested environment SHA, and current checkout identity."""
+    artifact_requested = evidence.get("requested_head_sha")
+    artifact_checked_out = evidence.get("checked_out_head_sha")
+    values = (requested, checked_out, artifact_requested, artifact_checked_out)
+    return all(
+        isinstance(value, str) and SHA_RE.fullmatch(value) for value in values
+    ) and len({value.lower() for value in values}) == 1
 
 
 def _wheel_smoke() -> dict[str, Any]:
@@ -142,11 +154,13 @@ def build_evidence() -> dict[str, Any]:
     """Run technical validation stages and write exact-head evidence."""
     requested = os.environ.get("KAIROS_EXACT_HEAD")
     checked_out = _git_head()
-    exact_head_matches = (
-        bool(requested)
-        and bool(SHA_RE.fullmatch(requested))
-        and bool(SHA_RE.fullmatch(checked_out))
-        and requested.lower() == checked_out.lower()
+    exact_head_matches = _exact_binding_matches(
+        {
+            "requested_head_sha": requested,
+            "checked_out_head_sha": checked_out,
+        },
+        requested,
+        checked_out,
     )
 
     stages = {
@@ -207,16 +221,19 @@ def build_evidence() -> dict[str, Any]:
 
 
 def enforce_evidence() -> int:
-    """Fail closed unless stored evidence proves the expected technical state."""
+    """Fail closed unless stored evidence is bound to the current exact checkout."""
     try:
         evidence = json.loads(ARTIFACT.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         print(f"Missing or malformed Kairos evidence: {exc}", file=sys.stderr)
         return 1
 
+    current_requested = os.environ.get("KAIROS_EXACT_HEAD")
+    current_checked_out = _git_head()
     checks = [
         evidence.get("verdict") == "TECHNICALLY_REPRODUCIBLE",
         evidence.get("exact_head_matches") is True,
+        _exact_binding_matches(evidence, current_requested, current_checked_out),
         evidence.get("authority", {}).get("classification") == "RESEARCH_ONLY",
         evidence.get("authority", {}).get("experiment_authorization") is False,
         evidence.get("canonical_classification") == "CANDIDATE_WINDOW",
@@ -224,6 +241,10 @@ def enforce_evidence() -> int:
     ]
     if not all(checks):
         print(json.dumps(evidence, indent=2), file=sys.stderr)
+        print(
+            "Evidence is not bound to the current KAIROS_EXACT_HEAD and git HEAD.",
+            file=sys.stderr,
+        )
         return 1
 
     print(
