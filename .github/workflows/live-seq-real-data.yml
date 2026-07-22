@@ -1,0 +1,116 @@
+name: Live-seq real-data feasibility
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/live-seq-feasibility-v0.1
+    paths:
+      - .github/workflows/live-seq-real-data.yml
+      - scripts/audit_live_seq_gse141064.py
+      - manifests/live-seq-gse141064.sources.v0.1.json
+      - protocols/live-seq-gse141064-feasibility.v0.1.json
+  pull_request:
+    paths:
+      - .github/workflows/live-seq-real-data.yml
+      - scripts/audit_live_seq_gse141064.py
+      - manifests/live-seq-gse141064.sources.v0.1.json
+      - protocols/live-seq-gse141064-feasibility.v0.1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-seq-real-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Immutable public-input audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      META_URL: https://raw.githubusercontent.com/DeplanckeLab/Live-seq/6633d4d468f56031ea197474e09921088d878512/data/meta.final.csv
+      COUNT_URL: https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE141064&file=GSE141064_count.final.csv.gz&format=file
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download immutable public inputs
+        run: |
+          set -euo pipefail
+          mkdir -p .artifacts/live-seq-real
+          curl --location --fail --silent --show-error --retry 4 \
+            --output .artifacts/live-seq-real/meta.final.csv \
+            "$META_URL"
+          curl --location --fail --silent --show-error --retry 4 \
+            --output .artifacts/live-seq-real/GSE141064_count.final.csv.gz \
+            "$COUNT_URL"
+          sha256sum \
+            .artifacts/live-seq-real/meta.final.csv \
+            .artifacts/live-seq-real/GSE141064_count.final.csv.gz \
+            > .artifacts/live-seq-real/input-sha256.txt
+          cat .artifacts/live-seq-real/input-sha256.txt
+
+      - name: Run fail-closed linkage audit
+        id: audit
+        run: |
+          set +e
+          python scripts/audit_live_seq_gse141064.py \
+            .artifacts/live-seq-real/meta.final.csv \
+            .artifacts/live-seq-real/GSE141064_count.final.csv.gz \
+            --data-reuse-status unclear \
+            > .artifacts/live-seq-real/result.json
+          code=$?
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          cat .artifacts/live-seq-real/result.json
+
+      - name: Enforce technical readiness boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(
+              Path('.artifacts/live-seq-real/result.json').read_text(encoding='utf-8')
+          )
+          status = result.get('status')
+          if status != 'BLOCKED_LICENSE_UNCLEAR':
+              raise SystemExit(
+                  'Expected intact data linkage with the reuse boundary still unresolved; '
+                  f'got {status!r}'
+              )
+          if not result.get('integrity', {}).get('full_id_sets_match'):
+              raise SystemExit('metadata/count-matrix identifiers do not match exactly')
+          if result.get('cohort', {}).get('selected_recorded_cells', 0) < 1:
+              raise SystemExit('no recorded-cell response cohort was recovered')
+          if len(result.get('cohort', {}).get('replicate_groups', [])) < 2:
+              raise SystemExit('fewer than two auditable replicate groups were recovered')
+          authority = result.get('authority', {})
+          if authority.get('classification') != 'RESEARCH_ONLY':
+              raise SystemExit('authority boundary is not RESEARCH_ONLY')
+          if authority.get('experiment_authorization') is not False:
+              raise SystemExit('audit must not authorize experiments')
+          print('REAL_INPUT_LINKAGE_PASS_REUSE_BOUNDARY_BLOCKED')
+          PY
+
+      - name: Upload audit evidence only
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-seq-real-audit-${{ env.EXACT_HEAD }}
+          path: |
+            .artifacts/live-seq-real/result.json
+            .artifacts/live-seq-real/input-sha256.txt
+          if-no-files-found: warn
+          retention-days: 30
