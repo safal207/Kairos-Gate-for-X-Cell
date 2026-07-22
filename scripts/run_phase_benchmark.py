@@ -36,6 +36,10 @@ def _load(path: Path) -> Mapping[str, Any]:
         raise BenchmarkError(f"unsupported dataset schema: {dataset.get('schema')}")
     if dataset.get("provenance_class") != "synthetic":
         raise BenchmarkError("v0.1 benchmark accepts synthetic fixtures only")
+    for field in ("dataset_id", "version"):
+        value = dataset.get(field)
+        if not isinstance(value, str) or not value.strip():
+            raise BenchmarkError(f"{field} must be a non-empty string")
 
     records = dataset.get("records")
     if not isinstance(records, list) or not records:
