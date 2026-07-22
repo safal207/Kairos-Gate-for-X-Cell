@@ -1,7 +1,7 @@
 {
   "schema": "kairos.open-data-feasibility-protocol.v0.1",
   "protocol_id": "kairos.live-seq-gse141064.feasibility.v0.1",
-  "status": "PREREGISTERED_BEFORE_REAL_DATA_RESULT",
+  "status": "AMENDED_BEFORE_MODEL_FITTING_TO_REMOVE_RESPONSE_SELECTION",
   "dataset_id": "GSE141064",
   "research_question": "Can the public Live-seq data support a leakage-controlled comparison of basal-transcriptome-only and pre-intervention-cell-cycle-conditioned prediction of downstream LPS-induced Tnf-mCherry response?",
   "cohort_rule": {
@@ -10,7 +10,13 @@
     "treatment": "not_treated",
     "batch": "8_8",
     "mCherry_log_intercept": "> 0",
-    "mCherry_log_slope": "finite and non-missing"
+    "uses_response_label": false
+  },
+  "outcome_availability_rule": {
+    "field": "mCherry.log.slope",
+    "requirement": "finite and non-missing for every selected cohort member",
+    "missing_outcome": "BLOCKED_MISSING_RESPONSE_LABELS",
+    "rule": "Outcome availability is evaluated only after cohort membership is frozen."
   },
   "required_metadata_columns": [
     "sample_ID",
@@ -58,10 +64,12 @@
   "audit_outcomes": [
     "READY_FOR_PREREGISTRATION",
     "BLOCKED_MISSING_CELL_LINKAGE",
+    "BLOCKED_MISSING_RESPONSE_LABELS",
     "BLOCKED_INSUFFICIENT_REPLICATES",
     "BLOCKED_LICENSE_UNCLEAR",
     "BLOCKED_DATA_INTEGRITY"
   ],
+  "amendment_note": "The initial feasibility draft incorrectly included response availability in cohort membership. This amendment removes target-dependent selection before any model fitting or performance estimation.",
   "non_claims": [
     "This audit does not evaluate X-Cell.",
     "This audit does not establish causal timing.",
