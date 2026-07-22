@@ -33,6 +33,8 @@ jobs:
       EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
       META_URL: https://raw.githubusercontent.com/DeplanckeLab/Live-seq/6633d4d468f56031ea197474e09921088d878512/data/meta.final.csv
       COUNT_URL: https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE141064&file=GSE141064_count.final.csv.gz&format=file
+      META_SHA256: dcce9bea9444857a6a042fc64be3a5c7b31a00095a21eabc1488e516abd689c8
+      COUNT_SHA256: 0e8a07d36a4b06bc8ced881bf97114adc2b55681b5ccf00d29e4f80e05107b22
     steps:
       - name: Checkout exact head
         uses: actions/checkout@v4
@@ -45,7 +47,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Download immutable public inputs
+      - name: Download and verify immutable public inputs
         run: |
           set -euo pipefail
           mkdir -p .artifacts/live-seq-real
@@ -55,10 +57,11 @@ jobs:
           curl --location --fail --silent --show-error --retry 4 \
             --output .artifacts/live-seq-real/GSE141064_count.final.csv.gz \
             "$COUNT_URL"
-          sha256sum \
-            .artifacts/live-seq-real/meta.final.csv \
-            .artifacts/live-seq-real/GSE141064_count.final.csv.gz \
+          printf '%s  %s\n' \
+            "$META_SHA256" .artifacts/live-seq-real/meta.final.csv \
+            "$COUNT_SHA256" .artifacts/live-seq-real/GSE141064_count.final.csv.gz \
             > .artifacts/live-seq-real/input-sha256.txt
+          sha256sum --check .artifacts/live-seq-real/input-sha256.txt
           cat .artifacts/live-seq-real/input-sha256.txt
 
       - name: Run fail-closed linkage audit
@@ -75,33 +78,50 @@ jobs:
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           cat .artifacts/live-seq-real/result.json
 
-      - name: Enforce technical readiness boundary
+      - name: Enforce exact blocked research boundary
+        env:
+          AUDIT_EXIT_CODE: ${{ steps.audit.outputs.exit_code }}
         run: |
           python - <<'PY'
           import json
+          import os
           from pathlib import Path
 
           result = json.loads(
               Path('.artifacts/live-seq-real/result.json').read_text(encoding='utf-8')
           )
-          status = result.get('status')
-          if status != 'BLOCKED_LICENSE_UNCLEAR':
+          if os.environ.get('AUDIT_EXIT_CODE') != '2':
+              raise SystemExit('blocked research status must return exit code 2')
+          if result.get('status') != 'BLOCKED_INSUFFICIENT_REPLICATES':
               raise SystemExit(
-                  'Expected intact data linkage with the reuse boundary still unresolved; '
-                  f'got {status!r}'
+                  'Expected exact data linkage with the replicate boundary unresolved; '
+                  f"got {result.get('status')!r}"
               )
-          if not result.get('integrity', {}).get('full_id_sets_match'):
+          inputs = result.get('inputs', {})
+          if inputs.get('metadata', {}).get('rows') != 1012:
+              raise SystemExit('unexpected metadata row count')
+          if inputs.get('count_matrix', {}).get('sample_columns') != 1012:
+              raise SystemExit('unexpected count-matrix sample count')
+          if inputs.get('metadata', {}).get('sha256') != 'sha256:' + os.environ['META_SHA256']:
+              raise SystemExit('metadata digest mismatch in result')
+          if inputs.get('count_matrix', {}).get('sha256') != 'sha256:' + os.environ['COUNT_SHA256']:
+              raise SystemExit('count-matrix digest mismatch in result')
+          integrity = result.get('integrity', {})
+          if not integrity.get('full_id_sets_match'):
               raise SystemExit('metadata/count-matrix identifiers do not match exactly')
-          if result.get('cohort', {}).get('selected_recorded_cells', 0) < 1:
-              raise SystemExit('no recorded-cell response cohort was recovered')
-          if len(result.get('cohort', {}).get('replicate_groups', [])) < 2:
-              raise SystemExit('fewer than two auditable replicate groups were recovered')
+          cohort = result.get('cohort', {})
+          if cohort.get('selected_recorded_cells') != 17:
+              raise SystemExit('unexpected recorded-cell cohort size')
+          if cohort.get('missing_selected_sample_ids') != []:
+              raise SystemExit('selected recorded cells are missing from count matrix')
+          if cohort.get('replicate_groups') != []:
+              raise SystemExit('replicate evidence changed and requires protocol review')
           authority = result.get('authority', {})
           if authority.get('classification') != 'RESEARCH_ONLY':
               raise SystemExit('authority boundary is not RESEARCH_ONLY')
           if authority.get('experiment_authorization') is not False:
               raise SystemExit('audit must not authorize experiments')
-          print('REAL_INPUT_LINKAGE_PASS_REUSE_BOUNDARY_BLOCKED')
+          print('REAL_INPUT_LINKAGE_PASS_REPLICATE_BOUNDARY_BLOCKED')
           PY
 
       - name: Upload audit evidence only
