@@ -1,0 +1,99 @@
+name: Live-seq technical group map
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/live-seq-replicate-recovery-v0.1
+    paths:
+      - .github/workflows/live-seq-technical-groups.yml
+      - scripts/summarize_live_seq_technical_groups.py
+  pull_request:
+    paths:
+      - .github/workflows/live-seq-technical-groups.yml
+      - scripts/summarize_live_seq_technical_groups.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-seq-technical-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  summarize:
+    name: Research-only technical grouping
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      META_URL: https://raw.githubusercontent.com/DeplanckeLab/Live-seq/6633d4d468f56031ea197474e09921088d878512/data/meta.final.csv
+      META_SHA256: dcce9bea9444857a6a042fc64be3a5c7b31a00095a21eabc1488e516abd689c8
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download and verify pinned metadata
+        run: |
+          set -euo pipefail
+          mkdir -p .artifacts/live-seq-groups
+          curl --location --fail --silent --show-error --retry 4 \
+            --output .artifacts/live-seq-groups/meta.final.csv \
+            "$META_URL"
+          printf '%s  %s\n' "$META_SHA256" \
+            .artifacts/live-seq-groups/meta.final.csv \
+            > .artifacts/live-seq-groups/input-sha256.txt
+          sha256sum --check .artifacts/live-seq-groups/input-sha256.txt
+
+      - name: Build technical group summary
+        run: |
+          python scripts/summarize_live_seq_technical_groups.py \
+            .artifacts/live-seq-groups/meta.final.csv \
+            > .artifacts/live-seq-groups/summary.json
+          cat .artifacts/live-seq-groups/summary.json
+
+      - name: Enforce non-replicate boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(
+              Path('.artifacts/live-seq-groups/summary.json').read_text(encoding='utf-8')
+          )
+          if result.get('cohort', {}).get('selected_cells') != 17:
+              raise SystemExit('unexpected selected cohort size')
+          if result.get('cohort', {}).get('selection_uses_response_label') is not False:
+              raise SystemExit('cohort selection must not use response labels')
+          decision = result.get('decision', {})
+          if decision.get('classification') != 'EXPLORATORY_ONLY_TECHNICAL_GROUPING':
+              raise SystemExit('technical grouping classification changed')
+          if decision.get('status') != 'BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED':
+              raise SystemExit('replicate semantics must remain blocked')
+          if decision.get('replicate_semantics_verified') is not False:
+              raise SystemExit('technical metadata must not verify replicate semantics')
+          if decision.get('confirmatory_preregistration_unlocked') is not False:
+              raise SystemExit('technical grouping must not unlock confirmation')
+          if result.get('authority', {}).get('classification') != 'RESEARCH_ONLY':
+              raise SystemExit('authority boundary is not RESEARCH_ONLY')
+          print('TECHNICAL_GROUPS_MAPPED_REPLICATE_SEMANTICS_BLOCKED')
+          PY
+
+      - name: Upload derived summary only
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-seq-technical-groups-${{ env.EXACT_HEAD }}
+          path: |
+            .artifacts/live-seq-groups/summary.json
+            .artifacts/live-seq-groups/input-sha256.txt
+          if-no-files-found: error
+          retention-days: 30
