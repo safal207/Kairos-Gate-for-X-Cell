@@ -17,7 +17,8 @@
       "status": "inferred",
       "label": "G1",
       "confidence": 0.84,
-      "method": "illustrative phase-score classifier"
+      "method": "illustrative phase-score classifier",
+      "observed_at": "2026-07-21T09:00:00Z"
     },
     "calcium": {"status": "unobserved"},
     "membrane_potential": {"status": "unobserved"},
@@ -49,7 +50,7 @@
   },
   "decision": "CANDIDATE_WINDOW",
   "justification": [
-    "At least one measurable phase variable is present with confidence above the minimum threshold.",
+    "At least one supported measurable phase variable is present with complete provenance and confidence above the minimum threshold.",
     "Identity-preservation and toxicity constraints remain within research-only candidate bounds.",
     "The record is illustrative and requires external biological validation."
   ],
