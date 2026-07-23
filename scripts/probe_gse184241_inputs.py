@@ -36,18 +36,18 @@ def probe_counts(path: Path) -> dict[str, Any]:
         observed_widths: set[int] = set()
         for line in handle:
             row_count += 1
-            values = split_geo_line(line)
-            observed_widths.add(len(values))
-            if len(preview) < 8:
-                preview.append(values[: min(12, len(values))])
             if row_count <= 100:
+                values = split_geo_line(line)
+                observed_widths.add(len(values))
+                if len(preview) < 8:
+                    preview.append(values[: min(12, len(values))])
                 nonzero_lengths.append(sum(value not in {"", "0", "0.0"} for value in values[1:]))
 
     return {
         "delimiter": "quoted_whitespace",
         "row_count_excluding_header": row_count,
         "cell_column_count": len(header),
-        "data_row_widths_observed": sorted(observed_widths),
+        "data_row_widths_observed_first_100": sorted(observed_widths),
         "first_20_cell_names": header[:20],
         "last_10_cell_names": header[-10:],
         "first_8_rows_first_12_values": preview,
