@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/causal-hypothesis-ranking.schema.json",
+  "title": "Causal Hypothesis Ranking",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "target_claim",
+    "inherited_constraints",
+    "hypotheses",
+    "pairwise_discriminators",
+    "causal_identification",
+    "claim_boundary",
+    "overall_verdict",
+    "next_valid_action",
+    "safety_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "case_id": {"type": "string", "minLength": 1},
+    "target_claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate", "phenotype", "temporal_order", "biological_system", "claim_level", "statement"],
+      "properties": {
+        "candidate": {"type": "string", "minLength": 1},
+        "phenotype": {"type": "string", "minLength": 1},
+        "temporal_order": {"type": "string", "minLength": 1},
+        "biological_system": {"type": "string", "minLength": 1},
+        "claim_level": {"enum": ["association", "prediction", "causal", "tissue", "clinical_therapeutic"]},
+        "statement": {"type": "string", "minLength": 1}
+      }
+    },
+    "inherited_constraints": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["constraint_id", "statement", "evidence_level", "impact"],
+        "properties": {
+          "constraint_id": {"type": "string", "minLength": 1},
+          "statement": {"type": "string", "minLength": 1},
+          "evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4", "F5"]},
+          "impact": {"enum": ["informational", "limiting", "blocking"]}
+        }
+      }
+    },
+    "hypotheses": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "hypothesis_id",
+          "rank",
+          "priority_score",
+          "statement",
+          "mechanism_class",
+          "status",
+          "evidence_level",
+          "scores",
+          "score_rationale",
+          "evidence_for",
+          "evidence_against",
+          "unresolved_assumptions",
+          "predicted_observations",
+          "falsifiers",
+          "discriminating_test"
+        ],
+        "properties": {
+          "hypothesis_id": {"type": "string", "minLength": 1},
+          "rank": {"type": "integer", "minimum": 1},
+          "priority_score": {"type": "number", "minimum": 0, "maximum": 100},
+          "statement": {"type": "string", "minLength": 1},
+          "mechanism_class": {
+            "enum": [
+              "direct_causal_effect",
+              "mediated_causal_effect",
+              "shared_upstream_state",
+              "state_marker_only",
+              "reverse_or_contemporaneous_coupling",
+              "technical_confounding",
+              "selection_or_measurement_bias",
+              "chance_or_overfitting",
+              "small_real_effect"
+            ]
+          },
+          "status": {"enum": ["causally_identified_with_limits", "supported_explanation", "plausible", "weakened", "not_identified", "blocked"]},
+          "evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4", "F5"]},
+          "scores": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["temporal_fit", "experimental_unit_fit", "cross_dataset_support", "confounder_resilience", "mechanistic_coherence", "intervention_support", "falsifiability", "effect_relevance", "uncertainty_penalty"],
+            "properties": {
+              "temporal_fit": {"type": "integer", "minimum": 0, "maximum": 4},
+              "experimental_unit_fit": {"type": "integer", "minimum": 0, "maximum": 4},
+              "cross_dataset_support": {"type": "integer", "minimum": 0, "maximum": 4},
+              "confounder_resilience": {"type": "integer", "minimum": 0, "maximum": 4},
+              "mechanistic_coherence": {"type": "integer", "minimum": 0, "maximum": 4},
+              "intervention_support": {"type": "integer", "minimum": 0, "maximum": 4},
+              "falsifiability": {"type": "integer", "minimum": 0, "maximum": 4},
+              "effect_relevance": {"type": "integer", "minimum": 0, "maximum": 4},
+              "uncertainty_penalty": {"type": "integer", "minimum": 0, "maximum": 4}
+            }
+          },
+          "score_rationale": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+          "evidence_for": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "evidence_against": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "unresolved_assumptions": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "predicted_observations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+          "falsifiers": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+          "discriminating_test": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["question", "required_evidence", "operational_protocol_included"],
+            "properties": {
+              "question": {"type": "string", "minLength": 1},
+              "required_evidence": {"type": "string", "minLength": 1},
+              "operational_protocol_included": {"const": false}
+            }
+          }
+        }
+      }
+    },
+    "pairwise_discriminators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["hypothesis_a", "hypothesis_b", "distinguishing_observation"],
+        "properties": {
+          "hypothesis_a": {"type": "string", "minLength": 1},
+          "hypothesis_b": {"type": "string", "minLength": 1},
+          "distinguishing_observation": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "causal_identification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identified", "temporal_order_matched", "experimental_unit_established", "identifying_design_present", "major_confounders_separable", "independent_validation_present", "reason"],
+      "properties": {
+        "identified": {"type": "boolean"},
+        "temporal_order_matched": {"type": "boolean"},
+        "experimental_unit_established": {"type": "boolean"},
+        "identifying_design_present": {"type": "boolean"},
+        "major_confounders_separable": {"type": "boolean"},
+        "independent_validation_present": {"type": "boolean"},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["association", "prediction", "causal", "tissue", "clinical_therapeutic"],
+      "properties": {
+        "association": {"enum": ["supported", "supported_with_limits", "not_established", "blocked"]},
+        "prediction": {"enum": ["supported", "supported_with_limits", "not_established", "blocked"]},
+        "causal": {"enum": ["supported", "supported_with_limits", "not_established", "blocked"]},
+        "tissue": {"enum": ["supported", "supported_with_limits", "not_established", "blocked"]},
+        "clinical_therapeutic": {"enum": ["supported", "supported_with_limits", "not_established", "blocked"]}
+      }
+    },
+    "overall_verdict": {"enum": ["RANKED_NOT_IDENTIFIED", "IDENTIFIED_WITH_LIMITS", "BLOCK"]},
+    "next_valid_action": {"type": "string", "minLength": 1},
+    "safety_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "physical_biology_authorized"],
+      "properties": {
+        "mode": {"const": "computational_only"},
+        "physical_biology_authorized": {"const": false},
+        "notes": {"type": "string"}
+      }
+    }
+  }
+}
