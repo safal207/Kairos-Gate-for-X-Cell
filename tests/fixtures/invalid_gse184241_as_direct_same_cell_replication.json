@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.2.0",
+  "search_id": "INVALID-GSE184241-DIRECT",
+  "searched_at": "2026-07-23T12:45:00Z",
+  "frozen_target": {
+    "organism": "Homo sapiens",
+    "cell_context": "human monocytes",
+    "pre_state": "baseline transcriptome",
+    "transition": "LPS",
+    "later_phenotype": "later response",
+    "identity_requirement": "same_cell"
+  },
+  "repositories": [
+    {"name": "GEO", "url": "https://www.ncbi.nlm.nih.gov/geo/"},
+    {"name": "PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/"}
+  ],
+  "queries": ["human macrophage baseline", "same cell later response", "human monocyte LPS", "GSE184241 direct replication"],
+  "candidates": [
+    {
+      "candidate_id": "GSE184241",
+      "title": "Incorrectly promoted donor-level study",
+      "organism": "Homo sapiens",
+      "cell_context": "CD14 monocytes",
+      "source_urls": ["https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE184241"],
+      "classification": "DIRECT_TEMPORAL_CANDIDATE",
+      "gates": {
+        "human": true,
+        "pre_state_before_transition": true,
+        "later_phenotype": true,
+        "same_cell_or_defensible_longitudinal_identity": false,
+        "independent_biological_units_explicit": true,
+        "technical_lineage_sufficient": true,
+        "public_analysis_data": true
+      },
+      "direct_replication_eligible": true,
+      "model_use": "claim direct prediction",
+      "exclusion_reason": "none"
+    }
+  ],
+  "gse94383_prefix_resolution": {
+    "status": "TECHNICAL_OR_CONDITION_PREFIX",
+    "biological_replicate": false,
+    "allowed_use": "technical_or_condition_sensitivity_only",
+    "unresolved_detail": "exact prefix mapping unresolved",
+    "evidence_urls": ["https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE94383"]
+  },
+  "global_verdict": "HUMAN_DIRECT_REPLICATION_FOUND",
+  "partner_lab_requirement": {
+    "required": true,
+    "summary": "Same-cell human evidence remains necessary despite this invalid promotion.",
+    "physical_execution_authorized": false
+  },
+  "claim_boundary": {
+    "human_domain_support": "supported_with_limits",
+    "direct_prediction": "not_established",
+    "causal": "blocked",
+    "clinical_therapeutic": "blocked"
+  },
+  "safety_status": {
+    "computational_only": true,
+    "physical_biology_authorized": false,
+    "clinical_use_authorized": false
+  }
+}
