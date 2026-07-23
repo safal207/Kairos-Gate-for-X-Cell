@@ -74,9 +74,9 @@ def main() -> int:
         },
         "data_identity": {
             "dataset_id": manifest["dataset_id"],
-            "input_artifact": input_path.as_posix(),
+            "input_artifact": input_path.name,
             "input_sha256": input_sha,
-            "output_artifact": output_path.as_posix(),
+            "output_artifact": output_path.name,
             "output_sha256": output_sha
         },
         "execution": {
@@ -129,7 +129,7 @@ def main() -> int:
     passport_path.parent.mkdir(parents=True, exist_ok=True)
     passport_path.write_bytes(canonical_bytes(passport))
     print(json.dumps({
-        "passport": passport_path.as_posix(),
+        "passport": passport_path.name,
         "input_sha256": input_sha,
         "output_sha256": output_sha,
         "model_inference_executed": False
