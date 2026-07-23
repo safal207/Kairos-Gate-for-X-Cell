@@ -76,6 +76,7 @@ jobs:
                   ['git', 'rev-parse', 'HEAD^{tree}'], text=True
               ).strip(),
               'stack_base_head': 'bdc3aac6dbe22a56d0cfdefc47e44104fdc45e91',
+              'stack_merge_ancestor_required': True,
               'authority': {
                   'classification': 'RESEARCH_ONLY',
                   'experiment_authorization': False,
@@ -132,6 +133,8 @@ jobs:
               raise SystemExit('attestation tree SHA mismatch')
           if attestation.get('stack_base_head') != 'bdc3aac6dbe22a56d0cfdefc47e44104fdc45e91':
               raise SystemExit('attestation stack base head mismatch')
+          if attestation.get('stack_merge_ancestor_required') is not True:
+              raise SystemExit('stack merge ancestry policy is not enforced')
           print('TECHNICAL_GROUPS_MAPPED_REPLICATE_SEMANTICS_BLOCKED')
           print('EXACT_HEAD_TREE_ATTESTATION_PASS')
           PY
