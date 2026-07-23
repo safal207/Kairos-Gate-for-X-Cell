@@ -5,6 +5,7 @@ on:
     paths:
       - ".agents/skills/gse184241-geneformer-v1-inference/**"
       - "scripts/run_gse184241_geneformer_v1_inference.py"
+      - "scripts/run_gse184241_geneformer_v1_encoder_only.py"
       - "scripts/validate_gse184241_geneformer_v1_inference.py"
       - "scripts/export_liminaldb_geneformer_inference_transition.py"
       - "scripts/validate_liminaldb_geneformer_inference_transition.py"
@@ -17,11 +18,13 @@ on:
       - "examples/gse184241.donor-held-out-benchmark.json"
       - "tests/fixtures/invalid_geneformer_inference_authority_escalation.patch.json"
       - "tools/liminaldb_bridge/geneformer_inference_transition_replay.rs"
+      - "reports/gse184241-geneformer-v1-inference-2026-07-23.md"
       - ".github/workflows/gse184241-geneformer-v1-inference.yml"
   push:
     paths:
       - ".agents/skills/gse184241-geneformer-v1-inference/**"
       - "scripts/run_gse184241_geneformer_v1_inference.py"
+      - "scripts/run_gse184241_geneformer_v1_encoder_only.py"
       - "scripts/validate_gse184241_geneformer_v1_inference.py"
       - "scripts/export_liminaldb_geneformer_inference_transition.py"
       - "scripts/validate_liminaldb_geneformer_inference_transition.py"
@@ -34,6 +37,7 @@ on:
       - "examples/gse184241.donor-held-out-benchmark.json"
       - "tests/fixtures/invalid_geneformer_inference_authority_escalation.patch.json"
       - "tools/liminaldb_bridge/geneformer_inference_transition_replay.rs"
+      - "reports/gse184241-geneformer-v1-inference-2026-07-23.md"
       - ".github/workflows/gse184241-geneformer-v1-inference.yml"
 
 permissions:
@@ -48,7 +52,7 @@ env:
   CAPTURED_AT_MS: "1784826000000"
 
 jobs:
-  inference-contract:
+  inference-and-replay:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
@@ -85,6 +89,7 @@ jobs:
           python -m json.tool tests/fixtures/invalid_geneformer_inference_authority_escalation.patch.json >/dev/null
           python -m py_compile \
             scripts/run_gse184241_geneformer_v1_inference.py \
+            scripts/run_gse184241_geneformer_v1_encoder_only.py \
             scripts/validate_gse184241_geneformer_v1_inference.py \
             scripts/export_liminaldb_geneformer_inference_transition.py \
             scripts/validate_liminaldb_geneformer_inference_transition.py \
@@ -102,15 +107,15 @@ jobs:
             "$BARCODES_URL"
           sha256sum inference-inputs/* | tee inference-results/input-sha256.txt
 
-      - name: Execute exact Geneformer V1 inference or durable HOLD
+      - name: Execute exact Geneformer V1 encoder inference or durable HOLD
         env:
           TOKENIZERS_PARALLELISM: "false"
           HF_HUB_DISABLE_TELEMETRY: "1"
-          OMP_NUM_THREADS: "2"
-          MKL_NUM_THREADS: "2"
+          OMP_NUM_THREADS: "4"
+          MKL_NUM_THREADS: "4"
         run: |
           set -o pipefail
-          python scripts/run_gse184241_geneformer_v1_inference.py \
+          python scripts/run_gse184241_geneformer_v1_encoder_only.py \
             --counts inference-inputs/GSE184241_combined_raw_counts.txt.gz \
             --barcodes inference-inputs/GSE184241_barcode_sequences.xlsx \
             --benchmark examples/gse184241.donor-held-out-benchmark.json \
@@ -127,11 +132,10 @@ jobs:
           import json
           from pathlib import Path
           from jsonschema import Draft202012Validator
-          pairs = [
+          for schema_path, data_path in [
               ('schemas/gse184241-geneformer-v1-inference.schema.json', 'inference-results/geneformer-v1-inference.json'),
               ('schemas/model-evidence-passport.schema.json', 'inference-results/model-evidence-passport.json'),
-          ]
-          for schema_path, data_path in pairs:
+          ]:
               schema = json.loads(Path(schema_path).read_text())
               data = json.loads(Path(data_path).read_text())
               Draft202012Validator(schema).validate(data)
@@ -162,7 +166,7 @@ jobs:
             --captured-at-ms "$CAPTURED_AT_MS" \
             2>&1 | tee inference-results/ledger-export.log
 
-      - name: Validate superseding ledger and misuse rejection
+      - name: Validate superseding ledger and authority misuse rejection
         run: |
           set -o pipefail
           python - <<'PY'
@@ -214,32 +218,6 @@ jobs:
           print(json.dumps({'status': result['status'], 'completed': completed, 'current_authorization_ref': current_auth}, sort_keys=True))
           PY
 
-      - name: Upload exact-head inference and bridge evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: gse184241-geneformer-v1-inference-${{ env.SOURCE_SHA }}
-          path: inference-results
-          if-no-files-found: error
-          retention-days: 30
-
-  liminaldb-replay:
-    needs: inference-contract
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - name: Checkout exact Kairos Gate head
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-        with:
-          ref: ${{ env.SOURCE_SHA }}
-          persist-credentials: false
-
-      - name: Download exact inference evidence
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: gse184241-geneformer-v1-inference-${{ env.SOURCE_SHA }}
-          path: inference-results
-
       - name: Checkout exact LiminalDB compatibility pin
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
@@ -248,21 +226,15 @@ jobs:
           path: vendor/LiminalDB
           persist-credentials: false
 
-      - name: Verify checked-out LiminalDB commit
+      - name: Compile and replay through real TrustworthyTransitionLedger
         run: |
+          set -o pipefail
           actual="$(git -C vendor/LiminalDB rev-parse HEAD)"
           test "$actual" = "$LIMINALDB_COMMIT"
           printf '%s\n' "$actual" > inference-results/liminaldb-checked-out-commit.txt
-
-      - name: Install inference replay adapter
-        run: |
           cp tools/liminaldb_bridge/geneformer_inference_transition_replay.rs \
             vendor/LiminalDB/liminal-db/crates/liminal-store/examples/geneformer_inference_transition_replay.rs
-
-      - name: Compile and replay through real TrustworthyTransitionLedger
-        working-directory: vendor/LiminalDB/liminal-db
-        run: |
-          set -o pipefail
+          cd vendor/LiminalDB/liminal-db
           cargo run --locked -q -p liminal-store --example geneformer_inference_transition_replay -- \
             "$GITHUB_WORKSPACE/inference-results/liminaldb-geneformer-inference-transition.json" \
             "$GITHUB_WORKSPACE/inference-results/temporary-liminaldb-inference-ledger" \
@@ -302,16 +274,11 @@ jobs:
             inference-results/liminaldb-geneformer-inference-replay-receipt.json \
             > inference-results/inference-replay-sha256.txt
 
-      - name: Upload exact-head inference replay evidence
+      - name: Upload exact-head inference and replay evidence
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: gse184241-geneformer-v1-replay-${{ env.SOURCE_SHA }}
-          path: |
-            inference-results/liminaldb-geneformer-inference-transition.json
-            inference-results/liminaldb-geneformer-inference-replay-receipt.json
-            inference-results/liminaldb-geneformer-inference-replay.log
-            inference-results/liminaldb-checked-out-commit.txt
-            inference-results/inference-replay-sha256.txt
-            inference-results/temporary-liminaldb-inference-ledger
+          name: gse184241-geneformer-v1-complete-${{ env.SOURCE_SHA }}
+          path: inference-results
           if-no-files-found: error
           retention-days: 30
