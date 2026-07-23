@@ -1,0 +1,241 @@
+{
+  "schema_version": "0.2.0",
+  "search_id": "HMTE-2026-07-23-v1",
+  "searched_at": "2026-07-23T12:45:00Z",
+  "frozen_target": {
+    "organism": "Homo sapiens",
+    "cell_context": "primary human monocytes or macrophages",
+    "pre_state": "single-cell molecular state measured before inflammatory stimulation",
+    "transition": "defined inflammatory stimulation or restimulation",
+    "later_phenotype": "later cytokine, signaling, reporter, or functional response",
+    "identity_requirement": "same_cell"
+  },
+  "repositories": [
+    {"name": "NCBI GEO", "url": "https://www.ncbi.nlm.nih.gov/geo/"},
+    {"name": "PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/"},
+    {"name": "PubMed Central", "url": "https://pmc.ncbi.nlm.nih.gov/"},
+    {"name": "Dryad", "url": "https://datadryad.org/"},
+    {"name": "CaltechAUTHORS", "url": "https://authors.library.caltech.edu/"}
+  ],
+  "queries": [
+    "human macrophage baseline transcriptome later cytokine response same cell dataset",
+    "human monocyte same-cell transcriptome before stimulation later phenotype",
+    "human macrophage longitudinal single-cell transcriptome live-cell imaging future response",
+    "human trained immunity baseline molecular state later restimulation cytokine GEO",
+    "same-cell live imaging single-cell RNA sequencing human monocyte macrophage",
+    "GSE94383 cell ID prefix condition biological replicate"
+  ],
+  "candidates": [
+    {
+      "candidate_id": "GSE184241",
+      "title": "Single-cell transcriptomic profiles before and after BCG vaccination with ex vivo LPS",
+      "organism": "Homo sapiens",
+      "cell_context": "CD14 monocytes from three longitudinally sampled healthy donors",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE184241",
+        "https://pubmed.ncbi.nlm.nih.gov/34788625/"
+      ],
+      "classification": "DONOR_LEVEL_TEMPORAL_SUPPORT",
+      "gates": {
+        "human": true,
+        "pre_state_before_transition": false,
+        "later_phenotype": true,
+        "same_cell_or_defensible_longitudinal_identity": false,
+        "independent_biological_units_explicit": true,
+        "technical_lineage_sufficient": true,
+        "public_analysis_data": true
+      },
+      "direct_replication_eligible": false,
+      "model_use": "high-priority human single-cell domain and donor-holdout benchmark for Geneformer-compatible analyses",
+      "exclusion_reason": "Longitudinal identity is donor-level; baseline and LPS-responsive transcriptomes come from different cells and do not link one cell's pre-state to its later phenotype."
+    },
+    {
+      "candidate_id": "DRYAD-10.5061-dryad.stqjq2cjc+GSE323311",
+      "title": "Human macrophage trained-immunity imaging, ATAC-seq, cytometry, and code package",
+      "organism": "Homo sapiens",
+      "cell_context": "primary human monocyte-derived macrophages across anonymized donors",
+      "source_urls": [
+        "https://datadryad.org/dataset/doi:10.5061/dryad.stqjq2cjc",
+        "https://pubmed.ncbi.nlm.nih.gov/42320478/",
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE323311"
+      ],
+      "classification": "DONOR_LEVEL_TEMPORAL_SUPPORT",
+      "gates": {
+        "human": true,
+        "pre_state_before_transition": true,
+        "later_phenotype": true,
+        "same_cell_or_defensible_longitudinal_identity": false,
+        "independent_biological_units_explicit": true,
+        "technical_lineage_sufficient": true,
+        "public_analysis_data": true
+      },
+      "direct_replication_eligible": false,
+      "model_use": "priority benchmark for human macrophage response timing, donor variability, and post-restimulation single-cell cytokine programs",
+      "exclusion_reason": "Pre-restimulation chromatin/state measurements and later single-cell cytokine measurements are not linked within the same individual cell."
+    },
+    {
+      "candidate_id": "GSE85243",
+      "title": "Time-resolved monocyte-to-macrophage differentiation and innate immune memory RNA-seq",
+      "organism": "Homo sapiens",
+      "cell_context": "primary human monocytes differentiated to macrophages",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE85243",
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC5927328/"
+      ],
+      "classification": "DONOR_LEVEL_TEMPORAL_SUPPORT",
+      "gates": {
+        "human": true,
+        "pre_state_before_transition": true,
+        "later_phenotype": true,
+        "same_cell_or_defensible_longitudinal_identity": false,
+        "independent_biological_units_explicit": true,
+        "technical_lineage_sufficient": true,
+        "public_analysis_data": true
+      },
+      "direct_replication_eligible": false,
+      "model_use": "bulk donor-level temporal reference and negative control for claims that require single-cell identity",
+      "exclusion_reason": "RNA-seq and later TNF/IL6 response are population/aliquot measurements; no same-cell molecular-to-future-response linkage exists."
+    },
+    {
+      "candidate_id": "GSE235094",
+      "title": "Human monocyte trained-immunity transcriptomes before and after secondary LPS stimulation",
+      "organism": "Homo sapiens",
+      "cell_context": "healthy-donor monocytes trained with inactivated SARS-CoV-2",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE235094",
+        "https://pubmed.ncbi.nlm.nih.gov/37989107/"
+      ],
+      "classification": "DONOR_LEVEL_TEMPORAL_SUPPORT",
+      "gates": {
+        "human": true,
+        "pre_state_before_transition": true,
+        "later_phenotype": true,
+        "same_cell_or_defensible_longitudinal_identity": false,
+        "independent_biological_units_explicit": true,
+        "technical_lineage_sufficient": true,
+        "public_analysis_data": true
+      },
+      "direct_replication_eligible": false,
+      "model_use": "human donor-level trained-immunity comparison with pre/post-restimulation transcriptomes",
+      "exclusion_reason": "Bulk condition samples and secreted cytokines are not linked to the molecular pre-state of the same individual cell."
+    },
+    {
+      "candidate_id": "GSE137043",
+      "title": "Longitudinal monocyte transcriptome, epigenome, and cytokine response after controlled malaria infection",
+      "organism": "Homo sapiens",
+      "cell_context": "monocytes from five longitudinally sampled volunteers",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE137043",
+        "https://pubmed.ncbi.nlm.nih.gov/33324683/"
+      ],
+      "classification": "DONOR_LEVEL_TEMPORAL_SUPPORT",
+      "gates": {
+        "human": true,
+        "pre_state_before_transition": true,
+        "later_phenotype": true,
+        "same_cell_or_defensible_longitudinal_identity": false,
+        "independent_biological_units_explicit": true,
+        "technical_lineage_sufficient": false,
+        "public_analysis_data": false
+      },
+      "direct_replication_eligible": false,
+      "model_use": "subject-level longitudinal external context only",
+      "exclusion_reason": "Subject-level, not same-cell, and raw data availability is restricted by participant privacy."
+    },
+    {
+      "candidate_id": "GSE126085",
+      "title": "Single-cell time series of human CD14 monocyte differentiation with M-CSF",
+      "organism": "Homo sapiens",
+      "cell_context": "CD14 monocytes sampled at days 0, 3, and 6 across donors",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE126085"
+      ],
+      "classification": "HUMAN_DOMAIN_REFERENCE",
+      "gates": {
+        "human": true,
+        "pre_state_before_transition": true,
+        "later_phenotype": false,
+        "same_cell_or_defensible_longitudinal_identity": false,
+        "independent_biological_units_explicit": true,
+        "technical_lineage_sufficient": true,
+        "public_analysis_data": true
+      },
+      "direct_replication_eligible": false,
+      "model_use": "human monocyte-to-macrophage state-space and species-compatible representation benchmark",
+      "exclusion_reason": "Destructive cells are sampled at separate time points and no later inflammatory phenotype is linked to the baseline cell."
+    },
+    {
+      "candidate_id": "GSE296669",
+      "title": "Multimodal human tissue macrophage profiling during ex vivo polarization",
+      "organism": "Homo sapiens",
+      "cell_context": "macrophages and monocytes from multiple tissues and organ donors",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE296669",
+        "https://pubmed.ncbi.nlm.nih.gov/41384851/"
+      ],
+      "classification": "HUMAN_DOMAIN_REFERENCE",
+      "gates": {
+        "human": true,
+        "pre_state_before_transition": false,
+        "later_phenotype": true,
+        "same_cell_or_defensible_longitudinal_identity": false,
+        "independent_biological_units_explicit": true,
+        "technical_lineage_sufficient": true,
+        "public_analysis_data": true
+      },
+      "direct_replication_eligible": false,
+      "model_use": "strong human tissue and donor holdout benchmark for context shift and cytokine-response representations",
+      "exclusion_reason": "Cultured and stimulated aliquots provide donor/tissue comparisons, not the same cell's pre-state and later phenotype."
+    },
+    {
+      "candidate_id": "GSE130070",
+      "title": "Single-cell response of human CD14 monocytes to LPS with or without IL-10 signaling blockade",
+      "organism": "Homo sapiens",
+      "cell_context": "human CD14 monocytes profiled after condition exposure",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE130070"
+      ],
+      "classification": "SINGLE_CELL_POST_RESPONSE_SUPPORT",
+      "gates": {
+        "human": true,
+        "pre_state_before_transition": false,
+        "later_phenotype": true,
+        "same_cell_or_defensible_longitudinal_identity": false,
+        "independent_biological_units_explicit": false,
+        "technical_lineage_sufficient": true,
+        "public_analysis_data": true
+      },
+      "direct_replication_eligible": false,
+      "model_use": "post-stimulation human single-cell response reference only",
+      "exclusion_reason": "RNA is measured after exposure; the design cannot test whether a baseline molecular state predicts a later response."
+    }
+  ],
+  "gse94383_prefix_resolution": {
+    "status": "TECHNICAL_OR_CONDITION_PREFIX",
+    "biological_replicate": false,
+    "allowed_use": "technical_or_condition_sensitivity_only",
+    "unresolved_detail": "GEO states that cell_ids.csv maps condition and ID and separates cells into time/stimulation samples, but no authoritative source found here maps every supplementary-table prefix to a specific chip, harvest, or acquisition field. Prefixes therefore cannot support biological independence.",
+    "evidence_urls": [
+      "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE94383",
+      "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM2490672",
+      "https://authors.library.caltech.edu/records/fyh1y-6zs57"
+    ]
+  },
+  "global_verdict": "HUMAN_DIRECT_REPLICATION_GAP",
+  "partner_lab_requirement": {
+    "required": true,
+    "summary": "An authorized study must link a human macrophage's pre-stimulation molecular state to its own later inflammatory phenotype while retaining donor, collection, stimulation, imaging, library, batch, and run lineage and independent biological units.",
+    "physical_execution_authorized": false
+  },
+  "claim_boundary": {
+    "human_domain_support": "supported_with_limits",
+    "direct_prediction": "not_established",
+    "causal": "blocked",
+    "clinical_therapeutic": "blocked"
+  },
+  "safety_status": {
+    "computational_only": true,
+    "physical_biology_authorized": false,
+    "clinical_use_authorized": false
+  }
+}
