@@ -64,7 +64,7 @@ permissions:
   contents: read
 
 jobs:
-  contract:
+  release-audit:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout exact revision
@@ -72,8 +72,34 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Audit v0.1 release consistency and safety boundaries
-        run: python scripts/audit_bioevidence_release.py
+      - name: Run v0.1 release consistency and safety audit
+        id: audit
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/audit_bioevidence_release.py | tee release-audit.txt
+
+      - name: Upload release-audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bioevidence-release-audit-${{ github.sha }}
+          path: release-audit.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce release-audit verdict
+        if: steps.audit.outcome == 'failure'
+        run: exit 1
+
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Validate accepted GSE141064 experimental-unit audit
         run: |
