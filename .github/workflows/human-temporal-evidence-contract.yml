@@ -1,0 +1,78 @@
+name: Human Macrophage Temporal Evidence Contracts
+
+on:
+  pull_request:
+    paths:
+      - ".agents/skills/bio-human-temporal-evidence-search/**"
+      - "schemas/human-temporal-evidence-search.schema.json"
+      - "examples/human-macrophage-temporal-evidence-search.*.json"
+      - "scripts/validate_human_temporal_evidence_search.py"
+      - "tests/fixtures/invalid_gse184241_as_direct_same_cell_replication.json"
+      - "reports/human-macrophage-temporal-evidence-search-*.md"
+      - ".github/workflows/human-temporal-evidence-contract.yml"
+      - "README.md"
+  push:
+    paths:
+      - ".agents/skills/bio-human-temporal-evidence-search/**"
+      - "schemas/human-temporal-evidence-search.schema.json"
+      - "examples/human-macrophage-temporal-evidence-search.*.json"
+      - "scripts/validate_human_temporal_evidence_search.py"
+      - "tests/fixtures/invalid_gse184241_as_direct_same_cell_replication.json"
+      - "reports/human-macrophage-temporal-evidence-search-*.md"
+      - ".github/workflows/human-temporal-evidence-contract.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  human-temporal-search-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact head revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Validate schema and accepted search record
+        run: |
+          python -m json.tool schemas/human-temporal-evidence-search.schema.json >/dev/null
+          python -m json.tool examples/human-macrophage-temporal-evidence-search.2026-07-23.json >/dev/null
+          python scripts/validate_human_temporal_evidence_search.py \
+            examples/human-macrophage-temporal-evidence-search.2026-07-23.json \
+            | tee human-temporal-search-validation.txt
+
+      - name: Confirm false GSE184241 direct replication fails closed
+        run: |
+          if python scripts/validate_human_temporal_evidence_search.py \
+            tests/fixtures/invalid_gse184241_as_direct_same_cell_replication.json; then
+            echo "donor-level study was incorrectly accepted as same-cell direct replication"
+            exit 1
+          fi
+          echo "false same-cell promotion correctly blocked"
+
+      - name: Verify frozen global verdict and prefix boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('examples/human-macrophage-temporal-evidence-search.2026-07-23.json')
+          d = json.loads(p.read_text())
+          assert d['global_verdict'] == 'HUMAN_DIRECT_REPLICATION_GAP'
+          assert not any(c['direct_replication_eligible'] for c in d['candidates'])
+          assert d['gse94383_prefix_resolution']['biological_replicate'] is False
+          assert d['gse94383_prefix_resolution']['allowed_use'] == 'technical_or_condition_sensitivity_only'
+          print('frozen gap and prefix boundary verified')
+          PY
+
+      - name: Upload exact-head search evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: human-macrophage-temporal-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            examples/human-macrophage-temporal-evidence-search.2026-07-23.json
+            reports/human-macrophage-temporal-evidence-search-2026-07-23.md
+            human-temporal-search-validation.txt
+          if-no-files-found: error
+          retention-days: 30
