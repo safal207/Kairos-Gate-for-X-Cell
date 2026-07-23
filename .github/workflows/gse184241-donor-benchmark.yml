@@ -77,14 +77,43 @@ jobs:
             --source-revision "$SOURCE_SHA"
           python -m json.tool benchmark-results/input-probe.json >/dev/null
 
-      - name: Run deterministic leave-one-donor-out baselines
+      - name: Run baseline and capture diagnostics
         run: |
+          set +e
           python scripts/run_gse184241_donor_baselines.py \
             --counts benchmark-inputs/GSE184241_combined_raw_counts.txt.gz \
             --barcodes benchmark-inputs/GSE184241_barcode_sequences.xlsx \
             --output-json benchmark-results/donor-held-out-baselines.json \
             --output-report benchmark-results/donor-held-out-baselines.md \
-            --source-revision "$SOURCE_SHA"
+            --source-revision "$SOURCE_SHA" \
+            > benchmark-results/baseline.log 2>&1
+          status=$?
+          printf '%s\n' "$status" > benchmark-results/baseline-exit-code.txt
+          cat benchmark-results/baseline.log
+          exit 0
+
+      - name: Upload baseline diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gse184241-baseline-diagnostics-${{ env.SOURCE_SHA }}
+          path: |
+            benchmark-results/input-sha256.txt
+            benchmark-results/input-probe.json
+            benchmark-results/baseline.log
+            benchmark-results/baseline-exit-code.txt
+            benchmark-results/donor-held-out-baselines.json
+            benchmark-results/donor-held-out-baselines.md
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Enforce baseline exit code
+        run: |
+          status="$(cat benchmark-results/baseline-exit-code.txt)"
+          if [ "$status" != "0" ]; then
+            echo "baseline failed with exit code $status"
+            exit "$status"
+          fi
           python -m json.tool benchmark-results/donor-held-out-baselines.json >/dev/null
 
       - name: Validate generated donor benchmark
