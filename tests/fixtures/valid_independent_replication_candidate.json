@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "target_study": "SYNTHETIC-TARGET",
+  "target_claim": {
+    "statement": "A prespecified expression-derived signal is associated with a dynamic cellular phenotype.",
+    "claim_level": "association",
+    "status": "supported_with_limits"
+  },
+  "search_fingerprint": {
+    "species": "synthetic species",
+    "biological_system": "synthetic cell system",
+    "cell_state": "matched state",
+    "perturbation_condition": "observational variation",
+    "phenotype_outcome": "matched dynamic phenotype",
+    "assay": "paired single-cell expression and live phenotype",
+    "time_structure": "independent collection events",
+    "required_biological_unit": "independently collected source batch",
+    "acceptable_substitutions": [],
+    "unacceptable_substitutions": ["shared source material"],
+    "excluded_relationships": ["same study", "technical remeasurement", "reprocessed target data"]
+  },
+  "sources_searched": [
+    {
+      "source": "synthetic repository",
+      "query_or_scope": "contract-positive candidate",
+      "status": "searched",
+      "searched_at": "2026-07-23T00:00:00+03:00"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "SYNTHETIC-INDEPENDENT-001",
+      "title": "Independent compatible experiment",
+      "evidence_level": "F3",
+      "independence_class": "independent_biological_experiment",
+      "replication_type": "external_validation",
+      "shared_target_identifiers": [],
+      "compatibility": {
+        "biological_source_independence": "compatible",
+        "experimental_unit": "compatible",
+        "species": "compatible",
+        "biological_system": "compatible",
+        "phenotype_outcome": "compatible",
+        "assay": "compatible",
+        "provenance": "complete",
+        "sample_size": "adequate"
+      },
+      "candidate_verdict": "ACCEPT_WITH_LIMITS",
+      "rationale": "Machine-checkable provenance shows independently collected biological material, compatible units, and no shared target identifiers."
+    }
+  ],
+  "independence_leakage_findings": [],
+  "prespecified_test": {
+    "status": "defined_not_run",
+    "primary_endpoint": "directional replication of the target association",
+    "expected_direction": "same prespecified direction",
+    "biological_grouping_key": "independent source batch",
+    "exclusion_criteria": ["shared target material", "unresolved unit identity"],
+    "success_criteria": "The prespecified direction is reproduced under biological-unit-aware analysis and robustness checks."
+  },
+  "overall_verdict": "ACCEPT_WITH_LIMITS",
+  "next_valid_action": "Run the prespecified analysis without changing the target endpoint or grouping key.",
+  "safety_status": {
+    "mode": "computational_only",
+    "physical_biology_authorized": false,
+    "notes": "Synthetic positive contract fixture only."
+  }
+}
