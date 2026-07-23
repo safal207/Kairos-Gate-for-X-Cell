@@ -1,0 +1,67 @@
+{
+  "schema": "kairos.dataset-readiness-result.v0.1",
+  "dataset": {
+    "id": "GSE141064-tiny",
+    "version": "fixture-v0.1",
+    "adapter": "live-seq-gse141064"
+  },
+  "status": "BLOCKED_REPEATED_CELL_GROUP_LEAKAGE",
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "preregistration_gate_passed": false,
+    "model_fitting_authorized": false,
+    "experiment_authorization": false,
+    "clinical_authorization": false,
+    "merge_authorization": false
+  },
+  "inputs": {
+    "metadata": {
+      "path": "tests/fixtures/live-seq-meta-tiny.csv",
+      "sha256": "sha256:32ea9e2e4e51add088c65c6331240a43c214a7f1d3eb8839e31a430898194050",
+      "identifiers": 5
+    },
+    "matrix": {
+      "path": "tests/fixtures/live-seq-count-tiny.csv",
+      "sha256": "sha256:c47d36f39777d3d3b765a47fded416b33dd8e967deb3793d9bb723e4b4cb2b6a",
+      "sample_identifiers": 5
+    },
+    "reuse_status": "clear"
+  },
+  "cohort": {
+    "selection_uses_response_label": false,
+    "selected_records": 4,
+    "response_complete_records": 4,
+    "selected_sample_ids": ["sampleA", "sampleB", "sampleC", "sampleD"],
+    "missing_response_sample_ids": [],
+    "missing_selected_sample_ids": []
+  },
+  "replicates": {
+    "semantics": "unresolved",
+    "minimum_independent_units": 2,
+    "independent_units": [
+      "2020-01-01|probe1",
+      "2020-01-02|probe2"
+    ],
+    "effective_independent_units": 2,
+    "repeated_identity_groups": {
+      "pair-1": [
+        "2020-01-01|probe1",
+        "2020-01-02|probe2"
+      ]
+    },
+    "cross_group_repeated_identity_ids": ["pair-1"]
+  },
+  "integrity": {
+    "metadata_ids_unique": true,
+    "matrix_ids_unique": true,
+    "selected_ids_unique": true,
+    "full_id_sets_match": true,
+    "errors": []
+  },
+  "next_action": "Keep each repeated identity within one split group or exclude it before preregistration.",
+  "limitations": [
+    "Readiness checks validate data and evidence contracts, not biological truth.",
+    "No model is fitted and no biological effect is estimated.",
+    "No causal, safety, therapeutic, clinical, or experiment-authorization claim is produced."
+  ]
+}

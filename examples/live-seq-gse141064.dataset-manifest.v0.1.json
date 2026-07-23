@@ -1,0 +1,24 @@
+{
+  "schema": "kairos.dataset-manifest.v0.1",
+  "dataset_id": "GSE141064",
+  "dataset_version": "pinned-public-inputs-v0.1",
+  "adapter": {
+    "name": "live-seq-gse141064"
+  },
+  "sources": [
+    {
+      "role": "metadata",
+      "url": "https://raw.githubusercontent.com/DeplanckeLab/Live-seq/6633d4d468f56031ea197474e09921088d878512/data/meta.final.csv",
+      "version": "6633d4d468f56031ea197474e09921088d878512",
+      "sha256": "sha256:dcce9bea9444857a6a042fc64be3a5c7b31a00095a21eabc1488e516abd689c8"
+    },
+    {
+      "role": "matrix",
+      "url": "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE141064&file=GSE141064_count.final.csv.gz&format=file",
+      "version": "GSE141064_count.final.csv.gz",
+      "sha256": "sha256:0e8a07d36a4b06bc8ced881bf97114adc2b55681b5ccf00d29e4f80e05107b22"
+    }
+  ],
+  "reuse_status": "unclear",
+  "minimum_independent_units": 2
+}

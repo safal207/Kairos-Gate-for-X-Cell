@@ -1,0 +1,167 @@
+name: Dataset readiness scanner
+
+on:
+  push:
+    branches:
+      - agent/dataset-readiness-scanner-v0.1
+    paths:
+      - .github/workflows/dataset-readiness.yml
+      - kairos_gate/dataset_adapters.py
+      - kairos_gate/dataset_readiness.py
+      - kairos_gate/schemas/dataset-manifest.schema.json
+      - schemas/dataset-manifest.schema.json
+      - tests/test_dataset_readiness.py
+      - tests/fixtures/dataset-readiness-*
+  pull_request:
+    paths:
+      - .github/workflows/dataset-readiness.yml
+      - kairos_gate/dataset_adapters.py
+      - kairos_gate/dataset_readiness.py
+      - kairos_gate/schemas/dataset-manifest.schema.json
+      - schemas/dataset-manifest.schema.json
+      - tests/test_dataset_readiness.py
+      - tests/fixtures/dataset-readiness-*
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dataset-readiness-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Exact-head readiness evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      STACK_BASE: e84a01d6c9877d2361d33e8b91560f5355de6608
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install scanner
+        run: |
+          python -m pip install "setuptools>=68" wheel
+          python -m pip install -e .
+
+      - name: Run generic ready fixture
+        run: |
+          set -euo pipefail
+          mkdir -p .artifacts/dataset-readiness
+          kairos audit-dataset \
+            --manifest tests/fixtures/dataset-readiness-synthetic.manifest.json \
+            --metadata tests/fixtures/dataset-readiness-synthetic-meta.csv \
+            --matrix tests/fixtures/dataset-readiness-synthetic-counts.csv \
+            > .artifacts/dataset-readiness/ready.json
+          cat .artifacts/dataset-readiness/ready.json
+
+      - name: Run Live-seq blocked fixture
+        id: blocked
+        run: |
+          set +e
+          kairos audit-dataset \
+            --manifest tests/fixtures/dataset-readiness-live-seq.manifest.json \
+            --metadata tests/fixtures/live-seq-meta-tiny.csv \
+            --matrix tests/fixtures/live-seq-count-tiny.csv \
+            > .artifacts/dataset-readiness/blocked.json
+          code=$?
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          cat .artifacts/dataset-readiness/blocked.json
+
+      - name: Build and enforce exact-head attestation
+        env:
+          BLOCKED_EXIT_CODE: ${{ steps.blocked.outputs.exit_code }}
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          root = Path('.artifacts/dataset-readiness')
+          ready_path = root / 'ready.json'
+          blocked_path = root / 'blocked.json'
+          ready = json.loads(ready_path.read_text(encoding='utf-8'))
+          blocked = json.loads(blocked_path.read_text(encoding='utf-8'))
+
+          if ready.get('status') != 'READY_FOR_PREREGISTRATION':
+              raise SystemExit(f"generic fixture is not ready: {ready.get('status')!r}")
+          ready_authority = ready.get('authority', {})
+          if ready_authority.get('preregistration_gate_passed') is not True:
+              raise SystemExit('ready result did not pass the preregistration gate')
+          if ready_authority.get('model_fitting_authorized') is not False:
+              raise SystemExit('scanner must not authorize model fitting')
+          if ready_authority.get('experiment_authorization') is not False:
+              raise SystemExit('scanner must never authorize experiments')
+          if os.environ.get('BLOCKED_EXIT_CODE') != '2':
+              raise SystemExit('blocked result must return exit code 2')
+          if blocked.get('status') != 'BLOCKED_REPEATED_CELL_GROUP_LEAKAGE':
+              raise SystemExit(f"unexpected Live-seq status: {blocked.get('status')!r}")
+          if blocked.get('cohort', {}).get('selection_uses_response_label') is not False:
+              raise SystemExit('cohort selection must remain response-independent')
+          if blocked.get('authority', {}).get('model_fitting_authorized') is not False:
+              raise SystemExit('blocked result must not authorize model fitting')
+
+          exact_head = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD'], text=True
+          ).strip()
+          git_tree = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD^{tree}'], text=True
+          ).strip()
+          stack_base = os.environ['STACK_BASE']
+          subprocess.run(
+              ['git', 'merge-base', '--is-ancestor', stack_base, exact_head],
+              check=True,
+          )
+          if exact_head != os.environ['EXACT_HEAD']:
+              raise SystemExit('checkout does not match requested exact head')
+
+          def digest(path: Path) -> str:
+              return 'sha256:' + hashlib.sha256(path.read_bytes()).hexdigest()
+
+          attestation = {
+              'schema': 'kairos.dataset-readiness-attestation.v0.1',
+              'exact_head': exact_head,
+              'git_tree': git_tree,
+              'stack_base': stack_base,
+              'ready_result_sha256': digest(ready_path),
+              'blocked_result_sha256': digest(blocked_path),
+              'authority': {
+                  'classification': 'RESEARCH_ONLY',
+                  'model_fitting_authorized': False,
+                  'experiment_authorization': False,
+                  'clinical_authorization': False,
+                  'merge_authorization': False,
+              },
+          }
+          output = root / 'attestation.json'
+          output.write_text(
+              json.dumps(attestation, indent=2, sort_keys=True, allow_nan=False) + '\n',
+              encoding='utf-8',
+          )
+          print(output.read_text(encoding='utf-8'))
+          print('DATASET_READINESS_READY_AND_BLOCKED_PATHS_PASS')
+          PY
+
+      - name: Upload exact-head scanner evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dataset-readiness-${{ env.EXACT_HEAD }}
+          path: .artifacts/dataset-readiness
+          if-no-files-found: error
+          retention-days: 30

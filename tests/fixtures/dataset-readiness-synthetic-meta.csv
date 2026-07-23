@@ -1,0 +1,5 @@
+sample_id,include,response,unit,repeat_id
+s1,yes,0.1,u1,
+s2,yes,0.2,u1,
+s3,yes,0.3,u2,
+s4,yes,0.4,u2,
