@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/dataset-readiness-result.schema.json",
+  "title": "Kairos Dataset Readiness Result v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "dataset",
+    "status",
+    "authority",
+    "inputs",
+    "cohort",
+    "replicates",
+    "integrity",
+    "next_action",
+    "limitations"
+  ],
+  "properties": {
+    "schema": {"const": "kairos.dataset-readiness-result.v0.1"},
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "adapter"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1},
+        "adapter": {"type": "string", "minLength": 1}
+      }
+    },
+    "status": {
+      "enum": [
+        "READY_FOR_PREREGISTRATION",
+        "EXPLORATORY_ONLY",
+        "BLOCKED_DATA_INTEGRITY",
+        "BLOCKED_MISSING_CELL_LINKAGE",
+        "BLOCKED_MISSING_RESPONSE_LABELS",
+        "BLOCKED_REPEATED_CELL_GROUP_LEAKAGE",
+        "BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED",
+        "BLOCKED_EFFECTIVE_SAMPLE_SIZE",
+        "BLOCKED_LICENSE_UNCLEAR"
+      ]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification",
+        "preregistration_gate_passed",
+        "model_fitting_authorized",
+        "experiment_authorization",
+        "clinical_authorization",
+        "merge_authorization"
+      ],
+      "properties": {
+        "classification": {"const": "RESEARCH_ONLY"},
+        "preregistration_gate_passed": {"type": "boolean"},
+        "model_fitting_authorized": {"const": false},
+        "experiment_authorization": {"const": false},
+        "clinical_authorization": {"const": false},
+        "merge_authorization": {"const": false}
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metadata", "matrix", "reuse_status"],
+      "properties": {
+        "metadata": {"$ref": "#/$defs/input"},
+        "matrix": {"$ref": "#/$defs/matrixInput"},
+        "reuse_status": {"enum": ["clear", "unclear"]}
+      }
+    },
+    "cohort": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selection_uses_response_label",
+        "selected_records",
+        "response_complete_records",
+        "selected_sample_ids",
+        "missing_response_sample_ids",
+        "missing_selected_sample_ids"
+      ],
+      "properties": {
+        "selection_uses_response_label": {"const": false},
+        "selected_records": {"type": "integer", "minimum": 0},
+        "response_complete_records": {"type": "integer", "minimum": 0},
+        "selected_sample_ids": {"$ref": "#/$defs/stringArray"},
+        "missing_response_sample_ids": {"$ref": "#/$defs/stringArray"},
+        "missing_selected_sample_ids": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "replicates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "semantics",
+        "minimum_independent_units",
+        "independent_units",
+        "effective_independent_units",
+        "repeated_identity_groups",
+        "cross_group_repeated_identity_ids"
+      ],
+      "properties": {
+        "semantics": {"enum": ["verified", "technical_only", "unresolved"]},
+        "minimum_independent_units": {"type": "integer", "minimum": 2},
+        "independent_units": {"$ref": "#/$defs/stringArray"},
+        "effective_independent_units": {"type": "integer", "minimum": 0},
+        "repeated_identity_groups": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/stringArray"}
+        },
+        "cross_group_repeated_identity_ids": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metadata_ids_unique",
+        "matrix_ids_unique",
+        "selected_ids_unique",
+        "full_id_sets_match",
+        "errors"
+      ],
+      "properties": {
+        "metadata_ids_unique": {"type": "boolean"},
+        "matrix_ids_unique": {"type": "boolean"},
+        "selected_ids_unique": {"type": "boolean"},
+        "full_id_sets_match": {"type": "boolean"},
+        "errors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "next_action": {"type": "string", "minLength": 1},
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "identifiers"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "identifiers": {"type": "integer", "minimum": 1}
+      }
+    },
+    "matrixInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sample_identifiers"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "sample_identifiers": {"type": "integer", "minimum": 1}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"status": {"const": "READY_FOR_PREREGISTRATION"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "authority": {
+            "properties": {"preregistration_gate_passed": {"const": true}}
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "authority": {
+            "properties": {"preregistration_gate_passed": {"const": false}}
+          }
+        }
+      }
+    }
+  ]
+}
