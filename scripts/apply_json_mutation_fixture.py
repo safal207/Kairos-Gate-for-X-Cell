@@ -13,6 +13,7 @@ TOKEN_RE = re.compile(r"([^.\[\]]+)|\[(\d+)\]")
 
 
 def tokens(path: str) -> list[str | int]:
+    """Parse a dotted path with numeric list indexes into traversal tokens."""
     parsed: list[str | int] = []
     for match in TOKEN_RE.finditer(path):
         name, index = match.groups()
@@ -21,6 +22,7 @@ def tokens(path: str) -> list[str | int]:
 
 
 def set_path(document: Any, path: str, value: Any, aliases: dict[str, str]) -> None:
+    """Set one deterministic document path, resolving fixture aliases when present."""
     parts = tokens(path)
     current = document
     for position, part in enumerate(parts[:-1]):
@@ -37,6 +39,7 @@ def set_path(document: Any, path: str, value: Any, aliases: dict[str, str]) -> N
 
 
 def main() -> int:
+    """Apply every fixture mutation and write the intentionally invalid document."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True)
     parser.add_argument("--fixture", required=True)
@@ -46,13 +49,26 @@ def main() -> int:
     document = json.loads(Path(args.input).read_text(encoding="utf-8"))
     fixture = json.loads(Path(args.fixture).read_text(encoding="utf-8"))
     aliases = {
+        "CURRENT_AUTHORIZATION": document["records"][0]["record_ref"],
         "RUNTIME_OBSERVATION": document["records"][2]["record_ref"],
         "CONTINUITY": document["records"][5]["record_ref"],
     }
     for path, value in fixture["set"].items():
         set_path(document, path, value, aliases)
-    Path(args.output).write_text(json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps({"output": args.output, "mutations": len(fixture["set"]), "expected_verdict": fixture["expected_verdict"]}, sort_keys=True))
+    Path(args.output).write_text(
+        json.dumps(document, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(
+        json.dumps(
+            {
+                "output": args.output,
+                "mutations": len(fixture["set"]),
+                "expected_verdict": fixture["expected_verdict"],
+            },
+            sort_keys=True,
+        )
+    )
     return 0
 
 
