@@ -14,7 +14,8 @@ All notable changes to Kairos Gate are recorded here. The project follows semant
 - synthetic phase benchmark protocol and negative controls;
 - FAIR-oriented reproducibility, model-card, and data-card templates;
 - dataset-agnostic readiness manifests, adapters, result schema, and exact-head evidence;
-- pinned GSE141064 scanner evidence with historical cohort-equivalence checks.
+- pinned GSE141064 scanner evidence with historical cohort-equivalence checks;
+- deterministic Next Evidence Planner, strict plan schema, CLI, result-digest binding, Live-seq example, and exact-head evidence.
 
 ### Changed
 
@@ -35,7 +36,8 @@ All notable changes to Kairos Gate are recorded here. The project follows semant
 - post-record phase evidence cannot qualify a candidate window;
 - predictive usefulness is separated from causal evidence;
 - technical plate, index, run, `Date`, and `Probe` labels cannot verify biological replicate semantics;
-- scanner readiness never authorizes model fitting, experiments, clinical use, deployment, or merge actions.
+- scanner readiness never authorizes model fitting, experiments, clinical use, deployment, or merge actions;
+- evidence planning never changes the source verdict, accepts evidence automatically, contacts authors, or authorizes downstream actions.
 
 ## 0.1.0 — planned
 

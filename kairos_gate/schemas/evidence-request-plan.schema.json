@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/evidence-request-plan.schema.json",
+  "title": "Kairos Evidence Request Plan v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "plan_status",
+    "source_result",
+    "blocker",
+    "required_evidence",
+    "forbidden_substitutions",
+    "decision_mapping",
+    "authority",
+    "next_action",
+    "limitations"
+  ],
+  "properties": {
+    "schema": {"const": "kairos.evidence-request-plan.v0.1"},
+    "plan_status": {
+      "enum": ["OPEN_EVIDENCE_REQUEST", "NO_BLOCKING_EVIDENCE_REQUEST"]
+    },
+    "source_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "dataset_id",
+        "dataset_version",
+        "adapter",
+        "status",
+        "sha256"
+      ],
+      "properties": {
+        "schema": {"const": "kairos.dataset-readiness-result.v0.1"},
+        "dataset_id": {"type": "string", "minLength": 1},
+        "dataset_version": {"type": "string", "minLength": 1},
+        "adapter": {"type": "string", "minLength": 1},
+        "status": {
+          "enum": [
+            "READY_FOR_PREREGISTRATION",
+            "BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED"
+          ]
+        },
+        "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
+    "blocker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "summary"],
+      "properties": {
+        "code": {
+          "enum": ["NONE", "BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED"]
+        },
+        "summary": {"type": "string", "minLength": 1}
+      }
+    },
+    "required_evidence": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/evidenceRequirement"}
+    },
+    "forbidden_substitutions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "decision_mapping": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/decisionMapping"}
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification",
+        "readiness_verdict_changed",
+        "model_fitting_authorized",
+        "author_contact_authorized",
+        "experiment_authorization",
+        "clinical_authorization",
+        "merge_authorization"
+      ],
+      "properties": {
+        "classification": {"const": "RESEARCH_ONLY"},
+        "readiness_verdict_changed": {"const": false},
+        "model_fitting_authorized": {"const": false},
+        "author_contact_authorized": {"const": false},
+        "experiment_authorization": {"const": false},
+        "clinical_authorization": {"const": false},
+        "merge_authorization": {"const": false}
+      }
+    },
+    "next_action": {"type": "string", "minLength": 1},
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  },
+  "$defs": {
+    "sourceClass": {
+      "enum": [
+        "PUBLIC_AUTHOR_CLARIFICATION",
+        "IMMUTABLE_SUPPLEMENTARY_METHODS",
+        "PINNED_PROTOCOL",
+        "MACHINE_READABLE_METADATA_WITH_SEMANTICS",
+        "VERSIONED_LAB_DOCUMENTATION"
+      ]
+    },
+    "evidenceRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "question",
+        "acceptable_sources",
+        "minimum_content",
+        "blocking_if_missing"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "question": {"type": "string", "minLength": 1},
+        "acceptable_sources": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sourceClass"}
+        },
+        "minimum_content": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "blocking_if_missing": {"const": true}
+      }
+    },
+    "decisionMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["condition", "outcome"],
+      "properties": {
+        "condition": {"type": "string", "minLength": 1},
+        "outcome": {
+          "enum": [
+            "REPLICATE_GROUPING_VERIFIED",
+            "BLOCKED_EFFECTIVE_SAMPLE_SIZE",
+            "EXPLORATORY_ONLY_TECHNICAL_GROUPING",
+            "BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED",
+            "READY_FOR_PREREGISTRATION"
+          ]
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "plan_status": {"const": "NO_BLOCKING_EVIDENCE_REQUEST"}
+        },
+        "required": ["plan_status"]
+      },
+      "then": {
+        "properties": {
+          "blocker": {"properties": {"code": {"const": "NONE"}}},
+          "required_evidence": {"maxItems": 0}
+        }
+      },
+      "else": {
+        "properties": {
+          "blocker": {
+            "properties": {
+              "code": {"const": "BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED"}
+            }
+          },
+          "required_evidence": {"minItems": 1}
+        }
+      }
+    }
+  ]
+}

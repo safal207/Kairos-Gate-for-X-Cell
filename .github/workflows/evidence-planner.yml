@@ -1,0 +1,212 @@
+name: Next evidence planner
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/next-evidence-planner-v0.1
+    paths:
+      - .github/workflows/evidence-planner.yml
+      - kairos_gate/evidence_planner.py
+      - kairos_gate/__main__.py
+      - kairos_gate/schemas/evidence-request-plan.schema.json
+      - schemas/evidence-request-plan.schema.json
+      - examples/live-seq-gse141064.readiness-result.v0.1.json
+      - examples/live-seq-gse141064.evidence-request-plan.v0.1.json
+      - tests/test_evidence_planner.py
+  pull_request:
+    paths:
+      - .github/workflows/evidence-planner.yml
+      - kairos_gate/evidence_planner.py
+      - kairos_gate/__main__.py
+      - kairos_gate/schemas/evidence-request-plan.schema.json
+      - schemas/evidence-request-plan.schema.json
+      - examples/live-seq-gse141064.readiness-result.v0.1.json
+      - examples/live-seq-gse141064.evidence-request-plan.v0.1.json
+      - tests/test_evidence_planner.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: next-evidence-planner-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    name: Exact-head evidence request plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      STACK_BASE: 481d98df6315a9cc41e823904cfa7c4841b3cf4b
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install planner
+        run: |
+          python -m pip install "setuptools>=68" wheel
+          python -m pip install -e .
+
+      - name: Generate Live-seq evidence request plan
+        run: |
+          set -euo pipefail
+          mkdir -p .artifacts/evidence-planner
+          kairos plan-next-evidence \
+            --result examples/live-seq-gse141064.readiness-result.v0.1.json \
+            > .artifacts/evidence-planner/generated-plan.json
+          cat .artifacts/evidence-planner/generated-plan.json
+
+      - name: Enforce deterministic plan and build attestation
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          from kairos_gate.dataset_readiness import validate_result_record
+          from kairos_gate.evidence_planner import validate_evidence_plan_record
+
+          root = Path('.artifacts/evidence-planner')
+          source_path = Path(
+              'examples/live-seq-gse141064.readiness-result.v0.1.json'
+          )
+          committed_path = Path(
+              'examples/live-seq-gse141064.evidence-request-plan.v0.1.json'
+          )
+          schema_path = Path('schemas/evidence-request-plan.schema.json')
+          generated_path = root / 'generated-plan.json'
+
+          source = json.loads(source_path.read_text(encoding='utf-8'))
+          committed = json.loads(committed_path.read_text(encoding='utf-8'))
+          generated = json.loads(generated_path.read_text(encoding='utf-8'))
+          validate_result_record(source)
+          validate_evidence_plan_record(committed)
+          validate_evidence_plan_record(generated)
+
+          if generated != committed:
+              raise SystemExit('generated plan differs from committed example')
+          if generated.get('plan_status') != 'OPEN_EVIDENCE_REQUEST':
+              raise SystemExit('Live-seq plan must remain an open evidence request')
+          if generated.get('blocker', {}).get('code') != (
+              'BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED'
+          ):
+              raise SystemExit('unexpected evidence-plan blocker')
+
+          expected_ids = [
+              'independent_unit_definition',
+              'sample_to_unit_mapping',
+              'dependency_disclosure',
+              'technical_label_semantics',
+              'effective_unit_count',
+              'held_out_split_recommendation',
+          ]
+          actual_ids = [item['id'] for item in generated['required_evidence']]
+          if actual_ids != expected_ids:
+              raise SystemExit(f'unexpected evidence requirements: {actual_ids!r}')
+          if len(actual_ids) != len(set(actual_ids)):
+              raise SystemExit('evidence requirement IDs must be unique')
+
+          forbidden = generated.get('forbidden_substitutions', [])
+          if 'random cell split presented as generalization evidence' not in forbidden:
+              raise SystemExit('random-cell split prohibition is missing')
+          outcomes = {item['outcome'] for item in generated['decision_mapping']}
+          expected_outcomes = {
+              'REPLICATE_GROUPING_VERIFIED',
+              'BLOCKED_EFFECTIVE_SAMPLE_SIZE',
+              'EXPLORATORY_ONLY_TECHNICAL_GROUPING',
+              'BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED',
+          }
+          if outcomes != expected_outcomes:
+              raise SystemExit(f'unexpected decision mapping: {outcomes!r}')
+
+          authority = generated.get('authority', {})
+          for field in (
+              'readiness_verdict_changed',
+              'model_fitting_authorized',
+              'author_contact_authorized',
+              'experiment_authorization',
+              'clinical_authorization',
+              'merge_authorization',
+          ):
+              if authority.get(field) is not False:
+                  raise SystemExit(f'{field} must remain false')
+
+          def digest(path: Path) -> str:
+              return 'sha256:' + hashlib.sha256(path.read_bytes()).hexdigest()
+
+          if generated['source_result']['sha256'] != digest(source_path):
+              raise SystemExit('plan is not bound to the exact readiness result')
+
+          exact_head = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD'], text=True
+          ).strip()
+          git_tree = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD^{tree}'], text=True
+          ).strip()
+          stack_base = os.environ['STACK_BASE']
+          subprocess.run(
+              ['git', 'merge-base', '--is-ancestor', stack_base, exact_head],
+              check=True,
+          )
+          if exact_head != os.environ['EXACT_HEAD']:
+              raise SystemExit('checkout does not match requested exact head')
+
+          attestation = {
+              'schema': 'kairos.evidence-planner-attestation.v0.1',
+              'exact_head': exact_head,
+              'git_tree': git_tree,
+              'stack_base': stack_base,
+              'dataset_id': source['dataset']['id'],
+              'readiness_status': source['status'],
+              'source_result_sha256': digest(source_path),
+              'generated_plan_sha256': digest(generated_path),
+              'committed_plan_sha256': digest(committed_path),
+              'schema_sha256': digest(schema_path),
+              'required_evidence_count': len(actual_ids),
+              'authority': {
+                  'classification': 'RESEARCH_ONLY',
+                  'readiness_verdict_changed': False,
+                  'model_fitting_authorized': False,
+                  'author_contact_authorized': False,
+                  'experiment_authorization': False,
+                  'clinical_authorization': False,
+                  'merge_authorization': False,
+              },
+          }
+          output = root / 'attestation.json'
+          output.write_text(
+              json.dumps(attestation, indent=2, sort_keys=True, allow_nan=False)
+              + '\n',
+              encoding='utf-8',
+          )
+          print(output.read_text(encoding='utf-8'))
+          print('NEXT_EVIDENCE_PLAN_EXACT_HEAD_PASS')
+          PY
+
+      - name: Upload exact-head planner evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-planner-${{ env.EXACT_HEAD }}
+          path: |
+            .artifacts/evidence-planner/generated-plan.json
+            .artifacts/evidence-planner/attestation.json
+            examples/live-seq-gse141064.readiness-result.v0.1.json
+            examples/live-seq-gse141064.evidence-request-plan.v0.1.json
+            schemas/evidence-request-plan.schema.json
+          if-no-files-found: error
+          retention-days: 30
