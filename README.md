@@ -2,17 +2,13 @@
 
 Kairos Gate is a computational evidence and safety layer for deciding when a predicted cellular transition is sufficiently supported to move from hypothesis to authorized biological validation.
 
-The project starts with a narrower and more important problem:
-
-> Before asking how to influence a biological system, can we prove what the true experimental units were, trace every observation to its source, expose competing batch explanations, locate genuinely independent evidence, and state only the claims the evidence supports?
+> Before asking how to influence a biological system, can we prove the experimental units, trace every observation, expose competing batch explanations, locate genuinely independent evidence, and state only the claims the evidence supports?
 
 ## Biological evidence stack v0.1
 
 ### 1. `bio-experimental-unit-auditor`
 
 Location: [`.agents/skills/bio-experimental-unit-auditor/SKILL.md`](.agents/skills/bio-experimental-unit-auditor/SKILL.md)
-
-The skill:
 
 - distinguishes biological units from cells, wells, plates, libraries, and sequencing runs;
 - reconstructs source-to-analysis lineage;
@@ -25,12 +21,9 @@ The skill:
 
 Location: [`.agents/skills/bio-provenance-confounder-graph/SKILL.md`](.agents/skills/bio-provenance-confounder-graph/SKILL.md)
 
-The skill:
-
-- creates explicit nodes for biological sources, collection events, cells, technical containers, libraries, runs, data artifacts, transformations, outputs, and claims;
-- traces source-to-claim paths;
+- creates explicit source-to-claim nodes and edges;
 - keeps unknown events visible rather than guessing lineage;
-- detects orphan claims, identity collisions, broken paths, and cyclic provenance;
+- detects orphan claims, identity collisions, broken paths, and cycles;
 - models condition and outcome paths for candidate confounders;
 - classifies confounders as separable, partially separable, aliased, or unknown;
 - blocks unconditional acceptance when load-bearing high-risk confounders remain.
@@ -39,36 +32,25 @@ The skill:
 
 Location: [`.agents/skills/bio-independent-replication-finder/SKILL.md`](.agents/skills/bio-independent-replication-finder/SKILL.md)
 
-The skill:
-
-- freezes the exact biological claim before inspecting candidate outcomes;
-- builds a structured repository-search fingerprint;
-- distinguishes independent experiments from same-study accessions, shared biological sources, technical reruns, and reprocessed target data;
-- checks biological-source and experimental-unit independence separately from assay similarity;
-- separates direct replication, conceptual replication, external validation, and method transfer;
-- requires at least F3 machine-checkable evidence before accepting a candidate;
-- requires a prespecified endpoint, biological grouping key, exclusions, and success criteria;
-- never calls discovery alone a completed replication.
+- freezes the claim before candidate outcomes are inspected;
+- rejects same-study accessions, shared biological material, technical reruns, and reprocessed target data;
+- checks biological-source independence separately from assay similarity;
+- distinguishes direct replication, conceptual replication, external validation, and method transfer;
+- requires at least F3 machine-checkable evidence for an accepted candidate;
+- requires a prespecified endpoint, grouping key, exclusions, and success criteria.
 
 All three skills are computational-only and do not authorize physical biological work.
 
 ## Reference case: GSE141064 Batch 8_8
 
-Author clarification indicates that:
+Author clarification indicates that plate labels and `exp8_*` runs are technical structures, while exact per-cell collection grouping was not retained.
 
-- plate labels are technical library-preparation structures rather than independent biological experiments;
-- `exp8_*` labels sequencing runs or flow cells;
-- cells were collected across multiple days and extraction rounds;
-- exact per-cell collection grouping was not retained.
-
-Accordingly:
+Consequences:
 
 - exploratory cell-level description is allowed with limits;
-- leave-one-plate-out is only a technical sensitivity analysis;
-- plate-based pseudobulk biological inference is blocked;
-- collection day/extraction round and imaging session remain high-risk unresolved confounders;
-- alternate exp8 plates, libraries, runs, or reprocessed records cannot serve as independent replication;
-- no independent public candidate has yet been verified;
+- leave-one-plate-out is technical sensitivity only;
+- plate-based biological pseudobulk is blocked;
+- collection day, extraction round, and imaging session remain unresolved confounders;
 - prediction on new biological units is not established;
 - causal, tissue, clinical, and therapeutic claims are blocked.
 
@@ -78,7 +60,40 @@ Machine-readable records:
 - [`examples/gse141064.provenance-confounder-graph.json`](examples/gse141064.provenance-confounder-graph.json)
 - [`examples/gse141064.independent-replication-search.json`](examples/gse141064.independent-replication-search.json)
 
-## Contract validation
+## First live independent candidate: GSE94383
+
+A live repository search identified **GSE94383** as the strongest independent conceptual candidate. It measures LPS-induced NF-kB dynamics and RNA-seq in the same RAW264.7 cells.
+
+The exact public tables were downloaded and checksum-verified. The dynamics and expression tables contained the same **823 unique cell IDs**, with no duplicates.
+
+Frozen primary endpoint:
+
+> Is post-LPS `Nfkbia` expression positively associated with recent preceding same-cell NF-kB activity after stratification by transcriptome harvest time?
+
+Result:
+
+| Metric | Value |
+|---|---:|
+| Spearman rho | **0.178** |
+| Bootstrap 95% CI | **0.110 to 0.243** |
+| Stratified permutation p | **0.0002** |
+| Leave-one-ID-prefix-out rho range | **0.153 to 0.200** |
+
+Verdict:
+
+```text
+CONCEPTUAL_SIGNAL_SUPPORTED
+```
+
+This is a weak but stable independent pathway-coupling signal. It is **not direct replication** of the GSE141064 claim because GSE94383 measures RNA after stimulation rather than basal RNA followed by a future `Tnf-mCherry` phenotype.
+
+Persistent evidence:
+
+- [`reports/gse94383-conceptual-replication-2026-07-23.md`](reports/gse94383-conceptual-replication-2026-07-23.md)
+- [`reports/gse94383-conceptual-replication-2026-07-23.json`](reports/gse94383-conceptual-replication-2026-07-23.json)
+- [`scripts/analyze_gse94383_conceptual_replication.py`](scripts/analyze_gse94383_conceptual_replication.py)
+
+## Validation
 
 ```bash
 python scripts/validate_experimental_unit_audit.py \
@@ -91,30 +106,29 @@ python scripts/validate_independent_replication_search.py \
   examples/gse141064.independent-replication-search.json
 ```
 
-CI verifies three positive paths:
+CI verifies:
 
-- the GSE141064 experimental-unit audit;
-- the GSE141064 provenance/confounder graph;
-- a valid independent-candidate contract plus the current GSE141064 replication-search `HOLD` state.
-
-CI also verifies that three invalid cases fail closed:
-
-- plate labels presented as biological replicates;
-- a causal claim accepted through an aliased hidden-batch path;
-- a split accession from the same biological material presented as independent replication.
+- three valid biological-evidence contracts;
+- three invalid cases that must fail closed;
+- publisher checksums for GSE94383;
+- exact cell-ID compatibility;
+- the frozen GSE94383 conceptual-replication analysis;
+- reproducibility artifacts tied to the exact commit.
 
 ## Safety boundary
 
-Kairos Gate is currently a computational research protocol. It does not provide or authorize wet-lab procedures, biological modification, human experimentation, treatment, or clinical decisions.
+Kairos Gate is a computational research protocol. It does not provide or authorize wet-lab procedures, biological modification, human experimentation, treatment, or clinical decisions.
 
-Physical biological validation must be performed through a competent authorized institution with appropriate scientific supervision, ethics approval, biosafety review, consent, data governance, containment, and stop criteria.
+Physical validation must be performed through a competent authorized institution with scientific supervision, applicable ethics approval, biosafety review, consent, data governance, containment, and stop criteria.
 
 ## Roadmap
 
 - [x] Experimental-unit resolution and pseudoreplication firewall.
 - [x] Biological provenance and confounder graph.
 - [x] Independent-dataset replication finder contract.
-- [ ] Execute live repository search for the first verified GSE141064 candidate.
+- [x] Live repository search and first conceptual-replication run.
+- [ ] Resolve GSE94383 ID-prefix and collection-batch semantics.
+- [ ] Find a pre-stimulation transcriptome linked to a later TNF-promoter phenotype.
 - [ ] Causal hypothesis ranking with uncertainty.
 - [ ] Safe handoff specification for partner laboratories.
 - [ ] Result reconciliation and negative-result memory.
