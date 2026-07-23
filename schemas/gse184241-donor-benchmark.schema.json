@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/gse184241-donor-benchmark.schema.json",
+  "title": "GSE184241 Donor-Held-Out Benchmark",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "benchmark_id",
+    "source_revision",
+    "dataset",
+    "split_contract",
+    "task",
+    "preprocessing",
+    "folds",
+    "macro_metrics",
+    "geneformer",
+    "software",
+    "claim_boundary"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.2.0"},
+    "benchmark_id": {"const": "GSE184241-donor-held-out-response-state-v0.1"},
+    "source_revision": {"type": "string", "minLength": 7},
+    "dataset": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "accession",
+        "organism",
+        "cells_in_matrix",
+        "cells_retained",
+        "genes",
+        "donors",
+        "visits",
+        "conditions",
+        "counts_sha256",
+        "barcodes_sha256",
+        "counts_workbook_identity_exact",
+        "same_cell_longitudinal_identity"
+      ],
+      "properties": {
+        "accession": {"const": "GSE184241"},
+        "organism": {"const": "Homo sapiens"},
+        "cells_in_matrix": {"type": "integer", "minimum": 1},
+        "cells_retained": {"type": "integer", "minimum": 1},
+        "genes": {"type": "integer", "minimum": 1},
+        "donors": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "Donor1"},
+            {"const": "Donor2"},
+            {"const": "Donor3"}
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "visits": {
+          "type": "array",
+          "contains": {"enum": ["v1", "v2", "v3"]},
+          "minItems": 3
+        },
+        "conditions": {
+          "type": "array",
+          "contains": {"enum": ["LPS", "RPMI"]},
+          "minItems": 2
+        },
+        "counts_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "barcodes_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "counts_workbook_identity_exact": {"const": true},
+        "same_cell_longitudinal_identity": {"const": false}
+      }
+    },
+    "split_contract": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "biological_unit",
+        "strategy",
+        "folds",
+        "cell_random_split_allowed",
+        "feature_selection_fit_on_training_donors_only",
+        "scaling_fit_on_training_donors_only",
+        "pca_fit_on_training_donors_only",
+        "hyperparameter_tuning"
+      ],
+      "properties": {
+        "biological_unit": {"const": "donor"},
+        "strategy": {"const": "leave_one_donor_out"},
+        "folds": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "Donor1"},
+            {"const": "Donor2"},
+            {"const": "Donor3"}
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "cell_random_split_allowed": {"const": false},
+        "feature_selection_fit_on_training_donors_only": {"const": true},
+        "scaling_fit_on_training_donors_only": {"const": true},
+        "pca_fit_on_training_donors_only": {"const": true},
+        "hyperparameter_tuning": {"type": "string", "minLength": 1}
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["primary_target", "unit_of_prediction", "unit_of_generalization"],
+      "properties": {
+        "primary_target": {"const": "LPS_vs_RPMI_response_state"},
+        "unit_of_prediction": {"const": "cell"},
+        "unit_of_generalization": {"const": "held_out_donor"}
+      }
+    },
+    "preprocessing": {"type": "object"},
+    "folds": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {"$ref": "#/$defs/fold"}
+    },
+    "macro_metrics": {
+      "type": "object",
+      "required": [
+        "prevalence",
+        "metadata_visit",
+        "NFKBIA_only",
+        "inflammatory_panel",
+        "PCA_state",
+        "metadata_plus_PCA_state"
+      ],
+      "additionalProperties": {"$ref": "#/$defs/metrics"}
+    },
+    "geneformer": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "status",
+        "inference_executed",
+        "embedding_generated",
+        "training_overlap_status",
+        "required_next_evidence"
+      ],
+      "properties": {
+        "status": {"enum": ["GENEFORMER_RUNTIME_HOLD", "EXECUTED_WITH_PASSPORT"]},
+        "inference_executed": {"type": "boolean"},
+        "embedding_generated": {"type": "boolean"},
+        "training_overlap_status": {"enum": ["unknown", "excluded", "possible", "confirmed"]},
+        "required_next_evidence": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+      }
+    },
+    "software": {"type": "object"},
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "geneformer_incremental_value",
+        "same_cell_future_response_prediction",
+        "NFKBIA_specific_predictive_effect",
+        "causal",
+        "clinical",
+        "therapeutic"
+      ],
+      "properties": {
+        "same_cell_future_response_prediction": {"const": "blocked"},
+        "causal": {"const": "blocked"},
+        "clinical": {"const": "blocked"},
+        "therapeutic": {"const": "blocked"}
+      }
+    }
+  },
+  "$defs": {
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roc_auc", "average_precision", "balanced_accuracy", "log_loss"],
+      "properties": {
+        "roc_auc": {"type": "number", "minimum": 0, "maximum": 1},
+        "average_precision": {"type": "number", "minimum": 0, "maximum": 1},
+        "balanced_accuracy": {"type": "number", "minimum": 0, "maximum": 1},
+        "log_loss": {"type": "number", "minimum": 0}
+      }
+    },
+    "fold": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "held_out_donor",
+        "training_donors",
+        "train_cells",
+        "test_cells",
+        "test_class_counts",
+        "pca",
+        "models"
+      ],
+      "properties": {
+        "held_out_donor": {"enum": ["Donor1", "Donor2", "Donor3"]},
+        "training_donors": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["Donor1", "Donor2", "Donor3"]}
+        },
+        "train_cells": {"type": "integer", "minimum": 1},
+        "test_cells": {"type": "integer", "minimum": 1},
+        "test_class_counts": {
+          "type": "object",
+          "required": ["LPS", "RPMI"],
+          "properties": {
+            "LPS": {"type": "integer", "minimum": 1},
+            "RPMI": {"type": "integer", "minimum": 1}
+          }
+        },
+        "pca": {"type": "object"},
+        "models": {
+          "type": "object",
+          "required": [
+            "prevalence",
+            "metadata_visit",
+            "NFKBIA_only",
+            "inflammatory_panel",
+            "PCA_state",
+            "metadata_plus_PCA_state"
+          ],
+          "additionalProperties": {"$ref": "#/$defs/metrics"}
+        }
+      }
+    }
+  }
+}

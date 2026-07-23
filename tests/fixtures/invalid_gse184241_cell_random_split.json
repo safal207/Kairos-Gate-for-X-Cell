@@ -1,0 +1,111 @@
+{
+  "schema_version": "0.2.0",
+  "benchmark_id": "GSE184241-donor-held-out-response-state-v0.1",
+  "source_revision": "invalid-fixture",
+  "dataset": {
+    "accession": "GSE184241",
+    "organism": "Homo sapiens",
+    "cells_in_matrix": 1710,
+    "cells_retained": 1710,
+    "genes": 23895,
+    "donors": ["Donor1", "Donor2", "Donor3"],
+    "visits": ["v1", "v2", "v3"],
+    "conditions": ["LPS", "RPMI"],
+    "counts_sha256": "8e2482438215dc48ead81fa97a10a57ddf11633c83384dd3b11fbe39cb60830d",
+    "barcodes_sha256": "806c5b2ecb11cb4ec7a66d42608fddfb920722cbc53b23a9c000085391bb47dd",
+    "counts_workbook_identity_exact": true,
+    "same_cell_longitudinal_identity": false
+  },
+  "split_contract": {
+    "biological_unit": "cell",
+    "strategy": "random_cell_split",
+    "folds": ["Donor1", "Donor2", "Donor3"],
+    "cell_random_split_allowed": true,
+    "feature_selection_fit_on_training_donors_only": false,
+    "scaling_fit_on_training_donors_only": false,
+    "pca_fit_on_training_donors_only": false,
+    "hyperparameter_tuning": "all cells before split"
+  },
+  "task": {
+    "primary_target": "LPS_vs_RPMI_response_state",
+    "unit_of_prediction": "cell",
+    "unit_of_generalization": "held_out_donor"
+  },
+  "preprocessing": {},
+  "folds": [
+    {
+      "held_out_donor": "Donor1",
+      "training_donors": ["Donor1", "Donor2"],
+      "train_cells": 1140,
+      "test_cells": 570,
+      "test_class_counts": {"LPS": 285, "RPMI": 285},
+      "pca": {},
+      "models": {
+        "prevalence": {"roc_auc": 0.5, "average_precision": 0.5, "balanced_accuracy": 0.5, "log_loss": 0.693},
+        "metadata_visit": {"roc_auc": 0.5, "average_precision": 0.5, "balanced_accuracy": 0.5, "log_loss": 0.693},
+        "NFKBIA_only": {"roc_auc": 0.9, "average_precision": 0.9, "balanced_accuracy": 0.9, "log_loss": 0.2},
+        "inflammatory_panel": {"roc_auc": 0.95, "average_precision": 0.95, "balanced_accuracy": 0.95, "log_loss": 0.1},
+        "PCA_state": {"roc_auc": 0.99, "average_precision": 0.99, "balanced_accuracy": 0.99, "log_loss": 0.01},
+        "metadata_plus_PCA_state": {"roc_auc": 0.99, "average_precision": 0.99, "balanced_accuracy": 0.99, "log_loss": 0.01}
+      }
+    },
+    {
+      "held_out_donor": "Donor2",
+      "training_donors": ["Donor1", "Donor2"],
+      "train_cells": 1140,
+      "test_cells": 570,
+      "test_class_counts": {"LPS": 285, "RPMI": 285},
+      "pca": {},
+      "models": {
+        "prevalence": {"roc_auc": 0.5, "average_precision": 0.5, "balanced_accuracy": 0.5, "log_loss": 0.693},
+        "metadata_visit": {"roc_auc": 0.5, "average_precision": 0.5, "balanced_accuracy": 0.5, "log_loss": 0.693},
+        "NFKBIA_only": {"roc_auc": 0.9, "average_precision": 0.9, "balanced_accuracy": 0.9, "log_loss": 0.2},
+        "inflammatory_panel": {"roc_auc": 0.95, "average_precision": 0.95, "balanced_accuracy": 0.95, "log_loss": 0.1},
+        "PCA_state": {"roc_auc": 0.99, "average_precision": 0.99, "balanced_accuracy": 0.99, "log_loss": 0.01},
+        "metadata_plus_PCA_state": {"roc_auc": 0.99, "average_precision": 0.99, "balanced_accuracy": 0.99, "log_loss": 0.01}
+      }
+    },
+    {
+      "held_out_donor": "Donor3",
+      "training_donors": ["Donor1", "Donor2"],
+      "train_cells": 1140,
+      "test_cells": 570,
+      "test_class_counts": {"LPS": 285, "RPMI": 285},
+      "pca": {},
+      "models": {
+        "prevalence": {"roc_auc": 0.5, "average_precision": 0.5, "balanced_accuracy": 0.5, "log_loss": 0.693},
+        "metadata_visit": {"roc_auc": 0.5, "average_precision": 0.5, "balanced_accuracy": 0.5, "log_loss": 0.693},
+        "NFKBIA_only": {"roc_auc": 0.9, "average_precision": 0.9, "balanced_accuracy": 0.9, "log_loss": 0.2},
+        "inflammatory_panel": {"roc_auc": 0.95, "average_precision": 0.95, "balanced_accuracy": 0.95, "log_loss": 0.1},
+        "PCA_state": {"roc_auc": 0.99, "average_precision": 0.99, "balanced_accuracy": 0.99, "log_loss": 0.01},
+        "metadata_plus_PCA_state": {"roc_auc": 0.99, "average_precision": 0.99, "balanced_accuracy": 0.99, "log_loss": 0.01}
+      }
+    }
+  ],
+  "macro_metrics": {
+    "prevalence": {"roc_auc": 0.5, "average_precision": 0.5, "balanced_accuracy": 0.5, "log_loss": 0.693},
+    "metadata_visit": {"roc_auc": 0.5, "average_precision": 0.5, "balanced_accuracy": 0.5, "log_loss": 0.693},
+    "NFKBIA_only": {"roc_auc": 0.9, "average_precision": 0.9, "balanced_accuracy": 0.9, "log_loss": 0.2},
+    "inflammatory_panel": {"roc_auc": 0.95, "average_precision": 0.95, "balanced_accuracy": 0.95, "log_loss": 0.1},
+    "PCA_state": {"roc_auc": 0.99, "average_precision": 0.99, "balanced_accuracy": 0.99, "log_loss": 0.01},
+    "metadata_plus_PCA_state": {"roc_auc": 0.99, "average_precision": 0.99, "balanced_accuracy": 0.99, "log_loss": 0.01}
+  },
+  "geneformer": {
+    "status": "GENEFORMER_RUNTIME_HOLD",
+    "inference_executed": false,
+    "embedding_generated": false,
+    "checkpoint": null,
+    "runtime": null,
+    "training_overlap_status": "unknown",
+    "required_next_evidence": ["passport"]
+  },
+  "software": {},
+  "claim_boundary": {
+    "geneformer_incremental_value": "not_tested",
+    "same_cell_future_response_prediction": "blocked",
+    "NFKBIA_specific_predictive_effect": "not_established",
+    "causal": "blocked",
+    "clinical": "blocked",
+    "therapeutic": "blocked"
+  }
+}
