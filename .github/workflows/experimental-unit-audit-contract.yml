@@ -1,0 +1,45 @@
+name: Experimental Unit Audit Contract
+
+on:
+  pull_request:
+    paths:
+      - ".agents/skills/bio-experimental-unit-auditor/**"
+      - "schemas/experimental-unit-audit.schema.json"
+      - "examples/**experimental-unit-audit.json"
+      - "tests/fixtures/**"
+      - "scripts/validate_experimental_unit_audit.py"
+      - ".github/workflows/experimental-unit-audit-contract.yml"
+  push:
+    paths:
+      - ".agents/skills/bio-experimental-unit-auditor/**"
+      - "schemas/experimental-unit-audit.schema.json"
+      - "examples/**experimental-unit-audit.json"
+      - "tests/fixtures/**"
+      - "scripts/validate_experimental_unit_audit.py"
+      - ".github/workflows/experimental-unit-audit-contract.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate accepted GSE141064 audit
+        run: |
+          python scripts/validate_experimental_unit_audit.py \
+            examples/gse141064.experimental-unit-audit.json
+
+      - name: Confirm pseudoreplication fixture fails closed
+        run: |
+          if python scripts/validate_experimental_unit_audit.py \
+            tests/fixtures/invalid_plate_as_biological_replicate.json; then
+            echo "negative fixture was incorrectly accepted"
+            exit 1
+          fi
+          echo "negative fixture correctly blocked"
