@@ -73,7 +73,9 @@ class LiveSeqFeasibilityTests(unittest.TestCase):
         self.assertEqual(result["cohort"]["missing_response_sample_ids"], [])
         self.assertEqual(len(result["cohort"]["replicate_groups"]), 2)
         self.assertEqual(result["cohort"]["repeated_measurement_rows"], 2)
-        self.assertEqual(result["cohort"]["cross_group_repeated_measurement_ids"], [])
+        self.assertEqual(
+            result["cohort"]["cross_group_repeated_measurement_ids"], []
+        )
         self.assertTrue(result["integrity"]["full_id_sets_match"])
 
     def test_repeated_cell_pair_crossing_groups_blocks_readiness(self) -> None:
@@ -81,7 +83,9 @@ class LiveSeqFeasibilityTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 2, completed.stderr)
         result = json.loads(completed.stdout)
         self.assertEqual(result["status"], "BLOCKED_REPEATED_CELL_GROUP_LEAKAGE")
-        self.assertEqual(result["cohort"]["cross_group_repeated_measurement_ids"], ["pair-1"])
+        self.assertEqual(
+            result["cohort"]["cross_group_repeated_measurement_ids"], ["pair-1"]
+        )
         self.assertEqual(
             result["cohort"]["repeated_measurement_groups"]["pair-1"],
             ["2020-01-01|probe1", "2020-01-02|probe2"],
