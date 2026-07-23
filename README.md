@@ -179,7 +179,7 @@ python scripts/validate_temporal_replication_gate.py examples/gse141064.temporal
 CI verifies:
 
 - five valid biological-evidence contracts;
-- five invalid cases that must fail closed;
+- four invalid cases that must fail closed plus the post-stimulation timing-leakage fixture;
 - publisher checksums and exact cell-ID compatibility for GSE94383;
 - the frozen GSE94383 conceptual-replication analysis;
 - the original Live-seq Supplementary Table 4 structure and `Nfkbia` ranking;
