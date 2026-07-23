@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import contextlib
 import hashlib
+import io
 import json
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -81,24 +82,18 @@ class EvidencePlannerTests(unittest.TestCase):
             )
 
     def test_cli_emits_machine_readable_plan(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            output = Path(directory) / "plan.json"
-            import contextlib
-            import io
-
-            stream = io.StringIO()
-            with contextlib.redirect_stdout(stream):
-                code = main(
-                    [
-                        "plan-next-evidence",
-                        "--result",
-                        str(BLOCKED_RESULT),
-                    ]
-                )
-            output.write_text(stream.getvalue(), encoding="utf-8")
+        stream = io.StringIO()
+        with contextlib.redirect_stdout(stream):
+            code = main(
+                [
+                    "plan-next-evidence",
+                    "--result",
+                    str(BLOCKED_RESULT),
+                ]
+            )
 
         self.assertEqual(code, 0)
-        emitted = json.loads(output.read_text(encoding="utf-8"))
+        emitted = json.loads(stream.getvalue())
         self.assertEqual(emitted["schema"], "kairos.evidence-request-plan.v0.1")
         self.assertEqual(
             emitted["blocker"]["code"],
