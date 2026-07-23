@@ -16,7 +16,8 @@ from jsonschema.exceptions import SchemaError
 MANIFEST_SCHEMA = "kairos.dataset-manifest.v0.1"
 RESULT_SCHEMA = "kairos.dataset-readiness-result.v0.1"
 SCHEMA_PACKAGE = "kairos_gate.schemas"
-SCHEMA_NAME = "dataset-manifest.schema.json"
+MANIFEST_SCHEMA_NAME = "dataset-manifest.schema.json"
+RESULT_SCHEMA_NAME = "dataset-readiness-result.schema.json"
 
 READY = "READY_FOR_PREREGISTRATION"
 EXPLORATORY = "EXPLORATORY_ONLY"
@@ -55,18 +56,42 @@ def _validate_finite_numbers(value: Any, path: str = "$") -> None:
             _validate_finite_numbers(child, f"{path}[{index}]")
 
 
-def _load_schema() -> Mapping[str, Any]:
+def _load_schema(name: str, label: str) -> Mapping[str, Any]:
     try:
         schema = json.loads(
-            files(SCHEMA_PACKAGE).joinpath(SCHEMA_NAME).read_text(encoding="utf-8")
+            files(SCHEMA_PACKAGE).joinpath(name).read_text(encoding="utf-8")
         )
     except (OSError, json.JSONDecodeError, ModuleNotFoundError) as exc:
-        raise DatasetReadinessError(
-            f"unable to load dataset manifest schema: {exc}"
-        ) from exc
+        raise DatasetReadinessError(f"unable to load {label} schema: {exc}") from exc
     if not isinstance(schema, Mapping):
-        raise DatasetReadinessError("dataset manifest schema root must be an object")
+        raise DatasetReadinessError(f"{label} schema root must be an object")
     return schema
+
+
+def _validate_schema_record(
+    record: Mapping[str, Any],
+    *,
+    schema_name: str,
+    label: str,
+) -> None:
+    schema = _load_schema(schema_name, label)
+    try:
+        Draft202012Validator.check_schema(schema)
+        validator = Draft202012Validator(schema, format_checker=FormatChecker())
+        errors = sorted(
+            validator.iter_errors(record),
+            key=lambda error: list(error.absolute_path),
+        )
+    except SchemaError as exc:
+        raise DatasetReadinessError(
+            f"invalid bundled {label} schema: {exc.message}"
+        ) from exc
+    if errors:
+        error = errors[0]
+        location = ".".join(str(part) for part in error.absolute_path) or "<root>"
+        raise DatasetReadinessError(
+            f"{label} schema violation at {location}: {error.message}"
+        )
 
 
 def _is_immutable_source(source: Mapping[str, Any]) -> bool:
@@ -91,31 +116,28 @@ def _is_immutable_source(source: Mapping[str, Any]) -> bool:
 
 
 def validate_manifest_record(manifest: Mapping[str, Any]) -> None:
-    """Validate schema, finite values, and immutable provenance."""
+    """Validate manifest shape, finite values, and immutable provenance."""
     _validate_finite_numbers(manifest)
-    schema = _load_schema()
-    try:
-        Draft202012Validator.check_schema(schema)
-        validator = Draft202012Validator(schema, format_checker=FormatChecker())
-        errors = sorted(
-            validator.iter_errors(manifest),
-            key=lambda error: list(error.absolute_path),
-        )
-    except SchemaError as exc:
-        raise DatasetReadinessError(
-            f"invalid bundled dataset manifest schema: {exc.message}"
-        ) from exc
-    if errors:
-        error = errors[0]
-        location = ".".join(str(part) for part in error.absolute_path) or "<root>"
-        raise DatasetReadinessError(
-            f"dataset manifest schema violation at {location}: {error.message}"
-        )
+    _validate_schema_record(
+        manifest,
+        schema_name=MANIFEST_SCHEMA_NAME,
+        label="dataset manifest",
+    )
     for index, source in enumerate(manifest["sources"]):
         if not _is_immutable_source(source):
             raise DatasetReadinessError(
                 f"sources[{index}] must use an immutable or digest-bound HTTPS reference"
             )
+
+
+def validate_result_record(result: Mapping[str, Any]) -> None:
+    """Validate one complete machine-readable readiness verdict."""
+    _validate_finite_numbers(result)
+    _validate_schema_record(
+        result,
+        schema_name=RESULT_SCHEMA_NAME,
+        label="dataset readiness result",
+    )
 
 
 def load_manifest(path: Path) -> Mapping[str, Any]:
@@ -278,7 +300,7 @@ def evaluate_contract(
             f"unsupported replicate semantics: {semantics!r}"
         )
 
-    return {
+    result = {
         "schema": RESULT_SCHEMA,
         "dataset": {
             "id": manifest["dataset_id"],
@@ -350,6 +372,8 @@ def evaluate_contract(
             "No causal, safety, therapeutic, clinical, or experiment-authorization claim is produced.",
         ],
     }
+    validate_result_record(result)
+    return result
 
 
 def audit_dataset_paths(
