@@ -4,11 +4,11 @@ Kairos Gate is a computational evidence and safety layer for deciding when a pre
 
 The project starts with a narrower and more important problem:
 
-> Before asking how to influence a biological system, can we prove what the true experimental units were, which observations are independent, and which claims the data can actually support?
+> Before asking how to influence a biological system, can we prove what the true experimental units were, trace every observation to its source, expose competing batch explanations, and state only the claims the evidence supports?
 
-## First vertical slice
+## Biological evidence stack v0.1
 
-### `bio-experimental-unit-auditor v0.1`
+### 1. `bio-experimental-unit-auditor`
 
 Location: [`.agents/skills/bio-experimental-unit-auditor/SKILL.md`](.agents/skills/bio-experimental-unit-auditor/SKILL.md)
 
@@ -16,36 +16,64 @@ The skill:
 
 - distinguishes biological units from cells, wells, plates, libraries, and sequencing runs;
 - reconstructs source-to-analysis lineage;
-- detects pseudoreplication and batch confounding;
+- detects pseudoreplication;
 - applies F0–F5 evidence levels and L1–L4 audit depth;
 - separates descriptive, associative, predictive, causal, tissue, and clinical claims;
-- fails closed when biological independence is not established;
-- remains computational-only and does not authorize physical biological work.
+- fails closed when biological independence is not established.
 
-## Reference case
+### 2. `bio-provenance-confounder-graph`
 
-The first contract fixture audits **GSE141064 Batch 8_8**.
+Location: [`.agents/skills/bio-provenance-confounder-graph/SKILL.md`](.agents/skills/bio-provenance-confounder-graph/SKILL.md)
 
-Author clarification indicates that plate labels are technical library-preparation structures rather than independent biological experiments, `exp8_*` labels sequencing runs or flow cells, cells were collected across multiple days, and exact per-cell collection grouping was not retained.
+The skill:
+
+- creates explicit nodes for biological sources, collection events, cells, technical containers, libraries, runs, data artifacts, transformations, outputs, and claims;
+- traces source-to-claim paths;
+- keeps unknown events visible rather than guessing lineage;
+- detects orphan claims, identity collisions, broken paths, and cyclic provenance;
+- models condition and outcome paths for candidate confounders;
+- classifies confounders as separable, partially separable, aliased, or unknown;
+- blocks unconditional acceptance when load-bearing high-risk confounders remain.
+
+Both skills are computational-only and do not authorize physical biological work.
+
+## Reference case: GSE141064 Batch 8_8
+
+Author clarification indicates that:
+
+- plate labels are technical library-preparation structures rather than independent biological experiments;
+- `exp8_*` labels sequencing runs or flow cells;
+- cells were collected across multiple days and extraction rounds;
+- exact per-cell collection grouping was not retained.
 
 Accordingly:
 
 - exploratory cell-level description is allowed with limits;
 - leave-one-plate-out is only a technical sensitivity analysis;
 - plate-based pseudobulk biological inference is blocked;
+- collection day/extraction round and imaging session remain high-risk unresolved confounders;
 - prediction on new biological units is not established;
 - causal, tissue, clinical, and therapeutic claims are blocked.
 
-Machine-readable record: [`examples/gse141064.experimental-unit-audit.json`](examples/gse141064.experimental-unit-audit.json)
+Machine-readable records:
+
+- [`examples/gse141064.experimental-unit-audit.json`](examples/gse141064.experimental-unit-audit.json)
+- [`examples/gse141064.provenance-confounder-graph.json`](examples/gse141064.provenance-confounder-graph.json)
 
 ## Contract validation
 
 ```bash
 python scripts/validate_experimental_unit_audit.py \
   examples/gse141064.experimental-unit-audit.json
+
+python scripts/validate_provenance_confounder_graph.py \
+  examples/gse141064.provenance-confounder-graph.json
 ```
 
-The CI contract also verifies that a synthetic plate-as-biological-replicate fixture is rejected.
+CI also verifies that two synthetic invalid cases fail closed:
+
+- plate labels presented as biological replicates;
+- a causal claim accepted through an aliased hidden-batch path.
 
 ## Safety boundary
 
@@ -55,9 +83,9 @@ Physical biological validation must be performed through a competent authorized 
 
 ## Roadmap
 
-1. Experimental-unit resolution and pseudoreplication firewall.
-2. Biological provenance and confounder graph.
-3. Independent-dataset replication finder.
-4. Causal hypothesis ranking with uncertainty.
-5. Safe handoff specification for partner laboratories.
-6. Result reconciliation and negative-result memory.
+- [x] Experimental-unit resolution and pseudoreplication firewall.
+- [x] Biological provenance and confounder graph.
+- [ ] Independent-dataset replication finder.
+- [ ] Causal hypothesis ranking with uncertainty.
+- [ ] Safe handoff specification for partner laboratories.
+- [ ] Result reconciliation and negative-result memory.
