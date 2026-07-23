@@ -1,0 +1,310 @@
+name: GSE184241 Geneformer V1 Inference
+
+on:
+  pull_request:
+    paths:
+      - ".agents/skills/gse184241-geneformer-v1-inference/**"
+      - "scripts/run_gse184241_geneformer_v1_inference.py"
+      - "scripts/validate_gse184241_geneformer_v1_inference.py"
+      - "scripts/export_liminaldb_geneformer_inference_transition.py"
+      - "scripts/validate_liminaldb_geneformer_inference_transition.py"
+      - "scripts/apply_json_mutation_fixture.py"
+      - "scripts/run_gse184241_donor_baselines_v2.py"
+      - "schemas/gse184241-geneformer-v1-inference.schema.json"
+      - "schemas/liminaldb-geneformer-inference-transition.schema.json"
+      - "schemas/model-evidence-passport.schema.json"
+      - "scripts/validate_model_evidence_passport.py"
+      - "examples/gse184241.donor-held-out-benchmark.json"
+      - "tests/fixtures/invalid_geneformer_inference_authority_escalation.patch.json"
+      - "tools/liminaldb_bridge/geneformer_inference_transition_replay.rs"
+      - ".github/workflows/gse184241-geneformer-v1-inference.yml"
+  push:
+    paths:
+      - ".agents/skills/gse184241-geneformer-v1-inference/**"
+      - "scripts/run_gse184241_geneformer_v1_inference.py"
+      - "scripts/validate_gse184241_geneformer_v1_inference.py"
+      - "scripts/export_liminaldb_geneformer_inference_transition.py"
+      - "scripts/validate_liminaldb_geneformer_inference_transition.py"
+      - "scripts/apply_json_mutation_fixture.py"
+      - "scripts/run_gse184241_donor_baselines_v2.py"
+      - "schemas/gse184241-geneformer-v1-inference.schema.json"
+      - "schemas/liminaldb-geneformer-inference-transition.schema.json"
+      - "schemas/model-evidence-passport.schema.json"
+      - "scripts/validate_model_evidence_passport.py"
+      - "examples/gse184241.donor-held-out-benchmark.json"
+      - "tests/fixtures/invalid_geneformer_inference_authority_escalation.patch.json"
+      - "tools/liminaldb_bridge/geneformer_inference_transition_replay.rs"
+      - ".github/workflows/gse184241-geneformer-v1-inference.yml"
+
+permissions:
+  contents: read
+
+env:
+  SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  COUNTS_URL: https://ftp.ncbi.nlm.nih.gov/geo/series/GSE184nnn/GSE184241/suppl/GSE184241_combined_raw_counts.txt.gz
+  BARCODES_URL: https://ftp.ncbi.nlm.nih.gov/geo/series/GSE184nnn/GSE184241/suppl/GSE184241_barcode_sequences.xlsx
+  LIMINALDB_REPOSITORY: safal207/LiminalDB
+  LIMINALDB_COMMIT: ae51ac3a9d765492ba13e65ae3f7e8a09fa3191d
+  CAPTURED_AT_MS: "1784826000000"
+
+jobs:
+  inference-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout exact Kairos Gate head
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned CPU inference dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            torch==2.7.1 \
+            --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --disable-pip-version-check \
+            numpy==2.3.1 \
+            pandas==2.3.1 \
+            scikit-learn==1.7.1 \
+            openpyxl==3.1.5 \
+            transformers==4.52.4 \
+            huggingface_hub==0.32.4 \
+            safetensors==0.5.3 \
+            jsonschema==4.24.0
+
+      - name: Validate static inference and ledger contracts
+        run: |
+          python -m json.tool schemas/gse184241-geneformer-v1-inference.schema.json >/dev/null
+          python -m json.tool schemas/liminaldb-geneformer-inference-transition.schema.json >/dev/null
+          python -m json.tool tests/fixtures/invalid_geneformer_inference_authority_escalation.patch.json >/dev/null
+          python -m py_compile \
+            scripts/run_gse184241_geneformer_v1_inference.py \
+            scripts/validate_gse184241_geneformer_v1_inference.py \
+            scripts/export_liminaldb_geneformer_inference_transition.py \
+            scripts/validate_liminaldb_geneformer_inference_transition.py \
+            scripts/apply_json_mutation_fixture.py
+
+      - name: Download exact official GSE184241 inputs
+        run: |
+          mkdir -p inference-inputs inference-results model-cache
+          curl --fail --location --retry 4 --retry-all-errors \
+            --output inference-inputs/GSE184241_combined_raw_counts.txt.gz \
+            "$COUNTS_URL"
+          curl --fail --location --retry 4 --retry-all-errors \
+            --output inference-inputs/GSE184241_barcode_sequences.xlsx \
+            "$BARCODES_URL"
+          sha256sum inference-inputs/* | tee inference-results/input-sha256.txt
+
+      - name: Execute exact Geneformer V1 inference or durable HOLD
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+          HF_HUB_DISABLE_TELEMETRY: "1"
+          OMP_NUM_THREADS: "2"
+          MKL_NUM_THREADS: "2"
+        run: |
+          python scripts/run_gse184241_geneformer_v1_inference.py \
+            --counts inference-inputs/GSE184241_combined_raw_counts.txt.gz \
+            --barcodes inference-inputs/GSE184241_barcode_sequences.xlsx \
+            --benchmark examples/gse184241.donor-held-out-benchmark.json \
+            --output-dir inference-results \
+            --model-cache model-cache \
+            --source-revision "$SOURCE_SHA" \
+            --batch-size 4 \
+            | tee inference-results/inference.log
+
+      - name: Validate inference evidence and Model Evidence Passport
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+          pairs = [
+              ('schemas/gse184241-geneformer-v1-inference.schema.json', 'inference-results/geneformer-v1-inference.json'),
+              ('schemas/model-evidence-passport.schema.json', 'inference-results/model-evidence-passport.json'),
+          ]
+          for schema_path, data_path in pairs:
+              schema = json.loads(Path(schema_path).read_text())
+              data = json.loads(Path(data_path).read_text())
+              Draft202012Validator(schema).validate(data)
+              print(f'JSON Schema validation passed: {data_path}')
+          PY
+          python scripts/validate_gse184241_geneformer_v1_inference.py \
+            inference-results/geneformer-v1-inference.json \
+            | tee inference-results/inference-validation.log
+          python scripts/validate_model_evidence_passport.py \
+            inference-results/model-evidence-passport.json \
+            | tee inference-results/passport-validation.log
+
+      - name: Export superseding LiminalDB inference transition
+        shell: bash
+        run: |
+          manifest_args=()
+          if [ -f inference-results/geneformer-v1-input-manifest.json ]; then
+            manifest_args=(--input-manifest inference-results/geneformer-v1-input-manifest.json)
+          fi
+          python scripts/export_liminaldb_geneformer_inference_transition.py \
+            --inference inference-results/geneformer-v1-inference.json \
+            --benchmark examples/gse184241.donor-held-out-benchmark.json \
+            --passport inference-results/model-evidence-passport.json \
+            "${manifest_args[@]}" \
+            --output inference-results/liminaldb-geneformer-inference-transition.json \
+            --source-revision "$SOURCE_SHA" \
+            --captured-at-ms "$CAPTURED_AT_MS" \
+            | tee inference-results/ledger-export.log
+
+      - name: Validate superseding ledger and misuse rejection
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+          schema = json.loads(Path('schemas/liminaldb-geneformer-inference-transition.schema.json').read_text())
+          data = json.loads(Path('inference-results/liminaldb-geneformer-inference-transition.json').read_text())
+          Draft202012Validator(schema).validate(data)
+          print('LiminalDB inference JSON Schema validation passed')
+          PY
+          python scripts/validate_liminaldb_geneformer_inference_transition.py \
+            inference-results/liminaldb-geneformer-inference-transition.json \
+            | tee inference-results/ledger-validation.log
+          python scripts/apply_json_mutation_fixture.py \
+            --input inference-results/liminaldb-geneformer-inference-transition.json \
+            --fixture tests/fixtures/invalid_geneformer_inference_authority_escalation.patch.json \
+            --output inference-results/invalid-geneformer-inference-transition.json
+          if python scripts/validate_liminaldb_geneformer_inference_transition.py \
+            inference-results/invalid-geneformer-inference-transition.json \
+            > inference-results/invalid-ledger-validation.log 2>&1; then
+            cat inference-results/invalid-ledger-validation.log
+            echo "invalid predecessor authority or claim escalation was accepted"
+            exit 1
+          fi
+          cat inference-results/invalid-ledger-validation.log
+
+      - name: Verify bounded outcome and exact ancestry
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('inference-results/geneformer-v1-inference.json').read_text())
+          ledger = json.loads(Path('inference-results/liminaldb-geneformer-inference-transition.json').read_text())
+          expected = {
+              'relation': 'SUPERSEDES',
+              'predecessor_transition_id': 'gse184241-geneformer-runtime-preflight-v0-1',
+              'predecessor_authorization_ref': 'sha256:550df034e0eceb773ef69d2de8a9fbb9bb48b092a2b6bdee8a53988764eb0665',
+          }
+          assert ledger['supersession'] == expected
+          current_auth = ledger['records'][0]['record_ref']
+          assert current_auth != expected['predecessor_authorization_ref']
+          assert all(record['links']['authorization_ref'] == current_auth for record in ledger['records'][1:])
+          assert ledger['claim_boundary']['incremental_value_established'] is False
+          assert ledger['storage_boundary']['production_write'] is False
+          completed = result['status'] == 'GENEFORMER_INFERENCE_COMPLETED_REPORT_ONLY'
+          assert ledger['claim_boundary']['model_inference_executed'] is completed
+          assert ledger['records'][-1]['dimensions']['continuity_posture'] == ('REPORT_ONLY' if completed else 'BLOCKED')
+          print(json.dumps({'status': result['status'], 'completed': completed, 'current_authorization_ref': current_auth}, sort_keys=True))
+          PY
+
+      - name: Upload exact-head inference and bridge evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gse184241-geneformer-v1-inference-${{ env.SOURCE_SHA }}
+          path: inference-results
+          if-no-files-found: error
+          retention-days: 30
+
+  liminaldb-replay:
+    needs: inference-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact Kairos Gate head
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+
+      - name: Download exact inference evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: gse184241-geneformer-v1-inference-${{ env.SOURCE_SHA }}
+          path: inference-results
+
+      - name: Checkout exact LiminalDB compatibility pin
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          repository: ${{ env.LIMINALDB_REPOSITORY }}
+          ref: ${{ env.LIMINALDB_COMMIT }}
+          path: vendor/LiminalDB
+          persist-credentials: false
+
+      - name: Verify checked-out LiminalDB commit
+        run: |
+          actual="$(git -C vendor/LiminalDB rev-parse HEAD)"
+          test "$actual" = "$LIMINALDB_COMMIT"
+          printf '%s\n' "$actual" > inference-results/liminaldb-checked-out-commit.txt
+
+      - name: Install inference replay adapter
+        run: |
+          cp tools/liminaldb_bridge/geneformer_inference_transition_replay.rs \
+            vendor/LiminalDB/liminal-db/crates/liminal-store/examples/geneformer_inference_transition_replay.rs
+
+      - name: Compile and replay through real TrustworthyTransitionLedger
+        working-directory: vendor/LiminalDB/liminal-db
+        run: |
+          cargo run --locked -q -p liminal-store --example geneformer_inference_transition_replay -- \
+            "$GITHUB_WORKSPACE/inference-results/liminaldb-geneformer-inference-transition.json" \
+            "$GITHUB_WORKSPACE/inference-results/temporary-liminaldb-inference-ledger" \
+            "$GITHUB_WORKSPACE/inference-results/liminaldb-geneformer-inference-replay-receipt.json" \
+            | tee "$GITHUB_WORKSPACE/inference-results/liminaldb-geneformer-inference-replay.log"
+
+      - name: Verify replay receipt and bounded final dimensions
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('inference-results/geneformer-v1-inference.json').read_text())
+          receipt = json.loads(Path('inference-results/liminaldb-geneformer-inference-replay-receipt.json').read_text())
+          completed = result['status'] == 'GENEFORMER_INFERENCE_COMPLETED_REPORT_ONLY'
+          assert receipt['liminaldb_commit'] == 'ae51ac3a9d765492ba13e65ae3f7e8a09fa3191d'
+          assert receipt['supersession_relation'] == 'SUPERSEDES'
+          assert receipt['predecessor_transition_id'] == 'gse184241-geneformer-runtime-preflight-v0-1'
+          assert receipt['predecessor_authorization_ref'] == 'sha256:550df034e0eceb773ef69d2de8a9fbb9bb48b092a2b6bdee8a53988764eb0665'
+          assert receipt['final_authorization_ref'] != receipt['predecessor_authorization_ref']
+          assert receipt['event_count_before_reopen'] == 7
+          assert receipt['event_count_after_reopen'] == 7
+          assert receipt['snapshot_event_count'] == 7
+          assert receipt['projection_count'] == 1
+          assert receipt['projection_equal_after_reopen'] is True
+          assert receipt['final_side_effect_committed'] is False
+          assert receipt['final_event_count'] == 7
+          assert receipt['final_dimensions']['authority'] == 'VALID'
+          assert receipt['final_dimensions']['response_integrity'] == 'VERIFIED'
+          assert receipt['final_dimensions']['causal_validity'] == 'NOT_EVALUATED'
+          assert receipt['final_dimensions']['execution'] == ('OBSERVED_EXECUTED' if completed else 'OBSERVED_BLOCKED')
+          assert receipt['final_dimensions']['continuity_posture'] == ('REPORT_ONLY' if completed else 'BLOCKED')
+          assert receipt['verdict'] == ('RECOVERED_REPORT_ONLY' if completed else 'RECOVERED_BLOCKED')
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+          PY
+          sha256sum \
+            inference-results/liminaldb-geneformer-inference-transition.json \
+            inference-results/liminaldb-geneformer-inference-replay-receipt.json \
+            > inference-results/inference-replay-sha256.txt
+
+      - name: Upload exact-head inference replay evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gse184241-geneformer-v1-replay-${{ env.SOURCE_SHA }}
+          path: |
+            inference-results/liminaldb-geneformer-inference-transition.json
+            inference-results/liminaldb-geneformer-inference-replay-receipt.json
+            inference-results/liminaldb-geneformer-inference-replay.log
+            inference-results/liminaldb-checked-out-commit.txt
+            inference-results/inference-replay-sha256.txt
+            inference-results/temporary-liminaldb-inference-ledger
+          if-no-files-found: error
+          retention-days: 30
