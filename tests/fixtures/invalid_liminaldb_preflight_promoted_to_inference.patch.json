@@ -1,0 +1,18 @@
+{
+  "fixture_version": "0.1",
+  "fixture_type": "deterministic_mutation_patch",
+  "description": "Illegally promotes runtime preflight into completed Geneformer inference, causal validity, production persistence and continuation authority.",
+  "set": {
+    "claim_boundary.model_inference_executed": true,
+    "claim_boundary.embedding_generated": true,
+    "claim_boundary.incremental_value_established": true,
+    "claim_boundary.causal_effect_established": true,
+    "storage_boundary.production_write": true,
+    "records[5].dimensions.causal_validity": "VALID",
+    "records[5].dimensions.continuity_posture": "CONTINUE_SIDE_EFFECT",
+    "payloads.RUNTIME_OBSERVATION.model_inference_executed": true,
+    "payloads.RUNTIME_OBSERVATION.embedding_generated": true,
+    "payloads.CONTINUITY.production_write": true
+  },
+  "expected_verdict": "BLOCK"
+}
