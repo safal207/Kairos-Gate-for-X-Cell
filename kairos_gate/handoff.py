@@ -10,7 +10,7 @@ from typing import Any, Mapping
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
 
-from .validator import ValidationError
+from .validator import ValidationError, _validate_finite_numbers
 
 SCHEMA_PACKAGE = "kairos_gate.schemas"
 SCHEMA_NAME = "tip-kairos-handoff.schema.json"
@@ -35,7 +35,8 @@ def _load_schema() -> Mapping[str, Any]:
 
 
 def validate_handoff_record(record: Mapping[str, Any]) -> None:
-    """Validate complete handoff shape, provenance, versions, and authority."""
+    """Validate complete handoff shape, finite values, provenance, and authority."""
+    _validate_finite_numbers(record)
     schema = _load_schema()
     try:
         Draft202012Validator.check_schema(schema)
