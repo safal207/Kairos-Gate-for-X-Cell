@@ -5,6 +5,7 @@ on:
     paths:
       - "scripts/probe_gse184241_inputs.py"
       - "scripts/run_gse184241_donor_baselines.py"
+      - "scripts/validate_gse184241_donor_benchmark.py"
       - "schemas/gse184241-donor-benchmark.schema.json"
       - "examples/gse184241.donor-held-out-benchmark.json"
       - "tests/fixtures/invalid_gse184241_cell_random_split.json"
@@ -14,6 +15,7 @@ on:
     paths:
       - "scripts/probe_gse184241_inputs.py"
       - "scripts/run_gse184241_donor_baselines.py"
+      - "scripts/validate_gse184241_donor_benchmark.py"
       - "schemas/gse184241-donor-benchmark.schema.json"
       - "examples/gse184241.donor-held-out-benchmark.json"
       - "tests/fixtures/invalid_gse184241_cell_random_split.json"
@@ -24,7 +26,7 @@ permissions:
   contents: read
 
 jobs:
-  input-probe:
+  donor-held-out-baselines:
     runs-on: ubuntu-latest
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -42,8 +44,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install probe dependency
-        run: python -m pip install --disable-pip-version-check openpyxl==3.1.5
+      - name: Install frozen benchmark dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            numpy==2.3.1 \
+            pandas==2.3.1 \
+            scikit-learn==1.7.1 \
+            openpyxl==3.1.5
 
       - name: Download official GEO processed inputs
         run: |
@@ -65,12 +72,38 @@ jobs:
             --source-revision "$SOURCE_SHA"
           python -m json.tool benchmark-results/input-probe.json >/dev/null
 
-      - name: Upload exact-head input evidence
+      - name: Run deterministic leave-one-donor-out baselines
+        run: |
+          python scripts/run_gse184241_donor_baselines.py \
+            --counts benchmark-inputs/GSE184241_combined_raw_counts.txt.gz \
+            --barcodes benchmark-inputs/GSE184241_barcode_sequences.xlsx \
+            --output-json benchmark-results/donor-held-out-baselines.json \
+            --output-report benchmark-results/donor-held-out-baselines.md \
+            --source-revision "$SOURCE_SHA"
+          python -m json.tool benchmark-results/donor-held-out-baselines.json >/dev/null
+
+      - name: Verify foundation-model boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('benchmark-results/donor-held-out-baselines.json').read_text())
+          assert data['split_contract']['biological_unit'] == 'donor'
+          assert data['split_contract']['strategy'] == 'leave_one_donor_out'
+          assert data['split_contract']['cell_random_split_allowed'] is False
+          assert data['geneformer']['status'] == 'GENEFORMER_RUNTIME_HOLD'
+          assert data['geneformer']['inference_executed'] is False
+          assert data['claim_boundary']['same_cell_future_response_prediction'] == 'blocked'
+          PY
+
+      - name: Upload exact-head benchmark evidence
         uses: actions/upload-artifact@v4
         with:
-          name: gse184241-input-probe-${{ env.SOURCE_SHA }}
+          name: gse184241-donor-held-out-baselines-${{ env.SOURCE_SHA }}
           path: |
             benchmark-results/input-sha256.txt
             benchmark-results/input-probe.json
+            benchmark-results/donor-held-out-baselines.json
+            benchmark-results/donor-held-out-baselines.md
           if-no-files-found: error
           retention-days: 30
