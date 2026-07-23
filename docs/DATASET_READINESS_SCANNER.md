@@ -97,14 +97,14 @@ Mutable GitHub branch URLs and `latest` aliases fail validation. Input files are
 
 ## Authority boundary
 
-`model_fitting_authorized=true` means only that the declared technical readiness contract passed. It does not authorize:
+A ready result sets `preregistration_gate_passed=true`. It does not grant action authority. The following fields remain false for every result, including `READY_FOR_PREREGISTRATION`:
 
-- wet-lab, animal, or human experiments;
-- clinical use;
-- therapeutic claims;
-- causal claims;
-- deployment;
-- merge actions.
+- `model_fitting_authorized`;
+- `experiment_authorization`;
+- `clinical_authorization`;
+- `merge_authorization`.
+
+Human review must separately approve any modelling protocol. The scanner never authorizes wet-lab, animal, human, clinical, deployment, or merge actions.
 
 ## Current Live-seq disposition
 
