@@ -47,18 +47,63 @@ This gap is a result, not permission to weaken eligibility criteria.
 | GSE161125 | Cross-sectional support | Transcriptional and secretion programs are related, but one-to-one pre-state-to-later-response mapping is absent. |
 | Raman2RNA | Method transfer only | Nondestructive transcriptome inference may be useful in future designs, but the published biology and endpoint do not replicate this claim. |
 
-## What can still be done now
+## Original Supplementary Table 4 diagnostic
 
-The original study can be re-examined diagnostically, but not used as its own external validation.
+The publisher workbook was downloaded and probed on exact head `47cb2907533d644a1771e1b3ff928efee884c3be` in workflow run `30002737163`.
 
-The next diagnostic artifact is Supplementary Table 4, which contains the original transcriptome-wide linear-model ranking for the rate of Tnf-mCherry fluorescence increase. The pipeline will:
+Source identity:
 
-- download the publisher workbook;
-- preserve its checksum and structure;
-- locate the `Nfkbia` entry;
-- record columns and model outputs;
-- avoid interpreting the supplement as independent biological replication;
-- use it to design sensitivity analyses around feature-ranking and winner's-curse risk.
+- file: `41586_2022_5046_MOESM7_ESM.xlsx`;
+- SHA-256: `ffb1f233d7cd0c40d79086d92f3cf335fc6cbf0de14f64538bf063974784e925`;
+- sheet: `slope`;
+- tested genes: **362**.
+
+### `Nfkbia` result
+
+| Metric | Value |
+|---|---:|
+| Rank by linear-model p-value | **1** |
+| Linear-model p-value | **0.0002735** |
+| Linear-model FDR | **0.0996** |
+| R² | **0.5977** |
+| Coefficient | **−0.1239** |
+| Bootstrap p-value | **0.01198** |
+| Bootstrap FDR | **0.6056** |
+
+The second-ranked gene was `Slc12a4` with R² `0.4511`; the R² gap from `Nfkbia` was approximately `0.1465`.
+
+Multiplicity summary:
+
+| Threshold | LM FDR genes | Bootstrap FDR genes |
+|---:|---:|---:|
+| ≤ 0.05 | 0 | 0 |
+| ≤ 0.10 | 1 | 0 |
+| ≤ 0.20 | 1 | 0 |
+
+## Updated interpretation
+
+```text
+TOP_DISCOVERY_CANDIDATE_NOT_STABLE_UNIQUE_DRIVER
+```
+
+Supported:
+
+- `Nfkbia` is the top nominal linear-model feature in the original ranking;
+- its fitted relationship with later Tnf-mCherry slope is negative;
+- it is the only feature with linear-model FDR at or below 0.10 in the workbook.
+
+Not supported:
+
+- no gene reaches bootstrap FDR at or below 0.20;
+- the workbook does not establish a uniquely stable predictor under resampling and multiplicity correction;
+- the workbook is not external replication;
+- the workbook does not establish a direct causal effect or generalization to independent biological units.
+
+Winner's-curse risk remains high because feature selection and effect estimation use the same small target sample, biological independence is unresolved, and no direct external temporal replication candidate is available.
+
+Persistent machine-readable record:
+
+- [`gse141064-supplementary-table4-probe-2026-07-23.json`](gse141064-supplementary-table4-probe-2026-07-23.json)
 
 ## Highest-information next action
 
