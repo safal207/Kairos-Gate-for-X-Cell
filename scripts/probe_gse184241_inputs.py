@@ -7,6 +7,7 @@ import argparse
 import gzip
 import hashlib
 import json
+import shlex
 from pathlib import Path
 from typing import Any
 
@@ -21,33 +22,38 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def split_geo_line(line: str) -> list[str]:
+    """Split the quoted whitespace-delimited table emitted by GEO."""
+    return shlex.split(line.rstrip("\n\r"), posix=True)
+
+
 def probe_counts(path: Path) -> dict[str, Any]:
     with gzip.open(path, "rt", encoding="utf-8", errors="replace") as handle:
-        header_line = handle.readline().rstrip("\n\r")
-        delimiter = "\t" if "\t" in header_line else ","
-        header = header_line.split(delimiter)
+        header = split_geo_line(handle.readline())
         preview: list[list[str]] = []
         row_count = 0
-        nonempty_lengths: list[int] = []
+        nonzero_lengths: list[int] = []
+        observed_widths: set[int] = set()
         for line in handle:
             row_count += 1
-            values = line.rstrip("\n\r").split(delimiter)
+            values = split_geo_line(line)
+            observed_widths.add(len(values))
             if len(preview) < 8:
                 preview.append(values[: min(12, len(values))])
             if row_count <= 100:
-                nonempty_lengths.append(sum(value not in {"", "0", "0.0"} for value in values[1:]))
+                nonzero_lengths.append(sum(value not in {"", "0", "0.0"} for value in values[1:]))
 
     return {
-        "delimiter": "tab" if delimiter == "\t" else "comma",
+        "delimiter": "quoted_whitespace",
         "row_count_excluding_header": row_count,
-        "column_count": len(header),
-        "first_column_name": header[0] if header else None,
-        "first_20_column_names": header[:20],
-        "last_10_column_names": header[-10:],
+        "cell_column_count": len(header),
+        "data_row_widths_observed": sorted(observed_widths),
+        "first_20_cell_names": header[:20],
+        "last_10_cell_names": header[-10:],
         "first_8_rows_first_12_values": preview,
-        "first_100_rows_nonzero_cell_count_summary": {
-            "min": min(nonempty_lengths) if nonempty_lengths else None,
-            "max": max(nonempty_lengths) if nonempty_lengths else None,
+        "first_100_genes_nonzero_cell_count_summary": {
+            "min": min(nonzero_lengths) if nonzero_lengths else None,
+            "max": max(nonzero_lengths) if nonzero_lengths else None,
         },
     }
 
