@@ -1,0 +1,65 @@
+{
+  "schema_version": "0.2.0",
+  "assessment_id": "INVALID-MOUSE-GENEFORMER-ACCEPT",
+  "scientific_question": {
+    "statement": "Invalidly accept a human-trained model on mouse cells.",
+    "input_state": "mouse scRNA",
+    "target_outcome": "later response",
+    "temporal_relation": "pre_to_later"
+  },
+  "dataset": {
+    "dataset_id": "INVALID-MOUSE",
+    "organism": "Mus musculus",
+    "species": "Mus musculus",
+    "modality": "single_cell_rna",
+    "input_format": "mouse counts",
+    "biological_unit_status": "not_established",
+    "temporal_design": "longitudinal"
+  },
+  "model": {
+    "registry_id": "nvidia-geneformer-v2-104m",
+    "provider": "NVIDIA",
+    "model_family": "Geneformer",
+    "checkpoint_or_version": "Geneformer-V2-104M",
+    "documented_modalities": ["single_cell_rna"],
+    "documented_species": ["Homo sapiens"],
+    "source_urls": ["https://docs.nvidia.com/bionemo-framework/latest/main/recipes/models/geneformer/geneformer/index.html"],
+    "retrieved_at": "2026-07-23"
+  },
+  "compatibility": {
+    "transport": "compatible",
+    "modality": "compatible",
+    "species": "compatible",
+    "cell_context": "compatible",
+    "temporal": "compatible",
+    "question": "compatible"
+  },
+  "transformations": [
+    {
+      "name": "mouse-to-human ortholog mapping",
+      "status": "applied",
+      "provenance_recorded": false,
+      "validation_status": "unvalidated"
+    }
+  ],
+  "overlap_assessment": {
+    "training_overlap_status": "unknown",
+    "benchmark_overlap_status": "unknown",
+    "evidence": []
+  },
+  "evidence_contribution": "predictive_validation",
+  "claim_boundary": {
+    "descriptive": "allowed",
+    "association": "allowed_with_limits",
+    "prediction": "allowed_with_limits",
+    "causal": "blocked",
+    "tissue": "blocked",
+    "clinical_therapeutic": "blocked"
+  },
+  "overall_verdict": "ACCEPT_WITH_LIMITS",
+  "safety_status": {
+    "mode": "computational_documentary_only",
+    "physical_biology_authorized": false,
+    "clinical_use_authorized": false
+  }
+}
