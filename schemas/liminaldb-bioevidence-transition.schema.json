@@ -14,7 +14,8 @@
     "records",
     "payloads",
     "claim_boundary",
-    "storage_boundary"
+    "storage_boundary",
+    "bundle_sha256"
   ],
   "properties": {
     "schema_version": {"const": "0.1.0"},
@@ -87,7 +88,8 @@
         "deployment": {"const": false},
         "merge": {"const": false}
       }
-    }
+    },
+    "bundle_sha256": {"$ref": "#/$defs/sha256Ref"}
   },
   "$defs": {
     "sha256Ref": {
