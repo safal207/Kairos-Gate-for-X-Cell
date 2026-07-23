@@ -12,6 +12,9 @@ license = {text = "MIT"}
 authors = [{name = "safal207"}]
 dependencies = ["jsonschema[format]>=4.22,<5"]
 
+[project.scripts]
+kairos = "kairos_gate.__main__:main"
+
 [tool.setuptools.packages.find]
 include = ["kairos_gate*"]
 
