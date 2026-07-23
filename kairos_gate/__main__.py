@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Sequence
 
 from .dataset_readiness import DatasetReadinessError, audit_dataset_paths
+from .evidence_planner import EvidencePlannerError, plan_evidence_path
 from .validator import ValidationError, validate_path
 
 
@@ -27,18 +28,31 @@ def _parser() -> argparse.ArgumentParser:
     audit.add_argument("--manifest", type=Path, required=True)
     audit.add_argument("--metadata", type=Path, required=True)
     audit.add_argument("--matrix", type=Path, required=True)
+
+    plan = subparsers.add_parser(
+        "plan-next-evidence",
+        help="Generate a bounded evidence request from a readiness result",
+    )
+    plan.add_argument("--result", type=Path, required=True)
     return parser
 
 
 def _normalize_legacy_args(argv: Sequence[str]) -> list[str]:
     values = list(argv)
-    if values and values[0] not in {"validate-record", "audit-dataset", "-h", "--help"}:
+    commands = {
+        "validate-record",
+        "audit-dataset",
+        "plan-next-evidence",
+        "-h",
+        "--help",
+    }
+    if values and values[0] not in commands:
         return ["validate-record", *values]
     return values
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run transition validation or a dataset-readiness audit."""
+    """Run transition validation, dataset audit, or evidence planning."""
     parsed_argv = _normalize_legacy_args(sys.argv[1:] if argv is None else argv)
     args = _parser().parse_args(parsed_argv)
 
@@ -52,6 +66,35 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"RESEARCH_ONLY {args.record}: classification={record['decision']}; "
             "NOT EXPERIMENT AUTHORIZATION"
         )
+        return 0
+
+    if args.command == "plan-next-evidence":
+        try:
+            plan = plan_evidence_path(args.result)
+        except (OSError, ValueError, EvidencePlannerError) as exc:
+            print(
+                json.dumps(
+                    {
+                        "schema": "kairos.evidence-request-plan-error.v0.1",
+                        "status": "BLOCKED_INVALID_READINESS_RESULT",
+                        "authority": {
+                            "classification": "RESEARCH_ONLY",
+                            "readiness_verdict_changed": False,
+                            "model_fitting_authorized": False,
+                            "author_contact_authorized": False,
+                            "experiment_authorization": False,
+                            "clinical_authorization": False,
+                            "merge_authorization": False,
+                        },
+                        "error": str(exc),
+                    },
+                    indent=2,
+                    sort_keys=True,
+                    allow_nan=False,
+                )
+            )
+            return 1
+        print(json.dumps(plan, indent=2, sort_keys=True, allow_nan=False))
         return 0
 
     try:
