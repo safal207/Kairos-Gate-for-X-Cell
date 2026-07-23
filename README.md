@@ -4,6 +4,20 @@ Kairos Gate is a computational evidence and safety layer for deciding when a pre
 
 > Before asking how to influence a biological system, can we prove the experimental units, trace every observation, expose competing explanations, locate genuinely independent evidence, enforce temporal identity, and state only the claims the evidence supports?
 
+## Project steward
+
+> **Alexey (Alex Lim, [@safal207](https://github.com/safal207)) — founder and evidence-systems builder**
+>
+> QA engineer, AI-product builder, and entrepreneur focused on turning uncertain, high-stakes ideas into testable protocols, traceable artifacts, and bounded decisions.
+>
+> **Mission:** build trustworthy infrastructure for agentic science where models may propose possibilities, but evidence contracts and authorized humans determine what is supported and what may proceed.
+>
+> **Working principles:** root causes over symptoms · evidence over confidence · power under control · one verifiable artifact at a time.
+>
+> **Role boundary:** Alexey does not present himself as a biologist or clinician and does not authorize experiments or treatment. His contribution is QA, product thinking, causal and evidence architecture, reproducibility, traceability, and governance.
+>
+> **Personal archetype:** the Silver Surfer — great power restrained by principle, balance, and responsibility.
+
 Project navigation:
 
 - [`MASTER_ROADMAP.md`](MASTER_ROADMAP.md) — direction, milestones, gates, and deferred work;
