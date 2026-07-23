@@ -21,10 +21,12 @@ REQUIRED_MODULES = ["torch", "transformers", "datasets", "anndata", "huggingface
 
 
 def sha256_bytes(data: bytes) -> str:
+    """Return the lowercase SHA-256 hex digest of exact bytes."""
     return hashlib.sha256(data).hexdigest()
 
 
 def run(command: list[str]) -> dict[str, Any]:
+    """Run a read-only subprocess and preserve its exact command and result."""
     completed = subprocess.run(command, text=True, capture_output=True, check=False)
     return {
         "command": command,
@@ -35,15 +37,27 @@ def run(command: list[str]) -> dict[str, Any]:
 
 
 def module_observation(name: str) -> dict[str, Any]:
+    """Import one runtime module and record its version or exact failure."""
     try:
         module = importlib.import_module(name)
         version = getattr(module, "__version__", None)
-        return {"module": name, "imported": True, "version": str(version) if version is not None else None, "error": None}
+        return {
+            "module": name,
+            "imported": True,
+            "version": str(version) if version is not None else None,
+            "error": None,
+        }
     except Exception as exc:  # noqa: BLE001 - exact preflight error is evidence
-        return {"module": name, "imported": False, "version": None, "error": f"{type(exc).__name__}: {exc}"}
+        return {
+            "module": name,
+            "imported": False,
+            "version": None,
+            "error": f"{type(exc).__name__}: {exc}",
+        }
 
 
 def main() -> int:
+    """Observe source, dependency, hardware, and disk readiness without inference."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     parser.add_argument("--source-revision", required=True)
@@ -56,7 +70,14 @@ def main() -> int:
     modules = [module_observation(name) for name in REQUIRED_MODULES]
     imports_ready = all(item["imported"] for item in modules)
 
-    git_remote = run(["git", "ls-remote", "https://huggingface.co/ctheodoris/Geneformer", "refs/heads/main"])
+    git_remote = run(
+        [
+            "git",
+            "ls-remote",
+            "https://huggingface.co/ctheodoris/Geneformer",
+            "refs/heads/main",
+        ]
+    )
     resolved_revision = None
     if git_remote["returncode"] == 0 and git_remote["stdout"]:
         resolved_revision = git_remote["stdout"].split()[0]
@@ -72,18 +93,24 @@ def main() -> int:
         try:
             from huggingface_hub import HfApi
 
-            info = HfApi().model_info(MODEL_REPO, revision=resolved_revision or "main", files_metadata=True)
+            info = HfApi().model_info(
+                MODEL_REPO,
+                revision=resolved_revision or "main",
+                files_metadata=True,
+            )
             siblings = [s.rfilename for s in (info.siblings or [])]
             hf_info.update(
                 {
                     "resolved": True,
                     "sha": info.sha,
-                    "target_directory_present": any(path.startswith(f"{MODEL_TARGET}/") for path in siblings),
+                    "target_directory_present": any(
+                        path.startswith(f"{MODEL_TARGET}/") for path in siblings
+                    ),
                     "sibling_count": len(siblings),
                     "error": None,
                 }
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001 - exact source error is evidence
             hf_info["error"] = f"{type(exc).__name__}: {exc}"
 
     torch_observation: dict[str, Any] = {
@@ -102,11 +129,15 @@ def main() -> int:
         torch_observation["cuda_device_names"] = [
             torch.cuda.get_device_name(index) for index in range(torch.cuda.device_count())
         ]
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001 - exact runtime error is evidence
         torch_observation["error"] = f"{type(exc).__name__}: {exc}"
 
     nvidia_smi = shutil.which("nvidia-smi")
-    nvidia_smi_result = run([nvidia_smi, "--query-gpu=name,memory.total", "--format=csv,noheader"]) if nvidia_smi else None
+    nvidia_smi_result = (
+        run([nvidia_smi, "--query-gpu=name,memory.total", "--format=csv,noheader"])
+        if nvidia_smi
+        else None
+    )
 
     disk = shutil.disk_usage(output.parent)
     checkpoint_visible = bool(hf_info["resolved"] and hf_info["target_directory_present"])
@@ -179,10 +210,27 @@ def main() -> int:
         },
     }
 
-    canonical = json.dumps(result, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    canonical = json.dumps(
+        result,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
     result["content_sha256"] = sha256_bytes(canonical)
-    output.write_text(json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(json.dumps({"status": status, "resolved_revision": hf_info["sha"], "output": str(output)}, sort_keys=True))
+    output.write_text(
+        json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    print(
+        json.dumps(
+            {
+                "status": status,
+                "resolved_revision": hf_info["sha"],
+                "output": str(output),
+            },
+            sort_keys=True,
+        )
+    )
     return 0
 
 
