@@ -40,6 +40,7 @@ REQUIRED_COLUMNS = {
     "double_extraction",
     "double_extraction_order",
 }
+MISSING_MARKERS = {"", "NA", "N/A", "NAN", "NULL"}
 
 
 class AuditError(ValueError):
@@ -71,7 +72,7 @@ def _finite_number(value: Any) -> float | None:
     if value is None:
         return None
     text = str(value).strip()
-    if not text or text.upper() in {"NA", "N/A", "NAN", "NULL"}:
+    if text.upper() in MISSING_MARKERS:
         return None
     try:
         parsed = float(text)
@@ -134,6 +135,37 @@ def _selected_recorded_cells(rows: list[dict[str, str]]) -> list[dict[str, str]]
     return selected
 
 
+def _replicate_group(row: dict[str, str]) -> str | None:
+    """Return the declared Date|Probe group, or None when neither field exists."""
+    date = str(row.get("Date", "")).strip()
+    probe = str(row.get("Probe", "")).strip()
+    if not date and not probe:
+        return None
+    return f"{date}|{probe}"
+
+
+def _repeated_measurement_groups(
+    rows: list[dict[str, str]],
+) -> tuple[dict[str, list[str]], list[str]]:
+    """Map repeated-cell identities to groups and flag identities crossing groups."""
+    groups_by_identity: dict[str, set[str]] = {}
+    for row in rows:
+        identity = str(row.get("double_extraction", "")).strip()
+        if identity.upper() in MISSING_MARKERS:
+            continue
+        group = _replicate_group(row) or "<missing>"
+        groups_by_identity.setdefault(identity, set()).add(group)
+
+    normalized = {
+        identity: sorted(groups)
+        for identity, groups in sorted(groups_by_identity.items())
+    }
+    crossing = sorted(
+        identity for identity, groups in groups_by_identity.items() if len(groups) > 1
+    )
+    return normalized, crossing
+
+
 def audit(
     metadata_path: Path,
     count_matrix_path: Path,
@@ -165,17 +197,18 @@ def audit(
     missing_selected = sorted(set(selected_ids) - count_set)
 
     replicate_groups = sorted(
-        {
-            f"{str(row.get('Date', '')).strip()}|{str(row.get('Probe', '')).strip()}"
-            for row in selected
-            if str(row.get("Date", "")).strip() or str(row.get("Probe", "")).strip()
-        }
+        group
+        for group in {_replicate_group(row) for row in selected}
+        if group is not None
     )
     repeated_measurement_rows = sum(
         1
         for row in selected
         if str(row.get("double_extraction", "")).strip().upper()
-        not in {"", "NA", "N/A"}
+        not in MISSING_MARKERS
+    )
+    repeated_measurement_groups, cross_group_repeated_measurement_ids = (
+        _repeated_measurement_groups(selected)
     )
 
     integrity_errors: list[str] = []
@@ -194,6 +227,8 @@ def audit(
         status = "BLOCKED_DATA_INTEGRITY"
     elif missing_response_ids:
         status = "BLOCKED_MISSING_RESPONSE_LABELS"
+    elif cross_group_repeated_measurement_ids:
+        status = "BLOCKED_REPEATED_CELL_GROUP_LEAKAGE"
     elif len(replicate_groups) < 2:
         status = "BLOCKED_INSUFFICIENT_REPLICATES"
     elif data_reuse_status != "clear":
@@ -234,6 +269,10 @@ def audit(
             "missing_selected_sample_ids": missing_selected,
             "replicate_groups": replicate_groups,
             "repeated_measurement_rows": repeated_measurement_rows,
+            "repeated_measurement_groups": repeated_measurement_groups,
+            "cross_group_repeated_measurement_ids": (
+                cross_group_repeated_measurement_ids
+            ),
         },
         "integrity": {
             "metadata_ids_unique": len(metadata_ids) == len(set(metadata_ids)),
@@ -245,6 +284,7 @@ def audit(
             "READY_FOR_PREREGISTRATION": "Freeze the real-data model protocol before fitting any model.",
             "BLOCKED_MISSING_CELL_LINKAGE": "Resolve selected metadata IDs absent from the count matrix.",
             "BLOCKED_MISSING_RESPONSE_LABELS": "Resolve or explicitly exclude missing downstream labels before defining the modelling cohort.",
+            "BLOCKED_REPEATED_CELL_GROUP_LEAKAGE": "Keep every repeated-cell identity within one split group, or exclude it before preregistration.",
             "BLOCKED_INSUFFICIENT_REPLICATES": "Define or recover an auditable replicate-aware split.",
             "BLOCKED_LICENSE_UNCLEAR": "Document dataset reuse terms before redistributing derived inputs.",
             "BLOCKED_DATA_INTEGRITY": "Resolve metadata/count-matrix integrity failures before modelling.",
@@ -252,6 +292,7 @@ def audit(
         "limitations": [
             "A successful audit validates data linkage only, not predictive performance.",
             "Cell-cycle state is expected to be inferred from pre-intervention transcriptomes.",
+            "Repeated measurements of one cell must remain in one split group or be excluded.",
             "No causal, safety, therapeutic, X-Cell, or experimental authorization claim is made.",
         ],
     }
