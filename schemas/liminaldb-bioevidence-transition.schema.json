@@ -11,6 +11,7 @@
     "transition_id",
     "subject_id",
     "action",
+    "supersession",
     "records",
     "payloads",
     "claim_boundary",
@@ -34,6 +35,7 @@
     "transition_id": {"type": "string", "minLength": 1},
     "subject_id": {"const": "GSE184241"},
     "action": {"const": "GENEFORMER_RUNTIME_PREFLIGHT"},
+    "supersession": {"$ref": "#/$defs/supersession"},
     "records": {
       "type": "array",
       "minItems": 6,
@@ -95,6 +97,41 @@
     "sha256Ref": {
       "type": "string",
       "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "supersession": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relation", "predecessor_transition_id", "predecessor_authorization_ref"],
+      "properties": {
+        "relation": {"enum": ["ROOT", "SUPERSEDES"]},
+        "predecessor_transition_id": {"type": ["string", "null"], "minLength": 1},
+        "predecessor_authorization_ref": {
+          "anyOf": [
+            {"$ref": "#/$defs/sha256Ref"},
+            {"type": "null"}
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"relation": {"const": "ROOT"}}},
+          "then": {
+            "properties": {
+              "predecessor_transition_id": {"type": "null"},
+              "predecessor_authorization_ref": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"relation": {"const": "SUPERSEDES"}}},
+          "then": {
+            "properties": {
+              "predecessor_transition_id": {"type": "string", "minLength": 1},
+              "predecessor_authorization_ref": {"$ref": "#/$defs/sha256Ref"}
+            }
+          }
+        }
+      ]
     },
     "links": {
       "type": "object",
