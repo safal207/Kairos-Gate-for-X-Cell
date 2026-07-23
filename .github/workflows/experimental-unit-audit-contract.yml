@@ -8,13 +8,15 @@ on:
       - ".agents/skills/bio-independent-replication-finder/**"
       - "schemas/**"
       - "examples/**"
+      - "reports/**"
       - "tests/fixtures/**"
       - "scripts/validate_experimental_unit_audit.py"
       - "scripts/validate_provenance_confounder_graph.py"
       - "scripts/validate_independent_replication_search.py"
       - "scripts/probe_gse94383_tables.py"
       - "scripts/analyze_gse94383_conceptual_replication.py"
-      - ".github/workflows/experimental-unit-audit-contract.yml"
+      - "README.md"
+      - ".github/workflows/**"
   push:
     paths:
       - ".agents/skills/bio-experimental-unit-auditor/**"
@@ -22,13 +24,15 @@ on:
       - ".agents/skills/bio-independent-replication-finder/**"
       - "schemas/**"
       - "examples/**"
+      - "reports/**"
       - "tests/fixtures/**"
       - "scripts/validate_experimental_unit_audit.py"
       - "scripts/validate_provenance_confounder_graph.py"
       - "scripts/validate_independent_replication_search.py"
       - "scripts/probe_gse94383_tables.py"
       - "scripts/analyze_gse94383_conceptual_replication.py"
-      - ".github/workflows/experimental-unit-audit-contract.yml"
+      - "README.md"
+      - ".github/workflows/**"
 
 permissions:
   contents: read
