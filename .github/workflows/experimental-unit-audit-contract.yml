@@ -8,6 +8,7 @@ on:
       - ".agents/skills/bio-independent-replication-finder/**"
       - ".agents/skills/bio-causal-hypothesis-ranker/**"
       - ".agents/skills/bio-temporal-replication-gate/**"
+      - ".agents/skills/bio-partner-lab-evidence-handoff/**"
       - "schemas/**"
       - "examples/**"
       - "reports/**"
@@ -17,10 +18,13 @@ on:
       - "scripts/validate_independent_replication_search.py"
       - "scripts/validate_causal_hypothesis_ranking.py"
       - "scripts/validate_temporal_replication_gate.py"
+      - "scripts/validate_partner_lab_evidence_handoff.py"
       - "scripts/probe_gse94383_tables.py"
       - "scripts/analyze_gse94383_conceptual_replication.py"
       - "scripts/probe_live_seq_supplementary_table4.py"
       - "README.md"
+      - "MASTER_ROADMAP.md"
+      - "BACKLOG.md"
       - ".github/workflows/**"
   push:
     paths:
@@ -29,6 +33,7 @@ on:
       - ".agents/skills/bio-independent-replication-finder/**"
       - ".agents/skills/bio-causal-hypothesis-ranker/**"
       - ".agents/skills/bio-temporal-replication-gate/**"
+      - ".agents/skills/bio-partner-lab-evidence-handoff/**"
       - "schemas/**"
       - "examples/**"
       - "reports/**"
@@ -38,10 +43,13 @@ on:
       - "scripts/validate_independent_replication_search.py"
       - "scripts/validate_causal_hypothesis_ranking.py"
       - "scripts/validate_temporal_replication_gate.py"
+      - "scripts/validate_partner_lab_evidence_handoff.py"
       - "scripts/probe_gse94383_tables.py"
       - "scripts/analyze_gse94383_conceptual_replication.py"
       - "scripts/probe_live_seq_supplementary_table4.py"
       - "README.md"
+      - "MASTER_ROADMAP.md"
+      - "BACKLOG.md"
       - ".github/workflows/**"
 
 permissions:
@@ -130,6 +138,20 @@ jobs:
             exit 1
           fi
           echo "post-stimulation timing leakage correctly blocked"
+
+      - name: Validate Nfkbia partner-laboratory handoff
+        run: |
+          python scripts/validate_partner_lab_evidence_handoff.py \
+            examples/gse141064.nfkbia-partner-lab-handoff.json
+
+      - name: Confirm false physical authorization fails closed
+        run: |
+          if python scripts/validate_partner_lab_evidence_handoff.py \
+            tests/fixtures/invalid_partner_handoff_authorizes_execution.json; then
+            echo "false physical authorization was incorrectly accepted"
+            exit 1
+          fi
+          echo "false physical authorization correctly blocked"
 
   live-replication-probe:
     runs-on: ubuntu-latest
