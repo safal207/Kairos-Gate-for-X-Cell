@@ -4,6 +4,7 @@ import csv
 import json
 import tempfile
 import unittest
+from importlib.resources import files
 from pathlib import Path
 
 from kairos_gate.__main__ import main
@@ -21,6 +22,7 @@ from kairos_gate.dataset_readiness import (
     audit_dataset_paths,
     evaluate_contract,
     load_manifest,
+    validate_result_record,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,6 +33,8 @@ LIVE_COUNTS = FIXTURES / "live-seq-count-tiny.csv"
 SYN_MANIFEST = FIXTURES / "dataset-readiness-synthetic.manifest.json"
 SYN_META = FIXTURES / "dataset-readiness-synthetic-meta.csv"
 SYN_COUNTS = FIXTURES / "dataset-readiness-synthetic-counts.csv"
+READY_EXAMPLE = ROOT / "examples" / "dataset-readiness-ready.result.v0.1.json"
+BLOCKED_EXAMPLE = ROOT / "examples" / "dataset-readiness-blocked.result.v0.1.json"
 
 
 class DatasetReadinessTests(unittest.TestCase):
@@ -220,6 +224,38 @@ class DatasetReadinessTests(unittest.TestCase):
             path.write_text(json.dumps(manifest), encoding="utf-8")
             with self.assertRaises(DatasetReadinessError):
                 load_manifest(path)
+
+    def test_packaged_readiness_schemas_match_public_mirrors(self) -> None:
+        for name in (
+            "dataset-manifest.schema.json",
+            "dataset-readiness-result.schema.json",
+        ):
+            packaged = json.loads(
+                files("kairos_gate.schemas").joinpath(name).read_text(encoding="utf-8")
+            )
+            public = json.loads((ROOT / "schemas" / name).read_text(encoding="utf-8"))
+            self.assertEqual(packaged, public)
+
+    def test_committed_ready_and_blocked_examples_validate(self) -> None:
+        for path in (READY_EXAMPLE, BLOCKED_EXAMPLE):
+            result = json.loads(path.read_text(encoding="utf-8"))
+            validate_result_record(result)
+
+    def test_result_schema_rejects_ready_without_gate_pass(self) -> None:
+        result = json.loads(READY_EXAMPLE.read_text(encoding="utf-8"))
+        result["authority"]["preregistration_gate_passed"] = False
+        with self.assertRaises(DatasetReadinessError):
+            validate_result_record(result)
+
+    def test_duplicate_selected_ids_remain_machine_readable(self) -> None:
+        contract = self._canonical_contract()
+        contract["metadata_ids"] = ["s1", "s1"]
+        contract["matrix_ids"] = ["s1", "s1"]
+        contract["records"][1]["sample_id"] = "s1"
+        result = self._evaluate(contract)
+        self.assertEqual(result["status"], BLOCKED_DATA_INTEGRITY)
+        self.assertFalse(result["integrity"]["selected_ids_unique"])
+        self.assertEqual(result["cohort"]["selected_sample_ids"], ["s1", "s1"])
 
     def test_cli_returns_blocked_exit_code_for_live_seq_fixture(self) -> None:
         code = main(
