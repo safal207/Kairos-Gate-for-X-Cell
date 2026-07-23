@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import json
 import subprocess
 import sys
@@ -66,6 +65,27 @@ class SyntheticPhaseBenchmarkTests(unittest.TestCase):
         result = json.loads(completed.stdout)
         self.assertEqual(result["status"], "BLOCKED")
         self.assertIn("version must be a non-empty string", result["error"])
+        self.assertNotIn("Traceback", completed.stderr)
+
+    def test_overflowed_metric_fails_closed(self) -> None:
+        dataset = json.loads(DATASET.read_text(encoding="utf-8"))
+        first_test = next(
+            record for record in dataset["records"] if record["split"] == "test"
+        )
+        first_test["response"] = 1e308
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "overflowed-metric.json"
+            path.write_text(json.dumps(dataset), encoding="utf-8")
+            completed = self._run(path)
+
+        self.assertEqual(completed.returncode, 1)
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("squared error", result["error"])
+        self.assertIn("must be finite", result["error"])
+        self.assertNotIn("Infinity", completed.stdout)
+        self.assertNotIn("NaN", completed.stdout)
         self.assertNotIn("Traceback", completed.stderr)
 
 
