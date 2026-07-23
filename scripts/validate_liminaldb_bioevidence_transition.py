@@ -7,7 +7,6 @@ import argparse
 import hashlib
 import json
 import re
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -24,18 +23,22 @@ EXPECTED_KINDS = [
 
 
 def canonical_bytes(value: Any) -> bytes:
+    """Serialize a JSON-compatible value into deterministic UTF-8 bytes."""
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
 def sha256_ref(value: Any) -> str:
+    """Return a lowercase sha256 reference over canonical JSON bytes."""
     return "sha256:" + hashlib.sha256(canonical_bytes(value)).hexdigest()
 
 
 def block(errors: list[str], message: str) -> None:
+    """Append one stable fail-closed validation error."""
     errors.append(message)
 
 
 def main() -> int:
+    """Validate one preflight root bundle and return zero only for ACCEPT."""
     parser = argparse.ArgumentParser()
     parser.add_argument("bundle")
     args = parser.parse_args()
@@ -44,8 +47,13 @@ def main() -> int:
     errors: list[str] = []
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-    except Exception as exc:  # noqa: BLE001
-        print(json.dumps({"verdict": "BLOCK", "errors": [f"invalid JSON: {type(exc).__name__}: {exc}"]}, indent=2))
+    except Exception as exc:  # noqa: BLE001 - parse failure is evidence
+        print(
+            json.dumps(
+                {"verdict": "BLOCK", "errors": [f"invalid JSON: {type(exc).__name__}: {exc}"]},
+                indent=2,
+            )
+        )
         return 1
 
     if data.get("schema_version") != "0.1.0":
@@ -68,6 +76,18 @@ def main() -> int:
     if data.get("action") != "GENEFORMER_RUNTIME_PREFLIGHT":
         block(errors, "action must remain runtime preflight")
 
+    supersession = data.get("supersession")
+    expected_root = {
+        "relation": "ROOT",
+        "predecessor_transition_id": None,
+        "predecessor_authorization_ref": None,
+    }
+    if supersession != expected_root:
+        block(errors, "runtime preflight must be a ROOT transition with null predecessor fields")
+    predecessor_authorization_ref = (
+        supersession.get("predecessor_authorization_ref") if isinstance(supersession, dict) else None
+    )
+
     bundle_hash = data.get("bundle_sha256")
     without_hash = dict(data)
     without_hash.pop("bundle_sha256", None)
@@ -76,8 +96,12 @@ def main() -> int:
 
     records = data.get("records")
     payloads = data.get("payloads")
-    if not isinstance(records, list) or [record.get("kind") for record in records if isinstance(record, dict)] != EXPECTED_KINDS:
-        block(errors, "record chain must be authorization -> observation -> observation -> response_integrity -> causal_audit -> continuity_snapshot")
+    actual_kinds = [record.get("kind") for record in records if isinstance(record, dict)] if isinstance(records, list) else []
+    if not isinstance(records, list) or actual_kinds != EXPECTED_KINDS:
+        block(
+            errors,
+            "record chain must be authorization -> observation -> observation -> response_integrity -> causal_audit -> continuity_snapshot",
+        )
         records = records if isinstance(records, list) else []
     if not isinstance(payloads, dict):
         block(errors, "payloads must be an object")
@@ -119,13 +143,15 @@ def main() -> int:
         links = record.get("links")
         if not isinstance(links, dict):
             block(errors, f"record {index} links missing")
+        elif predecessor_authorization_ref is not None and links.get("authorization_ref") == predecessor_authorization_ref:
+            block(errors, f"record {index} must not use predecessor authorization as current authority")
 
     if len(refs) != len(set(refs)):
         block(errors, "record references must be globally unique")
     if set(payloads) != set(refs):
         block(errors, "payload key set must exactly equal record references")
 
-    if len(records) == 6:
+    if len(records) == 6 and all(isinstance(record, dict) for record in records):
         auth, obs_a, obs_b, integrity, causal, continuity = records
         auth_ref = auth.get("record_ref")
         obs_refs = sorted([obs_a.get("record_ref"), obs_b.get("record_ref")])
@@ -170,18 +196,30 @@ def main() -> int:
         if not isinstance(dimensions, dict):
             block(errors, "continuity snapshot must carry all independent dimensions")
         else:
-            required_dimensions = {"authority", "execution", "response_integrity", "causal_validity", "continuity_posture"}
+            required_dimensions = {
+                "authority",
+                "execution",
+                "response_integrity",
+                "causal_validity",
+                "continuity_posture",
+            }
             if set(dimensions) != required_dimensions:
                 block(errors, "continuity dimension set mismatch")
             if dimensions.get("authority") != "VALID":
                 block(errors, "preflight authority must be VALID")
-            if dimensions.get("execution") not in {"OBSERVED_EXECUTED", "OBSERVED_BLOCKED", "OBSERVED_ERRORED"}:
+            if dimensions.get("execution") not in {
+                "OBSERVED_EXECUTED",
+                "OBSERVED_BLOCKED",
+                "OBSERVED_ERRORED",
+            }:
                 block(errors, "preflight execution state is invalid")
             if dimensions.get("response_integrity") != "VERIFIED":
                 block(errors, "response integrity must be VERIFIED")
             if dimensions.get("causal_validity") != "NOT_EVALUATED":
                 block(errors, "runtime preflight cannot establish causal validity")
-            expected_posture = "REPORT_ONLY" if dimensions.get("execution") == "OBSERVED_EXECUTED" else "BLOCKED"
+            expected_posture = (
+                "REPORT_ONLY" if dimensions.get("execution") == "OBSERVED_EXECUTED" else "BLOCKED"
+            )
             if dimensions.get("continuity_posture") != expected_posture:
                 block(errors, "continuity posture does not match preflight execution")
 
@@ -210,11 +248,18 @@ def main() -> int:
             block(errors, "causal audit must remain NOT_EVALUATED")
 
         continuity_payload = payloads.get(continuity.get("record_ref"), {})
-        for key in ["model_inference_executed", "embedding_generated", "production_write", "physical_execution_authorized"]:
+        for key in [
+            "model_inference_executed",
+            "embedding_generated",
+            "production_write",
+            "physical_execution_authorized",
+        ]:
             if continuity_payload.get(key) is not False:
                 block(errors, f"continuity payload {key} must be false")
         if continuity_payload.get("supersession_required_for_future_inference") is not True:
             block(errors, "future inference must require explicit supersession")
+        if continuity_payload.get("current_authorization_ref") != auth_ref:
+            block(errors, "continuity payload must identify the current authorization")
 
     claim_boundary = data.get("claim_boundary", {})
     for key in [
@@ -237,7 +282,13 @@ def main() -> int:
             block(errors, f"storage boundary {key} must be false")
 
     verdict = "ACCEPT" if not errors else "BLOCK"
-    print(json.dumps({"verdict": verdict, "bundle": str(path), "errors": errors}, indent=2, sort_keys=True))
+    print(
+        json.dumps(
+            {"verdict": verdict, "bundle": str(path), "errors": errors},
+            indent=2,
+            sort_keys=True,
+        )
+    )
     return 0 if not errors else 1
 
 
