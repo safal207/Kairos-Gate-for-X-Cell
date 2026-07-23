@@ -15,14 +15,17 @@ SUBJECT_ID = "GSE184241"
 
 
 def canonical_bytes(value: Any) -> bytes:
+    """Serialize a JSON-compatible value into deterministic UTF-8 bytes."""
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
 def sha256_ref(value: Any) -> str:
+    """Return a lowercase sha256 reference over canonical JSON bytes."""
     return "sha256:" + hashlib.sha256(canonical_bytes(value)).hexdigest()
 
 
 def file_sha256_ref(path: Path) -> str:
+    """Return a lowercase sha256 reference for the exact file bytes."""
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
@@ -30,8 +33,14 @@ def file_sha256_ref(path: Path) -> str:
     return "sha256:" + digest.hexdigest()
 
 
-def make_record(kind: str, payload: dict[str, Any], links: dict[str, Any], captured_at_ms: int,
-                dimensions: dict[str, str] | None = None) -> tuple[dict[str, Any], str]:
+def make_record(
+    kind: str,
+    payload: dict[str, Any],
+    links: dict[str, Any],
+    captured_at_ms: int,
+    dimensions: dict[str, str] | None = None,
+) -> tuple[dict[str, Any], str]:
+    """Build one deterministic record envelope and its globally unique reference."""
     payload_digest = sha256_ref(payload)
     record_ref = sha256_ref(
         {
@@ -54,6 +63,7 @@ def make_record(kind: str, payload: dict[str, Any], links: dict[str, Any], captu
 
 
 def empty_links() -> dict[str, Any]:
+    """Create an empty current-transition LiminalDB parent-link set."""
     return {
         "authorization_ref": None,
         "observation_refs": [],
@@ -64,6 +74,7 @@ def empty_links() -> dict[str, Any]:
 
 
 def main() -> int:
+    """Read frozen evidence inputs and emit one deterministic root transition bundle."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--benchmark", required=True)
     parser.add_argument("--preflight", required=True)
@@ -109,7 +120,9 @@ def main() -> int:
         "production_write": False,
         "side_effect_authorized": False,
     }
-    record, authorization_ref = make_record("authorization", authorization_payload, empty_links(), captured_at_ms)
+    record, authorization_ref = make_record(
+        "authorization", authorization_payload, empty_links(), captured_at_ms
+    )
     records.append(record)
     payloads[authorization_ref] = authorization_payload
 
@@ -178,7 +191,9 @@ def main() -> int:
     integrity_links = empty_links()
     integrity_links["authorization_ref"] = authorization_ref
     integrity_links["observation_refs"] = observation_refs
-    record, integrity_ref = make_record("response_integrity", integrity_payload, integrity_links, captured_at_ms + 3)
+    record, integrity_ref = make_record(
+        "response_integrity", integrity_payload, integrity_links, captured_at_ms + 3
+    )
     records.append(record)
     payloads[integrity_ref] = integrity_payload
 
@@ -206,7 +221,9 @@ def main() -> int:
     causal_links["authorization_ref"] = authorization_ref
     causal_links["observation_refs"] = observation_refs
     causal_links["response_integrity_ref"] = integrity_ref
-    record, causal_ref = make_record("causal_audit", causal_payload, causal_links, captured_at_ms + 4)
+    record, causal_ref = make_record(
+        "causal_audit", causal_payload, causal_links, captured_at_ms + 4
+    )
     records.append(record)
     payloads[causal_ref] = causal_payload
 
@@ -239,7 +256,11 @@ def main() -> int:
         }
     )
     record, continuity_ref = make_record(
-        "continuity_snapshot", continuity_payload, continuity_links, captured_at_ms + 5, dimensions=dimensions
+        "continuity_snapshot",
+        continuity_payload,
+        continuity_links,
+        captured_at_ms + 5,
+        dimensions=dimensions,
     )
     records.append(record)
     payloads[continuity_ref] = continuity_payload
@@ -256,6 +277,11 @@ def main() -> int:
         "transition_id": TRANSITION_ID,
         "subject_id": SUBJECT_ID,
         "action": "GENEFORMER_RUNTIME_PREFLIGHT",
+        "supersession": {
+            "relation": "ROOT",
+            "predecessor_transition_id": None,
+            "predecessor_authorization_ref": None,
+        },
         "records": records,
         "payloads": payloads,
         "claim_boundary": {
@@ -278,8 +304,20 @@ def main() -> int:
     }
     bundle["bundle_sha256"] = sha256_ref(bundle)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(bundle, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(json.dumps({"output": str(output_path), "bundle_sha256": bundle["bundle_sha256"], "records": len(records)}, sort_keys=True))
+    output_path.write_text(
+        json.dumps(bundle, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    print(
+        json.dumps(
+            {
+                "output": str(output_path),
+                "bundle_sha256": bundle["bundle_sha256"],
+                "records": len(records),
+            },
+            sort_keys=True,
+        )
+    )
     return 0
 
 
