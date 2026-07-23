@@ -1,0 +1,24 @@
+{
+  "schema": "kairos.dataset-manifest.v0.1",
+  "dataset_id": "GSE141064-tiny",
+  "dataset_version": "fixture-v0.1",
+  "adapter": {
+    "name": "live-seq-gse141064"
+  },
+  "sources": [
+    {
+      "role": "metadata",
+      "url": "https://example.org/live-seq/meta-v0.1.csv",
+      "version": "fixture-v0.1",
+      "sha256": "sha256:32ea9e2e4e51add088c65c6331240a43c214a7f1d3eb8839e31a430898194050"
+    },
+    {
+      "role": "matrix",
+      "url": "https://example.org/live-seq/counts-v0.1.csv",
+      "version": "fixture-v0.1",
+      "sha256": "sha256:c47d36f39777d3d3b765a47fded416b33dd8e967deb3793d9bb723e4b4cb2b6a"
+    }
+  ],
+  "reuse_status": "clear",
+  "minimum_independent_units": 2
+}
