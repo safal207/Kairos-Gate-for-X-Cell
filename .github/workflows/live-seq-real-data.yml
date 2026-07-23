@@ -10,12 +10,14 @@ on:
       - scripts/audit_live_seq_gse141064.py
       - manifests/live-seq-gse141064.sources.v0.1.json
       - protocols/live-seq-gse141064-feasibility.v0.1.json
+      - evidence/live-seq-gse141064/feasibility.real.v0.1.json
   pull_request:
     paths:
       - .github/workflows/live-seq-real-data.yml
       - scripts/audit_live_seq_gse141064.py
       - manifests/live-seq-gse141064.sources.v0.1.json
       - protocols/live-seq-gse141064-feasibility.v0.1.json
+      - evidence/live-seq-gse141064/feasibility.real.v0.1.json
 
 permissions:
   contents: read
@@ -78,18 +80,55 @@ jobs:
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           cat .artifacts/live-seq-real/result.json
 
+      - name: Build runtime exact-head attestation
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          result_path = Path('.artifacts/live-seq-real/result.json')
+          snapshot_path = Path('evidence/live-seq-gse141064/feasibility.real.v0.1.json')
+          attestation = {
+              'schema': 'kairos.real-input-exact-head-attestation.v0.1',
+              'dataset_id': 'GSE141064',
+              'exact_head': os.environ['EXACT_HEAD'],
+              'result_sha256': 'sha256:' + hashlib.sha256(result_path.read_bytes()).hexdigest(),
+              'committed_snapshot_path': str(snapshot_path),
+              'committed_snapshot_sha256': 'sha256:' + hashlib.sha256(snapshot_path.read_bytes()).hexdigest(),
+              'authority': {
+                  'classification': 'RESEARCH_ONLY',
+                  'experiment_authorization': False,
+                  'clinical_authorization': False,
+                  'merge_authorization': False,
+              },
+          }
+          output = Path('.artifacts/live-seq-real/attestation.json')
+          output.write_text(
+              json.dumps(attestation, indent=2, sort_keys=True, allow_nan=False) + '\n',
+              encoding='utf-8',
+          )
+          print(output.read_text(encoding='utf-8'))
+          PY
+
       - name: Enforce exact blocked research boundary
         env:
           AUDIT_EXIT_CODE: ${{ steps.audit.outputs.exit_code }}
         run: |
           python - <<'PY'
+          import hashlib
           import json
           import os
           from pathlib import Path
 
-          result = json.loads(
-              Path('.artifacts/live-seq-real/result.json').read_text(encoding='utf-8')
-          )
+          result_path = Path('.artifacts/live-seq-real/result.json')
+          snapshot_path = Path('evidence/live-seq-gse141064/feasibility.real.v0.1.json')
+          attestation_path = Path('.artifacts/live-seq-real/attestation.json')
+          result = json.loads(result_path.read_text(encoding='utf-8'))
+          snapshot = json.loads(snapshot_path.read_text(encoding='utf-8'))
+          attestation = json.loads(attestation_path.read_text(encoding='utf-8'))
+
           if os.environ.get('AUDIT_EXIT_CODE') != '2':
               raise SystemExit('blocked research status must return exit code 2')
           if result.get('status') != 'BLOCKED_INSUFFICIENT_REPLICATES':
@@ -116,15 +155,46 @@ jobs:
               raise SystemExit('selected recorded cells are missing from count matrix')
           if cohort.get('replicate_groups') != []:
               raise SystemExit('replicate evidence changed and requires protocol review')
+          if cohort.get('cross_group_repeated_measurement_ids') != []:
+              raise SystemExit('repeated-cell identities cross candidate groups')
           authority = result.get('authority', {})
           if authority.get('classification') != 'RESEARCH_ONLY':
               raise SystemExit('authority boundary is not RESEARCH_ONLY')
           if authority.get('experiment_authorization') is not False:
               raise SystemExit('audit must not authorize experiments')
+
+          expected = snapshot.get('result', {})
+          checks = {
+              'status': result.get('status'),
+              'selected_recorded_cells': cohort.get('selected_recorded_cells'),
+              'response_complete_cells': cohort.get('response_complete_cells'),
+              'missing_response_sample_ids': cohort.get('missing_response_sample_ids'),
+              'selected_sample_ids': cohort.get('selected_sample_ids'),
+              'missing_selected_sample_ids': cohort.get('missing_selected_sample_ids'),
+              'declared_replicate_groups': cohort.get('replicate_groups'),
+              'repeated_measurement_rows': cohort.get('repeated_measurement_rows'),
+              'cross_group_repeated_measurement_ids': cohort.get('cross_group_repeated_measurement_ids'),
+          }
+          for field, actual in checks.items():
+              if expected.get(field) != actual:
+                  raise SystemExit(
+                      f'committed evidence mismatch for {field}: '
+                      f'{expected.get(field)!r} != {actual!r}'
+                  )
+
+          if attestation.get('exact_head') != os.environ['EXACT_HEAD']:
+              raise SystemExit('attestation is not bound to the checked-out exact head')
+          result_digest = 'sha256:' + hashlib.sha256(result_path.read_bytes()).hexdigest()
+          snapshot_digest = 'sha256:' + hashlib.sha256(snapshot_path.read_bytes()).hexdigest()
+          if attestation.get('result_sha256') != result_digest:
+              raise SystemExit('attestation result digest mismatch')
+          if attestation.get('committed_snapshot_sha256') != snapshot_digest:
+              raise SystemExit('attestation committed snapshot digest mismatch')
           print('REAL_INPUT_LINKAGE_PASS_REPLICATE_BOUNDARY_BLOCKED')
+          print('EXACT_HEAD_ATTESTATION_PASS')
           PY
 
-      - name: Upload audit evidence only
+      - name: Upload exact-head audit evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
@@ -132,5 +202,7 @@ jobs:
           path: |
             .artifacts/live-seq-real/result.json
             .artifacts/live-seq-real/input-sha256.txt
-          if-no-files-found: warn
+            .artifacts/live-seq-real/attestation.json
+            evidence/live-seq-gse141064/feasibility.real.v0.1.json
+          if-no-files-found: error
           retention-days: 30
