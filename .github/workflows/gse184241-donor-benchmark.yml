@@ -59,7 +59,10 @@ jobs:
       - name: Validate static contracts
         run: |
           python -m json.tool schemas/gse184241-donor-benchmark.schema.json >/dev/null
+          python -m json.tool examples/gse184241.donor-held-out-benchmark.json >/dev/null
           python -m json.tool tests/fixtures/invalid_gse184241_cell_random_split.json >/dev/null
+          python scripts/validate_gse184241_donor_benchmark.py \
+            examples/gse184241.donor-held-out-benchmark.json
 
       - name: Download official GEO processed inputs
         run: |
@@ -124,6 +127,20 @@ jobs:
         run: |
           python scripts/validate_gse184241_donor_benchmark.py \
             benchmark-results/donor-held-out-baselines.json | tee benchmark-results/validation.log
+
+      - name: Confirm canonical evidence has not drifted
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          generated = json.loads(Path('benchmark-results/donor-held-out-baselines.json').read_text())
+          canonical = json.loads(Path('examples/gse184241.donor-held-out-benchmark.json').read_text())
+          generated.pop('source_revision', None)
+          canonical.pop('source_revision', None)
+          if generated != canonical:
+              raise SystemExit('generated benchmark differs from canonical evidence')
+          print('canonical benchmark reproduced exactly apart from source_revision')
+          PY
 
       - name: Confirm cell-random donor leakage fails closed
         run: |
