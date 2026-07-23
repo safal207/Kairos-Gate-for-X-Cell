@@ -4,36 +4,39 @@ Roadmap epic: #24
 
 This backlog is ordered by dependency. Do not start a lower item when it would expand or destabilize unfinished higher-priority work.
 
-## NOW — finish v0.1
+## COMPLETED — v0.1 core
 
-### P0.1 Complete partner-laboratory evidence handoff — #25
-
-Current state:
+### P0.1 Partner-laboratory evidence handoff — #25
 
 - [x] Skill contract
 - [x] Schema
-- [x] Initial Nfkbia handoff record
-- [ ] Validator
-- [ ] Fail-closed misuse fixture
-- [ ] Release gate
-- [ ] Human-readable report
-- [ ] CI integration
-- [ ] README and PR synchronization
+- [x] Nfkbia handoff record
+- [x] Validator
+- [x] Fail-closed false-authorization fixture
+- [x] Release gate
+- [x] Human-readable report
+- [x] CI integration
+- [x] README and PR synchronization
+- [x] Positive handoff accepted on exact-head CI
+- [x] Scientific-review-to-execution leakage blocked
 
-Definition of done:
+Verdict:
 
-- positive handoff validates on exact-head CI;
-- a record that confuses scientific review with execution authorization fails closed;
-- required experimental unit, timing, identity, metadata return, analysis plan, stopping rules, and claim boundaries are explicit;
-- no operational procedure is included.
+```text
+READY_FOR_PARTNER_SCIENTIFIC_REVIEW
+PHYSICAL_EXECUTION_NOT_AUTHORIZED
+AI_DOES_NOT_AUTHORIZE_EXECUTION
+```
+
+## NOW — freeze v0.1
 
 ### P0.2 Freeze and review PR #23 — #26
 
-- [ ] Finish #25
+- [x] Finish #25
 - [ ] Stop adding major modules
 - [ ] Inspect review threads and reviews
-- [ ] Run final exact-head CI
-- [ ] Verify schemas, examples, validators, reports, README, and workflow agree
+- [ ] Run final exact-head CI after freeze changes
+- [ ] Verify schemas, examples, validators, reports, README, roadmap, backlog, and workflow agree
 - [ ] Safety and overclaim scan
 - [ ] Architecture diagram
 - [ ] Release notes
@@ -44,7 +47,8 @@ Definition of done:
 
 - bounded v0.1 release candidate;
 - no unresolved P0/P1 findings;
-- explicit deferred v0.2 scope.
+- explicit deferred v0.2 scope;
+- exact-head evidence recorded after the freeze.
 
 ## NEXT — model and data layer
 
@@ -154,7 +158,7 @@ Do not begin until v0.1 is reviewed and at least one independent or partner-gene
 
 Do not:
 
-- add more major modules to PR #23 after #25;
+- add more major modules to PR #23;
 - treat cells or technical containers as biological replication;
 - lower temporal or identity standards to accept a dataset;
 - claim direct causality from a ranked hypothesis;
