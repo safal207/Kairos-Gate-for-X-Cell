@@ -1,0 +1,241 @@
+name: LiminalDB Geneformer Runtime Ledger
+
+on:
+  pull_request:
+    paths:
+      - ".agents/skills/liminaldb-bioevidence-ledger/**"
+      - "schemas/liminaldb-bioevidence-transition.schema.json"
+      - "scripts/run_geneformer_runtime_preflight.py"
+      - "scripts/export_liminaldb_bioevidence_transition.py"
+      - "scripts/validate_liminaldb_bioevidence_transition.py"
+      - "scripts/apply_json_mutation_fixture.py"
+      - "tools/liminaldb_bridge/bioevidence_transition_replay.rs"
+      - "tests/fixtures/invalid_liminaldb_preflight_promoted_to_inference.patch.json"
+      - "reports/gse184241-liminaldb-geneformer-runtime-ledger-2026-07-23.md"
+      - ".github/workflows/liminaldb-geneformer-runtime-ledger.yml"
+  push:
+    paths:
+      - ".agents/skills/liminaldb-bioevidence-ledger/**"
+      - "schemas/liminaldb-bioevidence-transition.schema.json"
+      - "scripts/run_geneformer_runtime_preflight.py"
+      - "scripts/export_liminaldb_bioevidence_transition.py"
+      - "scripts/validate_liminaldb_bioevidence_transition.py"
+      - "scripts/apply_json_mutation_fixture.py"
+      - "tools/liminaldb_bridge/bioevidence_transition_replay.rs"
+      - "tests/fixtures/invalid_liminaldb_preflight_promoted_to_inference.patch.json"
+      - "reports/gse184241-liminaldb-geneformer-runtime-ledger-2026-07-23.md"
+      - ".github/workflows/liminaldb-geneformer-runtime-ledger.yml"
+
+permissions:
+  contents: read
+
+env:
+  LIMINALDB_REPOSITORY: safal207/LiminalDB
+  LIMINALDB_COMMIT: ae51ac3a9d765492ba13e65ae3f7e8a09fa3191d
+  CAPTURED_AT_MS: "1784820600000"
+
+jobs:
+  export-contract:
+    runs-on: ubuntu-latest
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Checkout exact Kairos Gate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned preflight and validation dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            torch==2.7.1 \
+            --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --disable-pip-version-check \
+            transformers==4.52.4 \
+            datasets==3.6.0 \
+            anndata==0.11.4 \
+            huggingface_hub==0.32.4 \
+            jsonschema==4.24.0
+
+      - name: Validate static bridge contracts
+        run: |
+          python -m json.tool schemas/liminaldb-bioevidence-transition.schema.json >/dev/null
+          python -m json.tool tests/fixtures/invalid_liminaldb_preflight_promoted_to_inference.patch.json >/dev/null
+          python -m py_compile \
+            scripts/run_geneformer_runtime_preflight.py \
+            scripts/export_liminaldb_bioevidence_transition.py \
+            scripts/validate_liminaldb_bioevidence_transition.py \
+            scripts/apply_json_mutation_fixture.py
+
+      - name: Observe Geneformer runtime preflight
+        run: |
+          mkdir -p ledger-results
+          python scripts/run_geneformer_runtime_preflight.py \
+            --output ledger-results/geneformer-runtime-preflight.json \
+            --source-revision "$SOURCE_SHA" \
+            --captured-at-ms "$CAPTURED_AT_MS" \
+            | tee ledger-results/preflight.log
+          python -m json.tool ledger-results/geneformer-runtime-preflight.json >/dev/null
+
+      - name: Export deterministic LiminalDB transition bundle
+        run: |
+          python scripts/export_liminaldb_bioevidence_transition.py \
+            --benchmark examples/gse184241.donor-held-out-benchmark.json \
+            --preflight ledger-results/geneformer-runtime-preflight.json \
+            --output ledger-results/liminaldb-bioevidence-transition.json \
+            --source-revision "$SOURCE_SHA" \
+            | tee ledger-results/export.log
+
+      - name: Validate schema and semantic bridge contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+          schema = json.loads(Path('schemas/liminaldb-bioevidence-transition.schema.json').read_text())
+          data = json.loads(Path('ledger-results/liminaldb-bioevidence-transition.json').read_text())
+          Draft202012Validator(schema).validate(data)
+          print('JSON Schema validation passed')
+          PY
+          python scripts/validate_liminaldb_bioevidence_transition.py \
+            ledger-results/liminaldb-bioevidence-transition.json \
+            | tee ledger-results/validation.log
+
+      - name: Confirm preflight-to-inference promotion fails closed
+        run: |
+          python scripts/apply_json_mutation_fixture.py \
+            --input ledger-results/liminaldb-bioevidence-transition.json \
+            --fixture tests/fixtures/invalid_liminaldb_preflight_promoted_to_inference.patch.json \
+            --output ledger-results/invalid-preflight-promoted-to-inference.json
+          if python scripts/validate_liminaldb_bioevidence_transition.py \
+            ledger-results/invalid-preflight-promoted-to-inference.json \
+            > ledger-results/invalid-validation.log 2>&1; then
+            cat ledger-results/invalid-validation.log
+            echo "invalid preflight promotion was incorrectly accepted"
+            exit 1
+          fi
+          cat ledger-results/invalid-validation.log
+          echo "preflight promotion misuse correctly blocked"
+
+      - name: Verify exact LiminalDB pin and claim boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('ledger-results/liminaldb-bioevidence-transition.json').read_text())
+          preflight = json.loads(Path('ledger-results/geneformer-runtime-preflight.json').read_text())
+          assert data['liminaldb_pin']['commit'] == 'ae51ac3a9d765492ba13e65ae3f7e8a09fa3191d'
+          assert len(data['records']) == 6
+          assert data['claim_boundary']['model_inference_executed'] is False
+          assert data['claim_boundary']['embedding_generated'] is False
+          assert data['storage_boundary']['production_write'] is False
+          assert data['records'][-1]['dimensions']['causal_validity'] == 'NOT_EVALUATED'
+          assert preflight['runtime_boundary']['model_inference_executed'] is False
+          PY
+
+      - name: Upload exact-head bridge input evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: liminaldb-geneformer-bridge-input-${{ env.SOURCE_SHA }}
+          path: |
+            ledger-results/geneformer-runtime-preflight.json
+            ledger-results/preflight.log
+            ledger-results/liminaldb-bioevidence-transition.json
+            ledger-results/export.log
+            ledger-results/validation.log
+            ledger-results/invalid-preflight-promoted-to-inference.json
+            ledger-results/invalid-validation.log
+          if-no-files-found: error
+          retention-days: 30
+
+  liminaldb-replay:
+    needs: export-contract
+    runs-on: ubuntu-latest
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Checkout exact Kairos Gate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+
+      - name: Download exact exported bridge bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: liminaldb-geneformer-bridge-input-${{ env.SOURCE_SHA }}
+          path: ledger-results
+
+      - name: Checkout exact LiminalDB compatibility pin
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.LIMINALDB_REPOSITORY }}
+          ref: ${{ env.LIMINALDB_COMMIT }}
+          path: vendor/LiminalDB
+          persist-credentials: false
+
+      - name: Verify checked-out LiminalDB commit
+        run: |
+          actual="$(git -C vendor/LiminalDB rev-parse HEAD)"
+          test "$actual" = "$LIMINALDB_COMMIT"
+          printf '%s\n' "$actual" > ledger-results/liminaldb-checked-out-commit.txt
+
+      - name: Install replay adapter into temporary LiminalDB checkout
+        run: |
+          cp tools/liminaldb_bridge/bioevidence_transition_replay.rs \
+            vendor/LiminalDB/liminal-db/crates/liminal-store/examples/bioevidence_transition_replay.rs
+
+      - name: Compile and replay through real TrustworthyTransitionLedger
+        working-directory: vendor/LiminalDB/liminal-db
+        run: |
+          cargo run -q -p liminal-store --example bioevidence_transition_replay -- \
+            "$GITHUB_WORKSPACE/ledger-results/liminaldb-bioevidence-transition.json" \
+            "$GITHUB_WORKSPACE/ledger-results/temporary-liminaldb-ledger" \
+            "$GITHUB_WORKSPACE/ledger-results/liminaldb-replay-receipt.json" \
+            | tee "$GITHUB_WORKSPACE/ledger-results/liminaldb-replay.log"
+
+      - name: Verify replay receipt and report-only dimensions
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          receipt = json.loads(Path('ledger-results/liminaldb-replay-receipt.json').read_text())
+          assert receipt['liminaldb_commit'] == 'ae51ac3a9d765492ba13e65ae3f7e8a09fa3191d'
+          assert receipt['event_count_before_reopen'] == 6
+          assert receipt['event_count_after_reopen'] == 6
+          assert receipt['snapshot_event_count'] == 6
+          assert receipt['projection_count'] == 1
+          assert receipt['projection_equal_after_reopen'] is True
+          assert receipt['final_side_effect_committed'] is False
+          assert receipt['final_event_count'] == 6
+          assert receipt['final_dimensions']['authority'] == 'VALID'
+          assert receipt['final_dimensions']['response_integrity'] == 'VERIFIED'
+          assert receipt['final_dimensions']['causal_validity'] == 'NOT_EVALUATED'
+          assert receipt['final_dimensions']['continuity_posture'] in {'REPORT_ONLY', 'BLOCKED'}
+          assert receipt['verdict'] == 'RECOVERED_REPORT_ONLY'
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+          PY
+          sha256sum \
+            ledger-results/liminaldb-bioevidence-transition.json \
+            ledger-results/liminaldb-replay-receipt.json \
+            > ledger-results/replay-sha256.txt
+
+      - name: Upload exact-head LiminalDB replay evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: liminaldb-geneformer-replay-${{ env.SOURCE_SHA }}
+          path: |
+            ledger-results/liminaldb-bioevidence-transition.json
+            ledger-results/liminaldb-replay-receipt.json
+            ledger-results/liminaldb-replay.log
+            ledger-results/liminaldb-checked-out-commit.txt
+            ledger-results/replay-sha256.txt
+            ledger-results/temporary-liminaldb-ledger
+          if-no-files-found: error
+          retention-days: 30
