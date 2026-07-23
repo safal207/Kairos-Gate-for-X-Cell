@@ -38,8 +38,30 @@ class LiveSeqFeasibilityTests(unittest.TestCase):
             check=False,
         )
 
+    def _write_grouped_repeat_metadata(self, directory: Path) -> Path:
+        """Keep pair-1 inside one Date|Probe group while preserving two groups."""
+        with METADATA.open("r", encoding="utf-8", newline="") as source:
+            reader = csv.DictReader(source)
+            fieldnames = list(reader.fieldnames or [])
+            rows = [dict(row) for row in reader]
+
+        source_pair = next(row for row in rows if row["sample_ID"] == "sampleC")
+        target_pair = next(row for row in rows if row["sample_ID"] == "sampleD")
+        target_pair["Date"] = source_pair["Date"]
+        target_pair["Probe"] = source_pair["Probe"]
+
+        metadata_path = directory / "grouped-repeat-metadata.csv"
+        with metadata_path.open("w", encoding="utf-8", newline="") as output:
+            writer = csv.DictWriter(output, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+        return metadata_path
+
     def test_clear_linkage_is_ready_for_preregistration(self) -> None:
-        completed = self._run(reuse_status="clear")
+        with tempfile.TemporaryDirectory() as directory:
+            metadata_path = self._write_grouped_repeat_metadata(Path(directory))
+            completed = self._run(metadata=metadata_path, reuse_status="clear")
+
         self.assertEqual(completed.returncode, 0, completed.stderr)
         result = json.loads(completed.stdout)
         self.assertEqual(result["status"], "READY_FOR_PREREGISTRATION")
@@ -51,10 +73,26 @@ class LiveSeqFeasibilityTests(unittest.TestCase):
         self.assertEqual(result["cohort"]["missing_response_sample_ids"], [])
         self.assertEqual(len(result["cohort"]["replicate_groups"]), 2)
         self.assertEqual(result["cohort"]["repeated_measurement_rows"], 2)
+        self.assertEqual(result["cohort"]["cross_group_repeated_measurement_ids"], [])
         self.assertTrue(result["integrity"]["full_id_sets_match"])
 
+    def test_repeated_cell_pair_crossing_groups_blocks_readiness(self) -> None:
+        completed = self._run(reuse_status="clear")
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["status"], "BLOCKED_REPEATED_CELL_GROUP_LEAKAGE")
+        self.assertEqual(result["cohort"]["cross_group_repeated_measurement_ids"], ["pair-1"])
+        self.assertEqual(
+            result["cohort"]["repeated_measurement_groups"]["pair-1"],
+            ["2020-01-01|probe1", "2020-01-02|probe2"],
+        )
+        self.assertIn("one split group", result["next_action"])
+
     def test_unclear_reuse_terms_block_readiness(self) -> None:
-        completed = self._run()
+        with tempfile.TemporaryDirectory() as directory:
+            metadata_path = self._write_grouped_repeat_metadata(Path(directory))
+            completed = self._run(metadata=metadata_path)
+
         self.assertEqual(completed.returncode, 2, completed.stderr)
         result = json.loads(completed.stdout)
         self.assertEqual(result["status"], "BLOCKED_LICENSE_UNCLEAR")
