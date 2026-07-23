@@ -1,0 +1,145 @@
+{
+  "schema_version": "0.1.0",
+  "case_id": "INVALID-CAUSAL-WINNER",
+  "target_claim": {
+    "candidate": "Nfkbia",
+    "phenotype": "later inflammatory response",
+    "temporal_order": "candidate before phenotype",
+    "biological_system": "synthetic fixture",
+    "claim_level": "causal",
+    "statement": "Nfkbia causes the later response."
+  },
+  "inherited_constraints": [
+    {
+      "constraint_id": "C1",
+      "statement": "Biological independence is not established.",
+      "evidence_level": "F2",
+      "impact": "blocking"
+    }
+  ],
+  "hypotheses": [
+    {
+      "hypothesis_id": "H1_DIRECT",
+      "rank": 1,
+      "priority_score": 90,
+      "statement": "Nfkbia directly causes the response.",
+      "mechanism_class": "direct_causal_effect",
+      "status": "causally_identified_with_limits",
+      "evidence_level": "F3",
+      "scores": {
+        "temporal_fit": 4,
+        "experimental_unit_fit": 0,
+        "cross_dataset_support": 1,
+        "confounder_resilience": 0,
+        "mechanistic_coherence": 4,
+        "intervention_support": 0,
+        "falsifiability": 4,
+        "effect_relevance": 4,
+        "uncertainty_penalty": 4
+      },
+      "score_rationale": ["The model preferred this explanation."],
+      "evidence_for": ["Correlation was observed."],
+      "evidence_against": ["No intervention exists."],
+      "unresolved_assumptions": ["All confounders are absent."],
+      "predicted_observations": ["The response should change with Nfkbia."],
+      "falsifiers": ["No change under an identifying design."],
+      "discriminating_test": {
+        "question": "Does an identifying design change the response?",
+        "required_evidence": "Independent identifying evidence.",
+        "operational_protocol_included": false
+      }
+    },
+    {
+      "hypothesis_id": "H2_STATE",
+      "rank": 2,
+      "priority_score": 40,
+      "statement": "A shared state causes both measurements.",
+      "mechanism_class": "shared_upstream_state",
+      "status": "plausible",
+      "evidence_level": "F2",
+      "scores": {
+        "temporal_fit": 3,
+        "experimental_unit_fit": 0,
+        "cross_dataset_support": 1,
+        "confounder_resilience": 0,
+        "mechanistic_coherence": 3,
+        "intervention_support": 0,
+        "falsifiability": 4,
+        "effect_relevance": 3,
+        "uncertainty_penalty": 4
+      },
+      "score_rationale": ["A latent state is possible."],
+      "evidence_for": ["No state adjustment exists."],
+      "evidence_against": ["The direct story is plausible."],
+      "unresolved_assumptions": ["The state is measurable."],
+      "predicted_observations": ["State adjustment should reduce the association."],
+      "falsifiers": ["Nfkbia remains specific after state adjustment."],
+      "discriminating_test": {
+        "question": "Does state adjustment absorb the association?",
+        "required_evidence": "Independent state measurements.",
+        "operational_protocol_included": false
+      }
+    },
+    {
+      "hypothesis_id": "H3_TECHNICAL",
+      "rank": 3,
+      "priority_score": 30,
+      "statement": "Technical structure creates the association.",
+      "mechanism_class": "technical_confounding",
+      "status": "plausible",
+      "evidence_level": "F2",
+      "scores": {
+        "temporal_fit": 2,
+        "experimental_unit_fit": 0,
+        "cross_dataset_support": 0,
+        "confounder_resilience": 0,
+        "mechanistic_coherence": 2,
+        "intervention_support": 0,
+        "falsifiability": 4,
+        "effect_relevance": 3,
+        "uncertainty_penalty": 4
+      },
+      "score_rationale": ["Batch metadata are absent."],
+      "evidence_for": ["The grouping structure is unresolved."],
+      "evidence_against": ["No documented perfect confounding."],
+      "unresolved_assumptions": ["A hidden batch exists."],
+      "predicted_observations": ["Balanced data should weaken the association."],
+      "falsifiers": ["The effect reproduces with balanced structure."],
+      "discriminating_test": {
+        "question": "Does balanced structure preserve the result?",
+        "required_evidence": "Explicit technical lineage.",
+        "operational_protocol_included": false
+      }
+    }
+  ],
+  "pairwise_discriminators": [
+    {
+      "hypothesis_a": "H1_DIRECT",
+      "hypothesis_b": "H2_STATE",
+      "distinguishing_observation": "Specific identifying evidence favors direct action."
+    }
+  ],
+  "causal_identification": {
+    "identified": true,
+    "temporal_order_matched": true,
+    "experimental_unit_established": false,
+    "identifying_design_present": false,
+    "major_confounders_separable": false,
+    "independent_validation_present": false,
+    "reason": "The correlation looked convincing."
+  },
+  "claim_boundary": {
+    "association": "supported",
+    "prediction": "supported",
+    "causal": "supported",
+    "tissue": "supported",
+    "clinical_therapeutic": "supported"
+  },
+  "overall_verdict": "IDENTIFIED_WITH_LIMITS",
+  "next_valid_action": "Publish the causal claim.",
+  "safety_status": {
+    "mode": "computational_only",
+    "physical_biology_authorized": false,
+    "notes": "Synthetic negative fixture."
+  }
+}
