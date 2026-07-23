@@ -1,13 +1,13 @@
 {
   "schema": "kairos.real-input-audit-evidence.v0.1",
   "dataset_id": "GSE141064",
-  "audited_at": "2026-07-22T05:58:42Z",
-  "auditor_commit": "0c192294de5ccabf8ecc0132e6fa3692ae233729",
-  "workflow": {
-    "run_id": 29895312004,
-    "artifact_name": "live-seq-real-audit-0c192294de5ccabf8ecc0132e6fa3692ae233729",
-    "artifact_digest": "sha256:1f8e375339785a9d6a9c84b8d8ac75f5c928719b6b4887c7b50c48e166b2a8b4",
-    "retention_days": 30
+  "snapshot_generated_at": "2026-07-22T05:58:42Z",
+  "binding": {
+    "mode": "runtime-exact-head-attestation",
+    "workflow_path": ".github/workflows/live-seq-real-data.yml",
+    "artifact_name_template": "live-seq-real-audit-${EXACT_HEAD}",
+    "attestation_file": "attestation.json",
+    "committed_snapshot_role": "Canonical expected result checked against the runtime audit; exact commit binding is emitted by CI to avoid self-referential commit metadata."
   },
   "inputs": {
     "metadata": {
@@ -54,6 +54,7 @@
     "missing_selected_sample_ids": [],
     "declared_replicate_groups": [],
     "repeated_measurement_rows": 0,
+    "cross_group_repeated_measurement_ids": [],
     "next_action": "Recover or verify an auditable replicate-aware grouping before preregistering any predictive model."
   },
   "interpretation": {
@@ -61,6 +62,7 @@
     "cohort_recovery": "PASS",
     "response_availability": "PASS",
     "target_leakage_at_selection": "REJECTED_BY_CONTRACT",
+    "repeated_cell_group_leakage": "NOT_DETECTED_IN_SELECTED_COHORT",
     "replicate_boundary": "BLOCKED",
     "model_readiness": "NOT_READY",
     "biological_claim": "NONE"
@@ -72,6 +74,8 @@
     "merge_authorization": false
   },
   "limitations": [
+    "The committed file is a canonical expected-result snapshot, not a self-asserted exact-head record.",
+    "The CI-generated attestation binds the checked-out head SHA, runtime result digest, and this snapshot digest.",
     "The evidence validates exact public-input linkage and cohort recovery only.",
     "Cohort membership is determined without consulting the downstream response field.",
     "No predictive model was fitted and no phase effect was estimated.",
