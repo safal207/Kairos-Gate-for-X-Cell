@@ -142,6 +142,11 @@ class TabularAdapter:
 
     def __init__(self, config: Mapping[str, Any]) -> None:
         self.config = dict(config)
+        semantics = self.config.get("replicate_semantics")
+        if semantics not in {"verified", "technical_only", "unresolved"}:
+            raise DatasetReadinessError(
+                f"unsupported tabular replicate semantics: {semantics!r}"
+            )
 
     def _selected(self, row: Mapping[str, str]) -> bool:
         for rule in self.config.get("selection", []):
