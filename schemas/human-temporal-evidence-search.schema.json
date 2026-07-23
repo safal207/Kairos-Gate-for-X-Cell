@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kairos-gate.example/schemas/human-temporal-evidence-search.schema.json",
+  "title": "Human Temporal Evidence Search",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "search_id",
+    "searched_at",
+    "frozen_target",
+    "repositories",
+    "queries",
+    "candidates",
+    "gse94383_prefix_resolution",
+    "global_verdict",
+    "partner_lab_requirement",
+    "claim_boundary",
+    "safety_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.2.0"},
+    "search_id": {"type": "string", "minLength": 8},
+    "searched_at": {"type": "string", "format": "date-time"},
+    "frozen_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["organism", "cell_context", "pre_state", "transition", "later_phenotype", "identity_requirement"],
+      "properties": {
+        "organism": {"const": "Homo sapiens"},
+        "cell_context": {"type": "string", "minLength": 3},
+        "pre_state": {"type": "string", "minLength": 3},
+        "transition": {"type": "string", "minLength": 3},
+        "later_phenotype": {"type": "string", "minLength": 3},
+        "identity_requirement": {"enum": ["same_cell", "retained_lineage", "defensible_longitudinal_biological_unit"]}
+      }
+    },
+    "repositories": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "url"],
+        "properties": {
+          "name": {"type": "string", "minLength": 2},
+          "url": {"type": "string", "format": "uri"}
+        }
+      }
+    },
+    "queries": {"type": "array", "minItems": 4, "items": {"type": "string", "minLength": 5}},
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "gse94383_prefix_resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "biological_replicate", "allowed_use", "unresolved_detail", "evidence_urls"],
+      "properties": {
+        "status": {"const": "TECHNICAL_OR_CONDITION_PREFIX"},
+        "biological_replicate": {"const": false},
+        "allowed_use": {"const": "technical_or_condition_sensitivity_only"},
+        "unresolved_detail": {"type": "string", "minLength": 8},
+        "evidence_urls": {"type": "array", "minItems": 1, "items": {"type": "string", "format": "uri"}}
+      }
+    },
+    "global_verdict": {"enum": ["HUMAN_DIRECT_REPLICATION_FOUND", "HUMAN_DIRECT_REPLICATION_GAP"]},
+    "partner_lab_requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "summary", "physical_execution_authorized"],
+      "properties": {
+        "required": {"type": "boolean"},
+        "summary": {"type": "string", "minLength": 20},
+        "physical_execution_authorized": {"const": false}
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["human_domain_support", "direct_prediction", "causal", "clinical_therapeutic"],
+      "properties": {
+        "human_domain_support": {"enum": ["supported_with_limits", "not_supported"]},
+        "direct_prediction": {"const": "not_established"},
+        "causal": {"const": "blocked"},
+        "clinical_therapeutic": {"const": "blocked"}
+      }
+    },
+    "safety_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["computational_only", "physical_biology_authorized", "clinical_use_authorized"],
+      "properties": {
+        "computational_only": {"const": true},
+        "physical_biology_authorized": {"const": false},
+        "clinical_use_authorized": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "title",
+        "organism",
+        "cell_context",
+        "source_urls",
+        "classification",
+        "gates",
+        "direct_replication_eligible",
+        "model_use",
+        "exclusion_reason"
+      ],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 3},
+        "title": {"type": "string", "minLength": 5},
+        "organism": {"type": "string", "minLength": 3},
+        "cell_context": {"type": "string", "minLength": 3},
+        "source_urls": {"type": "array", "minItems": 1, "items": {"type": "string", "format": "uri"}},
+        "classification": {
+          "enum": [
+            "DIRECT_TEMPORAL_CANDIDATE",
+            "DONOR_LEVEL_TEMPORAL_SUPPORT",
+            "SINGLE_CELL_POST_RESPONSE_SUPPORT",
+            "HUMAN_DOMAIN_REFERENCE",
+            "METHOD_TRANSFER_ONLY",
+            "CROSS_SECTIONAL_SUPPORT",
+            "EXCLUDE"
+          ]
+        },
+        "gates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "human",
+            "pre_state_before_transition",
+            "later_phenotype",
+            "same_cell_or_defensible_longitudinal_identity",
+            "independent_biological_units_explicit",
+            "technical_lineage_sufficient",
+            "public_analysis_data"
+          ],
+          "properties": {
+            "human": {"type": "boolean"},
+            "pre_state_before_transition": {"type": "boolean"},
+            "later_phenotype": {"type": "boolean"},
+            "same_cell_or_defensible_longitudinal_identity": {"type": "boolean"},
+            "independent_biological_units_explicit": {"type": "boolean"},
+            "technical_lineage_sufficient": {"type": "boolean"},
+            "public_analysis_data": {"type": "boolean"}
+          }
+        },
+        "direct_replication_eligible": {"type": "boolean"},
+        "model_use": {"type": "string", "minLength": 3},
+        "exclusion_reason": {"type": "string", "minLength": 3}
+      }
+    }
+  }
+}
