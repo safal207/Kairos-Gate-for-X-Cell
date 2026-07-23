@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kairos-gate.example/schemas/liminaldb-geneformer-inference-transition.schema.json",
+  "title": "Kairos Gate Geneformer inference LiminalDB transition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "bridge_profile",
+    "liminaldb_pin",
+    "transition_id",
+    "subject_id",
+    "action",
+    "supersession",
+    "records",
+    "payloads",
+    "claim_boundary",
+    "storage_boundary",
+    "bundle_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "bridge_profile": {"const": "org.kairos-gate.liminaldb-geneformer-inference-bridge.v0.1"},
+    "liminaldb_pin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit", "event_schema", "ledger_profile"],
+      "properties": {
+        "repository": {"const": "safal207/LiminalDB"},
+        "commit": {"const": "ae51ac3a9d765492ba13e65ae3f7e8a09fa3191d"},
+        "event_schema": {"const": "liminaldb.trustworthy-transition-event.v0.1"},
+        "ledger_profile": {"const": "org.liminaldb.trustworthy-transition-ledger.v0.1"}
+      }
+    },
+    "transition_id": {"const": "gse184241-geneformer-v1-inference-v0-1"},
+    "subject_id": {"const": "GSE184241"},
+    "action": {"const": "GENEFORMER_V1_INFERENCE"},
+    "supersession": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relation", "predecessor_transition_id", "predecessor_authorization_ref"],
+      "properties": {
+        "relation": {"const": "SUPERSEDES"},
+        "predecessor_transition_id": {"const": "gse184241-geneformer-runtime-preflight-v0-1"},
+        "predecessor_authorization_ref": {
+          "const": "sha256:550df034e0eceb773ef69d2de8a9fbb9bb48b092a2b6bdee8a53988764eb0665"
+        }
+      }
+    },
+    "records": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "prefixItems": [
+        {"$ref": "#/$defs/authorizationRecord"},
+        {"$ref": "#/$defs/observationRecord"},
+        {"$ref": "#/$defs/observationRecord"},
+        {"$ref": "#/$defs/observationRecord"},
+        {"$ref": "#/$defs/responseIntegrityRecord"},
+        {"$ref": "#/$defs/causalAuditRecord"},
+        {"$ref": "#/$defs/continuityRecord"}
+      ],
+      "items": false
+    },
+    "payloads": {
+      "type": "object",
+      "minProperties": 7,
+      "additionalProperties": {"type": "object"}
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_inference_executed",
+        "embedding_generated",
+        "descriptive_comparison_completed",
+        "incremental_value_established",
+        "same_cell_prediction_established",
+        "causal_effect_established",
+        "clinical_utility_established",
+        "physical_execution_authorized"
+      ],
+      "properties": {
+        "model_inference_executed": {"type": "boolean"},
+        "embedding_generated": {"type": "boolean"},
+        "descriptive_comparison_completed": {"type": "boolean"},
+        "incremental_value_established": {"const": false},
+        "same_cell_prediction_established": {"const": false},
+        "causal_effect_established": {"const": false},
+        "clinical_utility_established": {"const": false},
+        "physical_execution_authorized": {"const": false}
+      }
+    },
+    "storage_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["temporary_ledger_only", "production_write", "external_submission", "deployment", "merge"],
+      "properties": {
+        "temporary_ledger_only": {"const": true},
+        "production_write": {"const": false},
+        "external_submission": {"const": false},
+        "deployment": {"const": false},
+        "merge": {"const": false}
+      }
+    },
+    "bundle_sha256": {"$ref": "#/$defs/sha256Ref"}
+  },
+  "$defs": {
+    "sha256Ref": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authorization_ref",
+        "observation_refs",
+        "response_integrity_ref",
+        "causal_audit_ref",
+        "previous_continuity_ref"
+      ],
+      "properties": {
+        "authorization_ref": {"anyOf": [{"$ref": "#/$defs/sha256Ref"}, {"type": "null"}]},
+        "observation_refs": {"type": "array", "items": {"$ref": "#/$defs/sha256Ref"}, "uniqueItems": true},
+        "response_integrity_ref": {"anyOf": [{"$ref": "#/$defs/sha256Ref"}, {"type": "null"}]},
+        "causal_audit_ref": {"anyOf": [{"$ref": "#/$defs/sha256Ref"}, {"type": "null"}]},
+        "previous_continuity_ref": {"anyOf": [{"$ref": "#/$defs/sha256Ref"}, {"type": "null"}]}
+      }
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "execution", "response_integrity", "causal_validity", "continuity_posture"],
+      "properties": {
+        "authority": {"enum": ["VALID", "DENIED", "PENDING", "EXPIRED", "EXPIRED_AT_REPORT", "CONSUMED", "REVALIDATION_REQUIRED", "NOT_EVALUATED", "UNKNOWN"]},
+        "execution": {"enum": ["NOT_OBSERVED", "OBSERVED_EXECUTED", "OBSERVED_BLOCKED", "OBSERVED_ERRORED", "OBSERVED_OTHER"]},
+        "response_integrity": {"enum": ["VERIFIED", "FAILED", "PARTIAL", "NOT_EVALUATED", "UNKNOWN"]},
+        "causal_validity": {"enum": ["VALID", "INVALID", "NOT_EVALUATED", "UNKNOWN"]},
+        "continuity_posture": {"enum": ["CONTINUE_SIDE_EFFECT", "RETRY_SIDE_EFFECT", "REPORT_ONLY", "REMEDIATE_RESPONSE", "REVALIDATE", "BLOCKED", "ALREADY_CONSUMED", "NOT_EVALUATED"]}
+      }
+    },
+    "baseRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "record_ref", "payload_digest", "links", "dimensions", "side_effect_committed", "captured_at_ms"],
+      "properties": {
+        "kind": {"type": "string"},
+        "record_ref": {"$ref": "#/$defs/sha256Ref"},
+        "payload_digest": {"$ref": "#/$defs/sha256Ref"},
+        "links": {"$ref": "#/$defs/links"},
+        "dimensions": {"anyOf": [{"$ref": "#/$defs/dimensions"}, {"type": "null"}]},
+        "side_effect_committed": {"const": false},
+        "captured_at_ms": {"type": "integer", "minimum": 0}
+      }
+    },
+    "authorizationRecord": {"allOf": [{"$ref": "#/$defs/baseRecord"}, {"properties": {"kind": {"const": "authorization"}}}]},
+    "observationRecord": {"allOf": [{"$ref": "#/$defs/baseRecord"}, {"properties": {"kind": {"const": "observation"}}}]},
+    "responseIntegrityRecord": {"allOf": [{"$ref": "#/$defs/baseRecord"}, {"properties": {"kind": {"const": "response_integrity"}}}]},
+    "causalAuditRecord": {"allOf": [{"$ref": "#/$defs/baseRecord"}, {"properties": {"kind": {"const": "causal_audit"}}}]},
+    "continuityRecord": {"allOf": [{"$ref": "#/$defs/baseRecord"}, {"properties": {"kind": {"const": "continuity_snapshot"}}}]}
+  }
+}
