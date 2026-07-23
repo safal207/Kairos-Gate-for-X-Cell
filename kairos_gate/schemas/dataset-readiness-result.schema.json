@@ -86,9 +86,9 @@
         "selection_uses_response_label": {"const": false},
         "selected_records": {"type": "integer", "minimum": 0},
         "response_complete_records": {"type": "integer", "minimum": 0},
-        "selected_sample_ids": {"$ref": "#/$defs/stringArray"},
-        "missing_response_sample_ids": {"$ref": "#/$defs/stringArray"},
-        "missing_selected_sample_ids": {"$ref": "#/$defs/stringArray"}
+        "selected_sample_ids": {"$ref": "#/$defs/observedStringArray"},
+        "missing_response_sample_ids": {"$ref": "#/$defs/uniqueStringArray"},
+        "missing_selected_sample_ids": {"$ref": "#/$defs/uniqueStringArray"}
       }
     },
     "replicates": {
@@ -105,13 +105,13 @@
       "properties": {
         "semantics": {"enum": ["verified", "technical_only", "unresolved"]},
         "minimum_independent_units": {"type": "integer", "minimum": 2},
-        "independent_units": {"$ref": "#/$defs/stringArray"},
+        "independent_units": {"$ref": "#/$defs/uniqueStringArray"},
         "effective_independent_units": {"type": "integer", "minimum": 0},
         "repeated_identity_groups": {
           "type": "object",
-          "additionalProperties": {"$ref": "#/$defs/stringArray"}
+          "additionalProperties": {"$ref": "#/$defs/uniqueStringArray"}
         },
-        "cross_group_repeated_identity_ids": {"$ref": "#/$defs/stringArray"}
+        "cross_group_repeated_identity_ids": {"$ref": "#/$defs/uniqueStringArray"}
       }
     },
     "integrity": {
@@ -131,7 +131,6 @@
         "full_id_sets_match": {"type": "boolean"},
         "errors": {
           "type": "array",
-          "uniqueItems": true,
           "items": {"type": "string", "minLength": 1}
         }
       }
@@ -145,7 +144,11 @@
     }
   },
   "$defs": {
-    "stringArray": {
+    "observedStringArray": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "uniqueStringArray": {
       "type": "array",
       "uniqueItems": true,
       "items": {"type": "string", "minLength": 1}
@@ -157,7 +160,7 @@
       "properties": {
         "path": {"type": "string", "minLength": 1},
         "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-        "identifiers": {"type": "integer", "minimum": 1}
+        "identifiers": {"type": "integer", "minimum": 0}
       }
     },
     "matrixInput": {
@@ -167,7 +170,7 @@
       "properties": {
         "path": {"type": "string", "minLength": 1},
         "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-        "sample_identifiers": {"type": "integer", "minimum": 1}
+        "sample_identifiers": {"type": "integer", "minimum": 0}
       }
     }
   },
