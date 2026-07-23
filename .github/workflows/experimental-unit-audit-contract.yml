@@ -6,6 +6,7 @@ on:
       - ".agents/skills/bio-experimental-unit-auditor/**"
       - ".agents/skills/bio-provenance-confounder-graph/**"
       - ".agents/skills/bio-independent-replication-finder/**"
+      - ".agents/skills/bio-causal-hypothesis-ranker/**"
       - "schemas/**"
       - "examples/**"
       - "reports/**"
@@ -13,6 +14,7 @@ on:
       - "scripts/validate_experimental_unit_audit.py"
       - "scripts/validate_provenance_confounder_graph.py"
       - "scripts/validate_independent_replication_search.py"
+      - "scripts/validate_causal_hypothesis_ranking.py"
       - "scripts/probe_gse94383_tables.py"
       - "scripts/analyze_gse94383_conceptual_replication.py"
       - "README.md"
@@ -22,6 +24,7 @@ on:
       - ".agents/skills/bio-experimental-unit-auditor/**"
       - ".agents/skills/bio-provenance-confounder-graph/**"
       - ".agents/skills/bio-independent-replication-finder/**"
+      - ".agents/skills/bio-causal-hypothesis-ranker/**"
       - "schemas/**"
       - "examples/**"
       - "reports/**"
@@ -29,6 +32,7 @@ on:
       - "scripts/validate_experimental_unit_audit.py"
       - "scripts/validate_provenance_confounder_graph.py"
       - "scripts/validate_independent_replication_search.py"
+      - "scripts/validate_causal_hypothesis_ranking.py"
       - "scripts/probe_gse94383_tables.py"
       - "scripts/analyze_gse94383_conceptual_replication.py"
       - "README.md"
@@ -92,6 +96,20 @@ jobs:
             exit 1
           fi
           echo "same-study replication leakage correctly blocked"
+
+      - name: Validate Nfkbia causal hypothesis ranking
+        run: |
+          python scripts/validate_causal_hypothesis_ranking.py \
+            examples/gse141064.nfkbia-causal-hypotheses.json
+
+      - name: Confirm false causal winner fails closed
+        run: |
+          if python scripts/validate_causal_hypothesis_ranking.py \
+            tests/fixtures/invalid_causal_winner_without_discriminator.json; then
+            echo "false causal winner was incorrectly accepted"
+            exit 1
+          fi
+          echo "false causal winner correctly blocked"
 
   live-replication-probe:
     runs-on: ubuntu-latest
