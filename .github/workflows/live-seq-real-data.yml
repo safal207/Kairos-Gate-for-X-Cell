@@ -100,6 +100,7 @@ jobs:
               'tree_sha': subprocess.check_output(
                   ['git', 'rev-parse', 'HEAD^{tree}'], text=True
               ).strip(),
+              'stack_base_head': '60bc60be065a3b6921c37f4621a8c3865564b942',
               'result_sha256': 'sha256:' + hashlib.sha256(
                   result_path.read_bytes()
               ).hexdigest(),
@@ -205,6 +206,8 @@ jobs:
           ).strip()
           if attestation.get('tree_sha') != current_tree:
               raise SystemExit('attestation tree SHA mismatch')
+          if attestation.get('stack_base_head') != '60bc60be065a3b6921c37f4621a8c3865564b942':
+              raise SystemExit('attestation stack base head mismatch')
           result_digest = 'sha256:' + hashlib.sha256(result_path.read_bytes()).hexdigest()
           snapshot_digest = 'sha256:' + hashlib.sha256(
               snapshot_path.read_bytes()
