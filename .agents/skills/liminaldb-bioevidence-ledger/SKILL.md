@@ -1,7 +1,7 @@
 ---
 name: liminaldb-bioevidence-ledger
 description: Export one BioEvidence OS computational transition into a replayable LiminalDB trustworthy-transition chain without upgrading runtime readiness into model inference or scientific evidence.
-version: 0.1.0
+version: 0.1.1
 ---
 
 # LiminalDB BioEvidence Ledger
@@ -102,7 +102,25 @@ REPORT_ONLY
 
 ## Supersession
 
-Later events must not rewrite this transition. A real checkpoint execution or incremental-value result must create a new authorization epoch that explicitly references the current authorization in `links.authorization_ref` and explains what new evidence supersedes the earlier HOLD or preflight decision.
+`links.authorization_ref` always identifies the authorization governing the **current** record and current transition. It must never point to an authorization from an earlier transition merely to express ancestry.
+
+Transition ancestry is carried separately in the required top-level `supersession` envelope:
+
+```text
+relation: ROOT | SUPERSEDES
+predecessor_transition_id: string | null
+predecessor_authorization_ref: sha256 reference | null
+```
+
+The current preflight bundle is a `ROOT`, so both predecessor fields are null. A later checkpoint execution or incremental-value transition must:
+
+1. create its own new authorization;
+2. bind every new record to that new authorization through `links.authorization_ref`;
+3. set `supersession.relation=SUPERSEDES`;
+4. identify the earlier transition and its authorization only through the predecessor fields;
+5. explain in its authorization and causal-audit payloads which new evidence changes the prior HOLD or preflight decision.
+
+Later transitions must not rewrite the earlier WAL history.
 
 ## Storage boundary
 
@@ -124,7 +142,9 @@ Block the bundle when any of the following is true:
 - preflight is described as model inference;
 - embeddings are claimed without an exact artifact digest;
 - causal, same-cell, clinical, treatment, therapeutic, physical-experiment, merge, deployment, or production-write authority is granted;
-- a later authorization does not explicitly supersede the current authorization.
+- a root transition supplies predecessor fields;
+- a superseding transition omits either predecessor field;
+- a current record points `links.authorization_ref` at the predecessor authorization instead of its own current authorization.
 
 ## Release gate
 
