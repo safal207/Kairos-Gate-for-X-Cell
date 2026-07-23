@@ -1,8 +1,12 @@
 {
   "fixture_version": "0.1",
   "fixture_type": "deterministic_mutation_patch",
-  "description": "Illegally promotes runtime preflight into completed Geneformer inference, causal validity, production persistence and continuation authority.",
+  "description": "Illegally promotes runtime preflight into completed Geneformer inference, imports predecessor authority into the current chain, grants causal validity, production persistence and continuation authority.",
   "set": {
+    "supersession.relation": "SUPERSEDES",
+    "supersession.predecessor_transition_id": "gse184241-unauthorized-predecessor",
+    "supersession.predecessor_authorization_ref": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "records[1].links.authorization_ref": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
     "claim_boundary.model_inference_executed": true,
     "claim_boundary.embedding_generated": true,
     "claim_boundary.incremental_value_established": true,
