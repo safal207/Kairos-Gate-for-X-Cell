@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kairos-gate.example/schemas/gse184241-geneformer-v1-inference.schema.json",
+  "title": "GSE184241 Geneformer V1 inference evidence",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "status",
+    "compatibility_verdict",
+    "source_revision",
+    "predecessor",
+    "dataset",
+    "execution",
+    "claim_boundary"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "status": {
+      "enum": [
+        "GENEFORMER_INFERENCE_COMPLETED_REPORT_ONLY",
+        "HOLD_INPUT_CONTRACT",
+        "HOLD_CHECKPOINT_IDENTITY",
+        "HOLD_TOKENIZATION",
+        "HOLD_RUNTIME_RESOURCE",
+        "HOLD_TRAINING_OVERLAP"
+      ]
+    },
+    "compatibility_verdict": {
+      "enum": [
+        "HOLD_INPUT_CONTRACT",
+        "HOLD_CHECKPOINT_IDENTITY",
+        "HOLD_TOKENIZATION",
+        "HOLD_RUNTIME_RESOURCE",
+        "HOLD_TRAINING_OVERLAP"
+      ]
+    },
+    "source_revision": {"type": "string", "pattern": "^[a-f0-9]{40,64}$"},
+    "predecessor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transition_id", "authorization_ref"],
+      "properties": {
+        "transition_id": {"const": "gse184241-geneformer-runtime-preflight-v0-1"},
+        "authorization_ref": {
+          "const": "sha256:550df034e0eceb773ef69d2de8a9fbb9bb48b092a2b6bdee8a53988764eb0665"
+        }
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "required": ["accession", "counts_sha256", "barcodes_sha256"],
+      "properties": {
+        "accession": {"const": "GSE184241"},
+        "organism": {"const": "Homo sapiens"},
+        "cells": {"type": "integer", "minimum": 1},
+        "independent_donors": {"type": "integer", "minimum": 1},
+        "counts_sha256": {"$ref": "#/$defs/sha256"},
+        "barcodes_sha256": {"$ref": "#/$defs/sha256"},
+        "cell_order_sha256": {"$ref": "#/$defs/sha256"},
+        "same_cell_longitudinal_identity": {"type": "boolean"}
+      }
+    },
+    "model": {"type": "object"},
+    "tokenization": {"type": "object"},
+    "inference": {"type": "object"},
+    "benchmark": {"type": "object"},
+    "evidence": {"type": "object"},
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["completed", "model_inference_executed", "embedding_generated", "error"],
+      "properties": {
+        "completed": {"type": "boolean"},
+        "model_inference_executed": {"type": "boolean"},
+        "embedding_generated": {"type": "boolean"},
+        "error": {"type": ["string", "null"]}
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "same_cell_future_response_prediction",
+        "incremental_value_established",
+        "causal_effect_established",
+        "clinical_utility_established",
+        "physical_execution_authorized"
+      ],
+      "properties": {
+        "same_cell_future_response_prediction": {"const": false},
+        "incremental_value_established": {"const": false},
+        "causal_effect_established": {"const": false},
+        "clinical_utility_established": {"const": false},
+        "physical_execution_authorized": {"const": false}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {"const": "GENEFORMER_INFERENCE_COMPLETED_REPORT_ONLY"}
+        }
+      },
+      "then": {
+        "required": ["model", "tokenization", "inference", "benchmark", "evidence"],
+        "properties": {
+          "compatibility_verdict": {"const": "HOLD_TRAINING_OVERLAP"},
+          "dataset": {
+            "required": [
+              "organism",
+              "cells",
+              "independent_donors",
+              "cell_order_sha256",
+              "same_cell_longitudinal_identity"
+            ],
+            "properties": {
+              "cells": {"const": 1710},
+              "independent_donors": {"const": 3},
+              "same_cell_longitudinal_identity": {"const": false}
+            }
+          },
+          "execution": {
+            "properties": {
+              "completed": {"const": true},
+              "model_inference_executed": {"const": true},
+              "embedding_generated": {"const": true},
+              "error": {"type": "null"}
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "execution": {
+            "properties": {
+              "completed": {"const": false},
+              "model_inference_executed": {"const": false},
+              "embedding_generated": {"const": false},
+              "error": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}
