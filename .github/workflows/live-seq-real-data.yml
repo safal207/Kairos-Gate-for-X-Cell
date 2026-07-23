@@ -1,38 +1,45 @@
-name: Live-seq real-data feasibility
+name: Live-seq scanner migration evidence
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - agent/live-seq-feasibility-v0.1
+      - agent/live-seq-scanner-migration-v0.1
     paths:
       - .github/workflows/live-seq-real-data.yml
       - scripts/audit_live_seq_gse141064.py
-      - manifests/live-seq-gse141064.sources.v0.1.json
-      - protocols/live-seq-gse141064-feasibility.v0.1.json
+      - kairos_gate/dataset_adapters.py
+      - kairos_gate/dataset_readiness.py
+      - examples/live-seq-gse141064.dataset-manifest.v0.1.json
       - evidence/live-seq-gse141064/feasibility.real.v0.1.json
+      - evidence/live-seq-gse141064/feasibility.supersession.v0.2.json
+      - tests/test_live_seq_feasibility.py
   pull_request:
     paths:
       - .github/workflows/live-seq-real-data.yml
       - scripts/audit_live_seq_gse141064.py
-      - manifests/live-seq-gse141064.sources.v0.1.json
-      - protocols/live-seq-gse141064-feasibility.v0.1.json
+      - kairos_gate/dataset_adapters.py
+      - kairos_gate/dataset_readiness.py
+      - examples/live-seq-gse141064.dataset-manifest.v0.1.json
       - evidence/live-seq-gse141064/feasibility.real.v0.1.json
+      - evidence/live-seq-gse141064/feasibility.supersession.v0.2.json
+      - tests/test_live_seq_feasibility.py
 
 permissions:
   contents: read
 
 concurrency:
-  group: live-seq-real-${{ github.event.pull_request.number || github.ref }}
+  group: live-seq-scanner-migration-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   audit:
-    name: Immutable public-input audit
+    name: Scanner and compatibility equivalence
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      STACK_BASE: 3945935056032c4e514d6702f77439fd1df78633
       META_URL: https://raw.githubusercontent.com/DeplanckeLab/Live-seq/6633d4d468f56031ea197474e09921088d878512/data/meta.final.csv
       COUNT_URL: https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE141064&file=GSE141064_count.final.csv.gz&format=file
       META_SHA256: dcce9bea9444857a6a042fc64be3a5c7b31a00095a21eabc1488e516abd689c8
@@ -42,45 +49,70 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
 
-      - name: Download and verify immutable public inputs
+      - name: Install scanner
+        run: |
+          python -m pip install "setuptools>=68" wheel
+          python -m pip install -e .
+
+      - name: Download and verify pinned public inputs
         run: |
           set -euo pipefail
-          mkdir -p .artifacts/live-seq-real
+          mkdir -p .artifacts/live-seq-migration
           curl --location --fail --silent --show-error --retry 4 \
-            --output .artifacts/live-seq-real/meta.final.csv \
+            --output .artifacts/live-seq-migration/meta.final.csv \
             "$META_URL"
           curl --location --fail --silent --show-error --retry 4 \
-            --output .artifacts/live-seq-real/GSE141064_count.final.csv.gz \
+            --output .artifacts/live-seq-migration/GSE141064_count.final.csv.gz \
             "$COUNT_URL"
           printf '%s  %s\n' \
-            "$META_SHA256" .artifacts/live-seq-real/meta.final.csv \
-            "$COUNT_SHA256" .artifacts/live-seq-real/GSE141064_count.final.csv.gz \
-            > .artifacts/live-seq-real/input-sha256.txt
-          sha256sum --check .artifacts/live-seq-real/input-sha256.txt
-          cat .artifacts/live-seq-real/input-sha256.txt
+            "$META_SHA256" .artifacts/live-seq-migration/meta.final.csv \
+            "$COUNT_SHA256" .artifacts/live-seq-migration/GSE141064_count.final.csv.gz \
+            > .artifacts/live-seq-migration/input-sha256.txt
+          sha256sum --check .artifacts/live-seq-migration/input-sha256.txt
 
-      - name: Run fail-closed linkage audit
-        id: audit
+      - name: Run canonical readiness scanner
+        id: scanner
         run: |
           set +e
-          python scripts/audit_live_seq_gse141064.py \
-            .artifacts/live-seq-real/meta.final.csv \
-            .artifacts/live-seq-real/GSE141064_count.final.csv.gz \
-            --data-reuse-status unclear \
-            > .artifacts/live-seq-real/result.json
+          kairos audit-dataset \
+            --manifest examples/live-seq-gse141064.dataset-manifest.v0.1.json \
+            --metadata .artifacts/live-seq-migration/meta.final.csv \
+            --matrix .artifacts/live-seq-migration/GSE141064_count.final.csv.gz \
+            > .artifacts/live-seq-migration/result.json
           code=$?
           set -e
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          cat .artifacts/live-seq-real/result.json
+          cat .artifacts/live-seq-migration/result.json
 
-      - name: Build runtime exact-head attestation
+      - name: Run deprecated compatibility entrypoint
+        id: compatibility
+        run: |
+          set +e
+          python scripts/audit_live_seq_gse141064.py \
+            .artifacts/live-seq-migration/meta.final.csv \
+            .artifacts/live-seq-migration/GSE141064_count.final.csv.gz \
+            --data-reuse-status unclear \
+            > .artifacts/live-seq-migration/compatibility-result.json \
+            2> .artifacts/live-seq-migration/compatibility-stderr.txt
+          code=$?
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          cat .artifacts/live-seq-migration/compatibility-result.json
+          cat .artifacts/live-seq-migration/compatibility-stderr.txt
+
+      - name: Enforce equivalence and build supersession attestation
+        env:
+          SCANNER_EXIT_CODE: ${{ steps.scanner.outputs.exit_code }}
+          COMPATIBILITY_EXIT_CODE: ${{ steps.compatibility.outputs.exit_code }}
         run: |
           python - <<'PY'
           import hashlib
@@ -89,146 +121,167 @@ jobs:
           import subprocess
           from pathlib import Path
 
-          result_path = Path('.artifacts/live-seq-real/result.json')
-          snapshot_path = Path(
+          from kairos_gate.dataset_readiness import validate_result_record
+
+          root = Path('.artifacts/live-seq-migration')
+          result_path = root / 'result.json'
+          compatibility_path = root / 'compatibility-result.json'
+          stderr_path = root / 'compatibility-stderr.txt'
+          historical_path = Path(
               'evidence/live-seq-gse141064/feasibility.real.v0.1.json'
           )
+          supersession_path = Path(
+              'evidence/live-seq-gse141064/feasibility.supersession.v0.2.json'
+          )
+          manifest_path = Path(
+              'examples/live-seq-gse141064.dataset-manifest.v0.1.json'
+          )
+
+          result = json.loads(result_path.read_text(encoding='utf-8'))
+          compatibility = json.loads(
+              compatibility_path.read_text(encoding='utf-8')
+          )
+          historical = json.loads(historical_path.read_text(encoding='utf-8'))
+          supersession = json.loads(
+              supersession_path.read_text(encoding='utf-8')
+          )
+
+          validate_result_record(result)
+          validate_result_record(compatibility)
+
+          if os.environ.get('SCANNER_EXIT_CODE') != '2':
+              raise SystemExit('canonical blocked result must return exit code 2')
+          if os.environ.get('COMPATIBILITY_EXIT_CODE') != '2':
+              raise SystemExit('compatibility blocked result must return exit code 2')
+          if 'DEPRECATED' not in stderr_path.read_text(encoding='utf-8'):
+              raise SystemExit('compatibility entrypoint did not emit deprecation notice')
+
+          expected_status = 'BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED'
+          if result.get('status') != expected_status:
+              raise SystemExit(f'unexpected scanner status: {result.get("status")!r}')
+          if compatibility.get('status') != expected_status:
+              raise SystemExit(
+                  f'unexpected compatibility status: {compatibility.get("status")!r}'
+              )
+
+          historical_result = historical.get('result', {})
+          historical_ids = historical_result.get('selected_sample_ids')
+          scanner_ids = result.get('cohort', {}).get('selected_sample_ids')
+          compatibility_ids = compatibility.get('cohort', {}).get(
+              'selected_sample_ids'
+          )
+          if scanner_ids != historical_ids:
+              raise SystemExit('scanner cohort differs from historical 17-cell snapshot')
+          if compatibility_ids != scanner_ids:
+              raise SystemExit('compatibility cohort differs from canonical scanner')
+
+          if len(scanner_ids or []) != 17:
+              raise SystemExit('unexpected selected cohort size')
+          if result.get('cohort', {}).get('response_complete_records') != 17:
+              raise SystemExit('unexpected response-complete count')
+          if result.get('inputs', {}).get('metadata', {}).get('identifiers') != 1012:
+              raise SystemExit('unexpected metadata identifier count')
+          if result.get('inputs', {}).get('matrix', {}).get('sample_identifiers') != 1012:
+              raise SystemExit('unexpected matrix identifier count')
+          if not result.get('integrity', {}).get('full_id_sets_match'):
+              raise SystemExit('metadata and matrix identifiers do not match')
+          if result.get('replicates', {}).get('semantics') != 'unresolved':
+              raise SystemExit('replicate semantics changed without source evidence')
+          if result.get('replicates', {}).get('independent_units') != []:
+              raise SystemExit('technical labels were promoted to independent units')
+          if result.get('replicates', {}).get(
+              'cross_group_repeated_identity_ids'
+          ) != []:
+              raise SystemExit('repeated identities cross candidate groups')
+
+          for candidate in (result, compatibility):
+              authority = candidate.get('authority', {})
+              for field in (
+                  'preregistration_gate_passed',
+                  'model_fitting_authorized',
+                  'experiment_authorization',
+                  'clinical_authorization',
+                  'merge_authorization',
+              ):
+                  if authority.get(field) is not False:
+                      raise SystemExit(f'{field} must remain false')
+
+          if supersession.get('supersedes', {}).get('status') != (
+              'BLOCKED_INSUFFICIENT_REPLICATES'
+          ):
+              raise SystemExit('historical status was not recorded accurately')
+          if supersession.get('superseded_by', {}).get('status') != expected_status:
+              raise SystemExit('refined status is not recorded accurately')
+          if supersession.get('interpretation', {}).get('readiness_changed') is not False:
+              raise SystemExit('status refinement must not claim readiness changed')
+
+          exact_head = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD'], text=True
+          ).strip()
+          git_tree = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD^{tree}'], text=True
+          ).strip()
+          stack_base = os.environ['STACK_BASE']
+          subprocess.run(
+              ['git', 'merge-base', '--is-ancestor', stack_base, exact_head],
+              check=True,
+          )
+          if exact_head != os.environ['EXACT_HEAD']:
+              raise SystemExit('checkout does not match requested exact head')
+
+          def digest(path: Path) -> str:
+              return 'sha256:' + hashlib.sha256(path.read_bytes()).hexdigest()
+
           attestation = {
-              'schema': 'kairos.real-input-exact-head-attestation.v0.1',
+              'schema': 'kairos.live-seq-scanner-migration-attestation.v0.1',
               'dataset_id': 'GSE141064',
-              'exact_head': os.environ['EXACT_HEAD'],
-              'tree_sha': subprocess.check_output(
-                  ['git', 'rev-parse', 'HEAD^{tree}'], text=True
-              ).strip(),
-              'stack_base_head': '60bc60be065a3b6921c37f4621a8c3865564b942',
-              'result_sha256': 'sha256:' + hashlib.sha256(
-                  result_path.read_bytes()
-              ).hexdigest(),
-              'committed_snapshot_path': str(snapshot_path),
-              'committed_snapshot_sha256': 'sha256:' + hashlib.sha256(
-                  snapshot_path.read_bytes()
-              ).hexdigest(),
+              'exact_head': exact_head,
+              'git_tree': git_tree,
+              'stack_base': stack_base,
+              'manifest_path': str(manifest_path),
+              'manifest_sha256': digest(manifest_path),
+              'historical_snapshot_path': str(historical_path),
+              'historical_snapshot_sha256': digest(historical_path),
+              'supersession_path': str(supersession_path),
+              'supersession_sha256': digest(supersession_path),
+              'scanner_result_sha256': digest(result_path),
+              'compatibility_result_sha256': digest(compatibility_path),
+              'input_digest_record_sha256': digest(root / 'input-sha256.txt'),
+              'cohort_equivalence': True,
+              'historical_status': 'BLOCKED_INSUFFICIENT_REPLICATES',
+              'current_status': expected_status,
+              'readiness_changed': False,
               'authority': {
                   'classification': 'RESEARCH_ONLY',
+                  'model_fitting_authorized': False,
                   'experiment_authorization': False,
                   'clinical_authorization': False,
                   'merge_authorization': False,
               },
           }
-          output = Path('.artifacts/live-seq-real/attestation.json')
+          output = root / 'attestation.json'
           output.write_text(
               json.dumps(attestation, indent=2, sort_keys=True, allow_nan=False)
               + '\n',
               encoding='utf-8',
           )
           print(output.read_text(encoding='utf-8'))
+          print('LIVE_SEQ_SCANNER_MIGRATION_EQUIVALENCE_PASS')
           PY
 
-      - name: Enforce exact blocked research boundary
-        env:
-          AUDIT_EXIT_CODE: ${{ steps.audit.outputs.exit_code }}
-        run: |
-          python - <<'PY'
-          import hashlib
-          import json
-          import os
-          import subprocess
-          from pathlib import Path
-
-          result_path = Path('.artifacts/live-seq-real/result.json')
-          snapshot_path = Path(
-              'evidence/live-seq-gse141064/feasibility.real.v0.1.json'
-          )
-          attestation_path = Path('.artifacts/live-seq-real/attestation.json')
-          result = json.loads(result_path.read_text(encoding='utf-8'))
-          snapshot = json.loads(snapshot_path.read_text(encoding='utf-8'))
-          attestation = json.loads(attestation_path.read_text(encoding='utf-8'))
-
-          if os.environ.get('AUDIT_EXIT_CODE') != '2':
-              raise SystemExit('blocked research status must return exit code 2')
-          if result.get('status') != 'BLOCKED_INSUFFICIENT_REPLICATES':
-              raise SystemExit(
-                  'Expected exact data linkage with the replicate boundary unresolved; '
-                  f"got {result.get('status')!r}"
-              )
-          inputs = result.get('inputs', {})
-          if inputs.get('metadata', {}).get('rows') != 1012:
-              raise SystemExit('unexpected metadata row count')
-          if inputs.get('count_matrix', {}).get('sample_columns') != 1012:
-              raise SystemExit('unexpected count-matrix sample count')
-          if inputs.get('metadata', {}).get('sha256') != 'sha256:' + os.environ['META_SHA256']:
-              raise SystemExit('metadata digest mismatch in result')
-          if inputs.get('count_matrix', {}).get('sha256') != 'sha256:' + os.environ['COUNT_SHA256']:
-              raise SystemExit('count-matrix digest mismatch in result')
-          integrity = result.get('integrity', {})
-          if not integrity.get('full_id_sets_match'):
-              raise SystemExit('metadata/count-matrix identifiers do not match exactly')
-          cohort = result.get('cohort', {})
-          if cohort.get('selected_recorded_cells') != 17:
-              raise SystemExit('unexpected recorded-cell cohort size')
-          if cohort.get('missing_selected_sample_ids') != []:
-              raise SystemExit('selected recorded cells are missing from count matrix')
-          if cohort.get('replicate_groups') != []:
-              raise SystemExit('replicate evidence changed and requires protocol review')
-          if cohort.get('cross_group_repeated_measurement_ids') != []:
-              raise SystemExit('repeated-cell identities cross candidate groups')
-          authority = result.get('authority', {})
-          if authority.get('classification') != 'RESEARCH_ONLY':
-              raise SystemExit('authority boundary is not RESEARCH_ONLY')
-          if authority.get('experiment_authorization') is not False:
-              raise SystemExit('audit must not authorize experiments')
-
-          expected = snapshot.get('result', {})
-          checks = {
-              'status': result.get('status'),
-              'selected_recorded_cells': cohort.get('selected_recorded_cells'),
-              'response_complete_cells': cohort.get('response_complete_cells'),
-              'missing_response_sample_ids': cohort.get('missing_response_sample_ids'),
-              'selected_sample_ids': cohort.get('selected_sample_ids'),
-              'missing_selected_sample_ids': cohort.get('missing_selected_sample_ids'),
-              'declared_replicate_groups': cohort.get('replicate_groups'),
-              'repeated_measurement_rows': cohort.get('repeated_measurement_rows'),
-              'cross_group_repeated_measurement_ids': cohort.get(
-                  'cross_group_repeated_measurement_ids'
-              ),
-          }
-          for field, actual in checks.items():
-              if expected.get(field) != actual:
-                  raise SystemExit(
-                      f'committed evidence mismatch for {field}: '
-                      f'{expected.get(field)!r} != {actual!r}'
-                  )
-
-          if attestation.get('exact_head') != os.environ['EXACT_HEAD']:
-              raise SystemExit('attestation is not bound to the checked-out exact head')
-          current_tree = subprocess.check_output(
-              ['git', 'rev-parse', 'HEAD^{tree}'], text=True
-          ).strip()
-          if attestation.get('tree_sha') != current_tree:
-              raise SystemExit('attestation tree SHA mismatch')
-          if attestation.get('stack_base_head') != '60bc60be065a3b6921c37f4621a8c3865564b942':
-              raise SystemExit('attestation stack base head mismatch')
-          result_digest = 'sha256:' + hashlib.sha256(result_path.read_bytes()).hexdigest()
-          snapshot_digest = 'sha256:' + hashlib.sha256(
-              snapshot_path.read_bytes()
-          ).hexdigest()
-          if attestation.get('result_sha256') != result_digest:
-              raise SystemExit('attestation result digest mismatch')
-          if attestation.get('committed_snapshot_sha256') != snapshot_digest:
-              raise SystemExit('attestation committed snapshot digest mismatch')
-          print('REAL_INPUT_LINKAGE_PASS_REPLICATE_BOUNDARY_BLOCKED')
-          print('EXACT_HEAD_ATTESTATION_PASS')
-          PY
-
-      - name: Upload exact-head audit evidence
+      - name: Upload derived migration evidence only
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: live-seq-real-audit-${{ env.EXACT_HEAD }}
+          name: live-seq-scanner-migration-${{ env.EXACT_HEAD }}
           path: |
-            .artifacts/live-seq-real/result.json
-            .artifacts/live-seq-real/input-sha256.txt
-            .artifacts/live-seq-real/attestation.json
+            .artifacts/live-seq-migration/result.json
+            .artifacts/live-seq-migration/compatibility-result.json
+            .artifacts/live-seq-migration/compatibility-stderr.txt
+            .artifacts/live-seq-migration/input-sha256.txt
+            .artifacts/live-seq-migration/attestation.json
+            examples/live-seq-gse141064.dataset-manifest.v0.1.json
             evidence/live-seq-gse141064/feasibility.real.v0.1.json
+            evidence/live-seq-gse141064/feasibility.supersession.v0.2.json
           if-no-files-found: error
           retention-days: 30
