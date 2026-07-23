@@ -92,6 +92,7 @@ jobs:
 
       - name: Download exact official GSE184241 inputs
         run: |
+          set -o pipefail
           mkdir -p inference-inputs inference-results model-cache
           curl --fail --location --retry 4 --retry-all-errors \
             --output inference-inputs/GSE184241_combined_raw_counts.txt.gz \
@@ -108,6 +109,7 @@ jobs:
           OMP_NUM_THREADS: "2"
           MKL_NUM_THREADS: "2"
         run: |
+          set -o pipefail
           python scripts/run_gse184241_geneformer_v1_inference.py \
             --counts inference-inputs/GSE184241_combined_raw_counts.txt.gz \
             --barcodes inference-inputs/GSE184241_barcode_sequences.xlsx \
@@ -116,10 +118,11 @@ jobs:
             --model-cache model-cache \
             --source-revision "$SOURCE_SHA" \
             --batch-size 4 \
-            | tee inference-results/inference.log
+            2>&1 | tee inference-results/inference.log
 
       - name: Validate inference evidence and Model Evidence Passport
         run: |
+          set -o pipefail
           python - <<'PY'
           import json
           from pathlib import Path
@@ -136,14 +139,15 @@ jobs:
           PY
           python scripts/validate_gse184241_geneformer_v1_inference.py \
             inference-results/geneformer-v1-inference.json \
-            | tee inference-results/inference-validation.log
+            2>&1 | tee inference-results/inference-validation.log
           python scripts/validate_model_evidence_passport.py \
             inference-results/model-evidence-passport.json \
-            | tee inference-results/passport-validation.log
+            2>&1 | tee inference-results/passport-validation.log
 
       - name: Export superseding LiminalDB inference transition
         shell: bash
         run: |
+          set -o pipefail
           manifest_args=()
           if [ -f inference-results/geneformer-v1-input-manifest.json ]; then
             manifest_args=(--input-manifest inference-results/geneformer-v1-input-manifest.json)
@@ -156,10 +160,11 @@ jobs:
             --output inference-results/liminaldb-geneformer-inference-transition.json \
             --source-revision "$SOURCE_SHA" \
             --captured-at-ms "$CAPTURED_AT_MS" \
-            | tee inference-results/ledger-export.log
+            2>&1 | tee inference-results/ledger-export.log
 
       - name: Validate superseding ledger and misuse rejection
         run: |
+          set -o pipefail
           python - <<'PY'
           import json
           from pathlib import Path
@@ -171,7 +176,7 @@ jobs:
           PY
           python scripts/validate_liminaldb_geneformer_inference_transition.py \
             inference-results/liminaldb-geneformer-inference-transition.json \
-            | tee inference-results/ledger-validation.log
+            2>&1 | tee inference-results/ledger-validation.log
           python scripts/apply_json_mutation_fixture.py \
             --input inference-results/liminaldb-geneformer-inference-transition.json \
             --fixture tests/fixtures/invalid_geneformer_inference_authority_escalation.patch.json \
@@ -257,11 +262,12 @@ jobs:
       - name: Compile and replay through real TrustworthyTransitionLedger
         working-directory: vendor/LiminalDB/liminal-db
         run: |
+          set -o pipefail
           cargo run --locked -q -p liminal-store --example geneformer_inference_transition_replay -- \
             "$GITHUB_WORKSPACE/inference-results/liminaldb-geneformer-inference-transition.json" \
             "$GITHUB_WORKSPACE/inference-results/temporary-liminaldb-inference-ledger" \
             "$GITHUB_WORKSPACE/inference-results/liminaldb-geneformer-inference-replay-receipt.json" \
-            | tee "$GITHUB_WORKSPACE/inference-results/liminaldb-geneformer-inference-replay.log"
+            2>&1 | tee "$GITHUB_WORKSPACE/inference-results/liminaldb-geneformer-inference-replay.log"
 
       - name: Verify replay receipt and bounded final dimensions
         run: |
