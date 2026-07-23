@@ -127,6 +127,39 @@ Definition of done:
 
 A public reproducible draft exists and external review has begun.
 
+### P1.5 Real biology partner pilot and agentic-biopharma positioning
+
+Dependency: begin only after the v0.1 freeze and use the stable evidence contracts without adding major modules to PR #23.
+
+- [ ] Obtain informed agreement from one molecular-biology partner through a trusted introduction
+- [ ] Run a 30-minute discovery interview about evidence bottlenecks, repeated work, unreliable AI outputs, and expensive validation decisions
+- [ ] Select one bounded cancer-biology hypothesis, DOI, accession, or evidence package
+- [ ] Freeze the scientific question, competing hypotheses, allowed claims, prohibited claims, and confidentiality boundary
+- [ ] Run the experimental-unit audit
+- [ ] Build the provenance and confounder graph
+- [ ] Search for genuinely independent replication
+- [ ] Rank causal explanations without declaring a causal winner
+- [ ] Apply temporal and identity-linkage gates where relevant
+- [ ] Generate a machine-readable and human-readable Next Evidence Plan
+- [ ] Produce a partner-laboratory evidence handoff that does not include operational wet-lab instructions
+- [ ] Request independent biology and statistics review
+- [ ] Agree whether the result may be public, anonymized, or private
+- [ ] Turn the reviewed pilot into a reproducible case study or documented negative result
+- [ ] Prepare a one-page integration brief for BIOPTIC and other AI-for-science teams
+- [ ] Position Kairos as an evidence and governance layer: claim-level QA, evidence passports, multi-agent traceability, contradiction detection, and scientific red-flag gates
+- [ ] Separate asset-discovery recall from scientific support for each generated claim
+- [ ] Define a small non-clinical integration pilot using public or partner-approved evidence only
+
+Definition of done:
+
+- one real partner question audited end to end;
+- one exact-version evidence package produced;
+- biology and statistics review requested and dispositions recorded;
+- confidential material remains protected;
+- one reviewed case study or documented gap exists;
+- one focused AI-for-science integration brief exists;
+- no therapeutic, clinical, execution, or “cure cancer” claim is made.
+
 ## LATER
 
 ### P2 Research operations
