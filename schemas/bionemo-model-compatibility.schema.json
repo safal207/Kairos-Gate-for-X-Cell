@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kairos-gate.example/schemas/bionemo-model-compatibility.schema.json",
+  "title": "BioNeMo model compatibility record",
+  "type": "object",
+  "required": [
+    "schema_version", "assessment_id", "scientific_question", "dataset",
+    "model", "compatibility", "transformations", "overlap_assessment",
+    "evidence_contribution", "claim_boundary", "overall_verdict", "safety_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.2.0"},
+    "assessment_id": {"type": "string", "minLength": 1},
+    "scientific_question": {
+      "type": "object",
+      "required": ["statement", "input_state", "target_outcome", "temporal_relation"],
+      "properties": {
+        "statement": {"type": "string"},
+        "input_state": {"type": "string"},
+        "target_outcome": {"type": "string"},
+        "temporal_relation": {"enum": ["pre_to_later", "cross_sectional", "sequence_only", "not_applicable"]}
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "required": ["dataset_id", "organism", "species", "modality", "input_format", "biological_unit_status", "temporal_design"],
+      "properties": {
+        "dataset_id": {"type": "string"},
+        "organism": {"type": "string"},
+        "species": {"type": "string"},
+        "modality": {"enum": ["single_cell_rna", "dna", "protein", "chemistry", "multimodal", "orchestration_metadata"]},
+        "input_format": {"type": "string"},
+        "biological_unit_status": {"enum": ["established", "not_established", "not_applicable"]},
+        "temporal_design": {"type": "string"}
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": ["registry_id", "provider", "model_family", "checkpoint_or_version", "documented_modalities", "documented_species", "source_urls", "retrieved_at"],
+      "properties": {
+        "registry_id": {"type": "string"},
+        "provider": {"type": "string"},
+        "model_family": {"type": "string"},
+        "checkpoint_or_version": {"type": "string"},
+        "documented_modalities": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "documented_species": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "source_urls": {"type": "array", "items": {"type": "string", "format": "uri"}, "minItems": 1},
+        "retrieved_at": {"type": "string"}
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "required": ["transport", "modality", "species", "cell_context", "temporal", "question"],
+      "properties": {
+        "transport": {"enum": ["compatible", "incompatible", "unknown"]},
+        "modality": {"enum": ["compatible", "incompatible", "unknown"]},
+        "species": {"enum": ["compatible", "transfer_unvalidated", "incompatible", "not_applicable", "unknown"]},
+        "cell_context": {"enum": ["compatible", "partially_compatible", "incompatible", "unknown", "not_applicable"]},
+        "temporal": {"enum": ["compatible", "insufficient", "incompatible", "not_applicable", "unknown"]},
+        "question": {"enum": ["compatible", "partial", "not_applicable", "unknown"]}
+      }
+    },
+    "transformations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "status", "provenance_recorded"],
+        "properties": {
+          "name": {"type": "string"},
+          "status": {"enum": ["none", "planned", "applied", "blocked"]},
+          "provenance_recorded": {"type": "boolean"},
+          "validation_status": {"enum": ["validated", "unvalidated", "not_applicable", "unknown"]}
+        }
+      }
+    },
+    "overlap_assessment": {
+      "type": "object",
+      "required": ["training_overlap_status", "benchmark_overlap_status", "evidence"],
+      "properties": {
+        "training_overlap_status": {"enum": ["excluded", "possible", "present", "unknown", "not_applicable"]},
+        "benchmark_overlap_status": {"enum": ["excluded", "possible", "present", "unknown", "not_applicable"]},
+        "evidence": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "evidence_contribution": {
+      "enum": ["orchestration_only", "exploratory_representation", "sensitivity_analysis", "predictive_validation", "mechanistic_support", "none"]
+    },
+    "claim_boundary": {
+      "type": "object",
+      "required": ["descriptive", "association", "prediction", "causal", "tissue", "clinical_therapeutic"],
+      "properties": {
+        "descriptive": {"enum": ["allowed", "allowed_with_limits", "blocked"]},
+        "association": {"enum": ["allowed_with_limits", "not_established", "blocked"]},
+        "prediction": {"enum": ["allowed_with_limits", "not_established", "blocked"]},
+        "causal": {"const": "blocked"},
+        "tissue": {"const": "blocked"},
+        "clinical_therapeutic": {"const": "blocked"}
+      }
+    },
+    "overall_verdict": {
+      "enum": ["ACCEPT_WITH_LIMITS", "SPECIES_COMPATIBILITY_HOLD", "MODALITY_COMPATIBILITY_HOLD", "TEMPORAL_COMPATIBILITY_HOLD", "TRAINING_OVERLAP_HOLD", "QUESTION_NOT_APPLICABLE", "BLOCK"]
+    },
+    "safety_status": {
+      "type": "object",
+      "required": ["mode", "physical_biology_authorized", "clinical_use_authorized"],
+      "properties": {
+        "mode": {"const": "computational_documentary_only"},
+        "physical_biology_authorized": {"const": false},
+        "clinical_use_authorized": {"const": false}
+      }
+    }
+  }
+}
