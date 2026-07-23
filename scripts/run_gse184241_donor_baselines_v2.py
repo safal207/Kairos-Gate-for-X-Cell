@@ -43,17 +43,19 @@ def clean_identifier(value: object) -> str:
 
 
 def load_counts(path: Path) -> pd.DataFrame:
-    frame = pd.read_csv(
+    raw = pd.read_csv(
         path,
         sep=r"\s+",
         compression="gzip",
         header=0,
-        index_col=0,
         quotechar='"',
         engine="c",
-        dtype=np.float32,
     )
-    frame.index = pd.Index([clean_identifier(value) for value in frame.index], dtype="object")
+    if raw.shape[1] < 2:
+        raise ValueError("count matrix must contain one gene identifier column and at least one cell")
+    gene_identifiers = raw.iloc[:, 0].map(clean_identifier)
+    frame = raw.iloc[:, 1:].apply(pd.to_numeric, errors="raise").astype(np.float32)
+    frame.index = pd.Index(gene_identifiers, dtype="object")
     frame.columns = pd.Index([clean_identifier(value) for value in frame.columns], dtype="object")
     if frame.index.has_duplicates:
         frame = frame.groupby(level=0, sort=False).sum()
