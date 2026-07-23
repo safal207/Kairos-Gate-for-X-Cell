@@ -270,7 +270,9 @@ def audit(
             "replicate_groups": replicate_groups,
             "repeated_measurement_rows": repeated_measurement_rows,
             "repeated_measurement_groups": repeated_measurement_groups,
-            "cross_group_repeated_measurement_ids": cross_group_repeated_measurement_ids,
+            "cross_group_repeated_measurement_ids": (
+                cross_group_repeated_measurement_ids
+            ),
         },
         "integrity": {
             "metadata_ids_unique": len(metadata_ids) == len(set(metadata_ids)),
