@@ -86,6 +86,7 @@ jobs:
           import hashlib
           import json
           import os
+          import subprocess
           from pathlib import Path
 
           result_path = Path('.artifacts/live-seq-real/result.json')
@@ -96,6 +97,10 @@ jobs:
               'schema': 'kairos.real-input-exact-head-attestation.v0.1',
               'dataset_id': 'GSE141064',
               'exact_head': os.environ['EXACT_HEAD'],
+              'tree_sha': subprocess.check_output(
+                  ['git', 'rev-parse', 'HEAD^{tree}'], text=True
+              ).strip(),
+              'stack_base_head': '60bc60be065a3b6921c37f4621a8c3865564b942',
               'result_sha256': 'sha256:' + hashlib.sha256(
                   result_path.read_bytes()
               ).hexdigest(),
@@ -127,6 +132,7 @@ jobs:
           import hashlib
           import json
           import os
+          import subprocess
           from pathlib import Path
 
           result_path = Path('.artifacts/live-seq-real/result.json')
@@ -195,6 +201,13 @@ jobs:
 
           if attestation.get('exact_head') != os.environ['EXACT_HEAD']:
               raise SystemExit('attestation is not bound to the checked-out exact head')
+          current_tree = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD^{tree}'], text=True
+          ).strip()
+          if attestation.get('tree_sha') != current_tree:
+              raise SystemExit('attestation tree SHA mismatch')
+          if attestation.get('stack_base_head') != '60bc60be065a3b6921c37f4621a8c3865564b942':
+              raise SystemExit('attestation stack base head mismatch')
           result_digest = 'sha256:' + hashlib.sha256(result_path.read_bytes()).hexdigest()
           snapshot_digest = 'sha256:' + hashlib.sha256(
               snapshot_path.read_bytes()
