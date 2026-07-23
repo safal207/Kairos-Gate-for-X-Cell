@@ -1,0 +1,84 @@
+{
+  "schema_version": "0.1.0",
+  "target_study": "GSE141064 Batch 8_8",
+  "target_claim": {
+    "statement": "Expression features are exploratorily associated with mCherry.log.slope in the observed Live-seq cells.",
+    "claim_level": "association",
+    "status": "supported_with_limits"
+  },
+  "search_fingerprint": {
+    "species": null,
+    "biological_system": "Live-seq cells with paired expression and mCherry.log.slope-like phenotype measurements",
+    "cell_state": null,
+    "perturbation_condition": "observational phenotype variation; no identified randomized intervention",
+    "phenotype_outcome": "mCherry.log.slope or a documented biologically comparable dynamic phenotype",
+    "assay": "single-cell transcriptomic measurement paired with live-cell phenotyping",
+    "time_structure": "cell collection across documented independent biological collection events",
+    "required_biological_unit": "independently collected biological material with a defensible grouping key",
+    "acceptable_substitutions": [
+      "a documented comparable dynamic reporter phenotype",
+      "a compatible single-cell assay with raw or sufficiently processed data"
+    ],
+    "unacceptable_substitutions": [
+      "alternate plates from exp8",
+      "alternate sequencing runs or flow cells from exp8",
+      "reprocessed GSE141064 data",
+      "the same donor, clone, culture, extraction event, or pooled library material"
+    ],
+    "excluded_relationships": [
+      "same study under another accession",
+      "shared biological material",
+      "technical remeasurement",
+      "derived or reprocessed target data"
+    ]
+  },
+  "sources_searched": [
+    {
+      "source": "NCBI GEO",
+      "query_or_scope": "paired live-cell phenotype and single-cell expression studies compatible with the target claim",
+      "status": "planned",
+      "searched_at": null
+    },
+    {
+      "source": "NCBI SRA and BioProject relationships",
+      "query_or_scope": "candidate raw-data provenance and shared BioProject/sample identifiers",
+      "status": "planned",
+      "searched_at": null
+    },
+    {
+      "source": "EMBL-EBI ArrayExpress and Single Cell Expression Atlas",
+      "query_or_scope": "independent compatible cellular systems and assay records",
+      "status": "planned",
+      "searched_at": null
+    },
+    {
+      "source": "article citations, supplements, and related-record links",
+      "query_or_scope": "conceptual and direct replication candidates plus shared-source leakage",
+      "status": "planned",
+      "searched_at": null
+    }
+  ],
+  "candidates": [],
+  "independence_leakage_findings": [],
+  "prespecified_test": {
+    "status": "defined_not_run",
+    "primary_endpoint": "Reproduction of the prespecified directional association between expression-derived signal and the compatible dynamic phenotype on independent biological units.",
+    "expected_direction": "same prespecified direction as the target exploratory result",
+    "biological_grouping_key": "candidate-specific independently collected biological source or collection event",
+    "exclusion_criteria": [
+      "shared biological material with GSE141064",
+      "unresolved biological experimental unit",
+      "plate, library, lane, or sequencing run used as the biological grouping key",
+      "target data reprocessing or derivative datasets",
+      "condition inseparable from incompatible batch structure"
+    ],
+    "success_criteria": "A prespecified analysis on an independently verified compatible dataset reproduces the directional result with robustness to documented biological grouping and major candidate confounders."
+  },
+  "overall_verdict": "HOLD",
+  "next_valid_action": "Execute the repository search, classify every candidate for biological-source independence, and accept none until provenance and experimental units are verified.",
+  "safety_status": {
+    "mode": "computational_only",
+    "physical_biology_authorized": false,
+    "notes": "No public candidate has yet been verified or analysed; physical experiments are outside this contract."
+  }
+}
