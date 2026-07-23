@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -65,7 +64,7 @@ MODULES = [
         "schema": "schemas/partner-lab-evidence-handoff.schema.json",
         "example": "examples/gse141064.nfkbia-partner-lab-handoff.json",
         "validator": "scripts/validate_partner_lab_evidence_handoff.py",
-        "negative": "tests/fixtures/invalid_ai_authorizes_physical_execution.json",
+        "negative": "tests/fixtures/invalid_partner_handoff_authorizes_execution.json",
     },
 ]
 
@@ -157,7 +156,8 @@ def main() -> int:
         if fragment not in workflow_text:
             errors.append(f"workflow evidence-integrity fragment missing: {fragment}")
 
-    handoff_negative = load_json("tests/fixtures/invalid_ai_authorizes_physical_execution.json", errors)
+    handoff_negative_path = "tests/fixtures/invalid_partner_handoff_authorizes_execution.json"
+    handoff_negative = load_json(handoff_negative_path, errors)
     if isinstance(handoff_negative, dict):
         unsafe_signals = [
             handoff_negative.get("governance_gates", {}).get("execution_authorized") is True,
@@ -167,13 +167,14 @@ def main() -> int:
         if not all(unsafe_signals):
             errors.append("false-authorization fixture no longer exercises all required unsafe signals")
 
+    release_notes = (ROOT / "RELEASE_NOTES_v0.1.md").read_text(encoding="utf-8")
+    combined = readme_text + "\n" + release_notes
     for required_statement in (
         "RANKED_NOT_IDENTIFIED",
         "DIRECT_REPLICATION_GAP",
         "PHYSICAL_EXECUTION_NOT_AUTHORIZED",
         "AI_DOES_NOT_AUTHORIZE_EXECUTION",
     ):
-        combined = readme_text + "\n" + (ROOT / "RELEASE_NOTES_v0.1.md").read_text(encoding="utf-8")
         if required_statement not in combined:
             errors.append(f"release documentation missing boundary statement: {required_statement}")
 
