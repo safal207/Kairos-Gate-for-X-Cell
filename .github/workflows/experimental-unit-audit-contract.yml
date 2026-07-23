@@ -72,6 +72,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Audit v0.1 release consistency and safety boundaries
+        run: python scripts/audit_bioevidence_release.py
+
       - name: Validate accepted GSE141064 experimental-unit audit
         run: |
           python scripts/validate_experimental_unit_audit.py \
@@ -160,9 +163,6 @@ jobs:
             exit 1
           fi
           echo "false physical authorization correctly blocked"
-
-      - name: Audit v0.1 release consistency and safety boundaries
-        run: python scripts/audit_bioevidence_release.py
 
   live-replication-probe:
     runs-on: ubuntu-latest
