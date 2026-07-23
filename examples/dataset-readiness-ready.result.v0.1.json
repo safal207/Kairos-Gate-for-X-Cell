@@ -1,0 +1,59 @@
+{
+  "schema": "kairos.dataset-readiness-result.v0.1",
+  "dataset": {
+    "id": "synthetic-ready",
+    "version": "0.1.0",
+    "adapter": "tabular-v0.1"
+  },
+  "status": "READY_FOR_PREREGISTRATION",
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "preregistration_gate_passed": true,
+    "model_fitting_authorized": false,
+    "experiment_authorization": false,
+    "clinical_authorization": false,
+    "merge_authorization": false
+  },
+  "inputs": {
+    "metadata": {
+      "path": "tests/fixtures/dataset-readiness-synthetic-meta.csv",
+      "sha256": "sha256:79a6e007c3a9f289ec848f17a9da1730b5052def0776d35450876cea9ae917d4",
+      "identifiers": 4
+    },
+    "matrix": {
+      "path": "tests/fixtures/dataset-readiness-synthetic-counts.csv",
+      "sha256": "sha256:3f0b452b86a0b1af69e7fb4ea1548e6820dbebcb8e6bb12d3474ddb8ea66a526",
+      "sample_identifiers": 4
+    },
+    "reuse_status": "clear"
+  },
+  "cohort": {
+    "selection_uses_response_label": false,
+    "selected_records": 4,
+    "response_complete_records": 4,
+    "selected_sample_ids": ["s1", "s2", "s3", "s4"],
+    "missing_response_sample_ids": [],
+    "missing_selected_sample_ids": []
+  },
+  "replicates": {
+    "semantics": "verified",
+    "minimum_independent_units": 2,
+    "independent_units": ["u1", "u2"],
+    "effective_independent_units": 2,
+    "repeated_identity_groups": {},
+    "cross_group_repeated_identity_ids": []
+  },
+  "integrity": {
+    "metadata_ids_unique": true,
+    "matrix_ids_unique": true,
+    "selected_ids_unique": true,
+    "full_id_sets_match": true,
+    "errors": []
+  },
+  "next_action": "Freeze the modelling protocol before fitting any model.",
+  "limitations": [
+    "Readiness checks validate data and evidence contracts, not biological truth.",
+    "No model is fitted and no biological effect is estimated.",
+    "No causal, safety, therapeutic, clinical, or experiment-authorization claim is produced."
+  ]
+}
