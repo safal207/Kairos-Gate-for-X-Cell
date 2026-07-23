@@ -19,12 +19,16 @@ on:
       - "scripts/validate_causal_hypothesis_ranking.py"
       - "scripts/validate_temporal_replication_gate.py"
       - "scripts/validate_partner_lab_evidence_handoff.py"
+      - "scripts/audit_bioevidence_release.py"
       - "scripts/probe_gse94383_tables.py"
       - "scripts/analyze_gse94383_conceptual_replication.py"
       - "scripts/probe_live_seq_supplementary_table4.py"
       - "README.md"
       - "MASTER_ROADMAP.md"
       - "BACKLOG.md"
+      - "RELEASE_NOTES_v0.1.md"
+      - "docs/**"
+      - "reviews/**"
       - ".github/workflows/**"
   push:
     paths:
@@ -44,12 +48,16 @@ on:
       - "scripts/validate_causal_hypothesis_ranking.py"
       - "scripts/validate_temporal_replication_gate.py"
       - "scripts/validate_partner_lab_evidence_handoff.py"
+      - "scripts/audit_bioevidence_release.py"
       - "scripts/probe_gse94383_tables.py"
       - "scripts/analyze_gse94383_conceptual_replication.py"
       - "scripts/probe_live_seq_supplementary_table4.py"
       - "README.md"
       - "MASTER_ROADMAP.md"
       - "BACKLOG.md"
+      - "RELEASE_NOTES_v0.1.md"
+      - "docs/**"
+      - "reviews/**"
       - ".github/workflows/**"
 
 permissions:
@@ -152,6 +160,9 @@ jobs:
             exit 1
           fi
           echo "false physical authorization correctly blocked"
+
+      - name: Audit v0.1 release consistency and safety boundaries
+        run: python scripts/audit_bioevidence_release.py
 
   live-replication-probe:
     runs-on: ubuntu-latest
