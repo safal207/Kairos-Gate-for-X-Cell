@@ -8,14 +8,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from kairos_gate.dataset_readiness import audit_dataset_paths
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "audit_live_seq_gse141064.py"
 METADATA = ROOT / "tests" / "fixtures" / "live-seq-meta-tiny.csv"
 COUNTS = ROOT / "tests" / "fixtures" / "live-seq-count-tiny.csv"
+MANIFEST = ROOT / "tests" / "fixtures" / "dataset-readiness-live-seq.manifest.json"
 
 
-class LiveSeqFeasibilityTests(unittest.TestCase):
-    """Verify the open-data auditor fails closed before any model is fitted."""
+class LiveSeqCompatibilityTests(unittest.TestCase):
+    """Verify the deprecated entrypoint delegates to the canonical scanner."""
 
     def _run(
         self,
@@ -39,7 +42,6 @@ class LiveSeqFeasibilityTests(unittest.TestCase):
         )
 
     def _write_grouped_repeat_metadata(self, directory: Path) -> Path:
-        """Keep pair-1 inside one Date|Probe group while preserving two groups."""
         with METADATA.open("r", encoding="utf-8", newline="") as source:
             reader = csv.DictReader(source)
             fieldnames = list(reader.fieldnames or [])
@@ -57,59 +59,52 @@ class LiveSeqFeasibilityTests(unittest.TestCase):
             writer.writerows(rows)
         return metadata_path
 
-    def test_clear_linkage_is_ready_for_preregistration(self) -> None:
+    def test_shim_matches_canonical_scanner_for_tiny_fixture(self) -> None:
+        completed = self._run(reuse_status="clear")
+        canonical = audit_dataset_paths(MANIFEST, METADATA, COUNTS)
+
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        self.assertIn("DEPRECATED", completed.stderr)
+        shim = json.loads(completed.stdout)
+        self.assertEqual(shim["schema"], "kairos.dataset-readiness-result.v0.1")
+        self.assertEqual(shim["status"], canonical["status"])
+        self.assertEqual(
+            shim["cohort"]["selected_sample_ids"],
+            canonical["cohort"]["selected_sample_ids"],
+        )
+        self.assertEqual(
+            shim["cohort"]["response_complete_records"],
+            canonical["cohort"]["response_complete_records"],
+        )
+        self.assertEqual(
+            shim["replicates"]["cross_group_repeated_identity_ids"],
+            canonical["replicates"]["cross_group_repeated_identity_ids"],
+        )
+        self.assertFalse(shim["authority"]["model_fitting_authorized"])
+
+    def test_grouped_repeat_uses_refined_semantics_status(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             metadata_path = self._write_grouped_repeat_metadata(Path(directory))
             completed = self._run(metadata=metadata_path, reuse_status="clear")
 
-        self.assertEqual(completed.returncode, 0, completed.stderr)
-        result = json.loads(completed.stdout)
-        self.assertEqual(result["status"], "READY_FOR_PREREGISTRATION")
-        self.assertEqual(result["authority"]["classification"], "RESEARCH_ONLY")
-        self.assertFalse(result["authority"]["experiment_authorization"])
-        self.assertFalse(result["cohort"]["selection_uses_response_label"])
-        self.assertEqual(result["cohort"]["selected_recorded_cells"], 4)
-        self.assertEqual(result["cohort"]["response_complete_cells"], 4)
-        self.assertEqual(result["cohort"]["missing_response_sample_ids"], [])
-        self.assertEqual(len(result["cohort"]["replicate_groups"]), 2)
-        self.assertEqual(result["cohort"]["repeated_measurement_rows"], 2)
-        self.assertEqual(
-            result["cohort"]["cross_group_repeated_measurement_ids"], []
-        )
-        self.assertTrue(result["integrity"]["full_id_sets_match"])
-
-    def test_repeated_cell_pair_crossing_groups_blocks_readiness(self) -> None:
-        completed = self._run(reuse_status="clear")
         self.assertEqual(completed.returncode, 2, completed.stderr)
         result = json.loads(completed.stdout)
-        self.assertEqual(result["status"], "BLOCKED_REPEATED_CELL_GROUP_LEAKAGE")
         self.assertEqual(
-            result["cohort"]["cross_group_repeated_measurement_ids"], ["pair-1"]
+            result["status"], "BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED"
         )
         self.assertEqual(
-            result["cohort"]["repeated_measurement_groups"]["pair-1"],
-            ["2020-01-01|probe1", "2020-01-02|probe2"],
+            result["replicates"]["cross_group_repeated_identity_ids"], []
         )
-        self.assertIn("one split group", result["next_action"])
-
-    def test_unclear_reuse_terms_block_readiness(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            metadata_path = self._write_grouped_repeat_metadata(Path(directory))
-            completed = self._run(metadata=metadata_path)
-
-        self.assertEqual(completed.returncode, 2, completed.stderr)
-        result = json.loads(completed.stdout)
-        self.assertEqual(result["status"], "BLOCKED_LICENSE_UNCLEAR")
-        self.assertIn("reuse terms", result["next_action"])
+        self.assertFalse(result["authority"]["preregistration_gate_passed"])
 
     def test_missing_response_does_not_change_selected_cohort(self) -> None:
         with METADATA.open("r", encoding="utf-8", newline="") as source:
             reader = csv.DictReader(source)
             fieldnames = list(reader.fieldnames or [])
             rows = [dict(row) for row in reader]
-
-        target = next(row for row in rows if row["sample_ID"] == "sampleD")
-        target["mCherry.log.slope"] = ""
+        next(row for row in rows if row["sample_ID"] == "sampleD")[
+            "mCherry.log.slope"
+        ] = ""
 
         with tempfile.TemporaryDirectory() as directory:
             metadata_path = Path(directory) / "metadata.csv"
@@ -123,8 +118,8 @@ class LiveSeqFeasibilityTests(unittest.TestCase):
         result = json.loads(completed.stdout)
         self.assertEqual(result["status"], "BLOCKED_MISSING_RESPONSE_LABELS")
         self.assertFalse(result["cohort"]["selection_uses_response_label"])
-        self.assertEqual(result["cohort"]["selected_recorded_cells"], 4)
-        self.assertEqual(result["cohort"]["response_complete_cells"], 3)
+        self.assertEqual(result["cohort"]["selected_records"], 4)
+        self.assertEqual(result["cohort"]["response_complete_records"], 3)
         self.assertEqual(result["cohort"]["missing_response_sample_ids"], ["sampleD"])
 
     def test_missing_selected_count_column_blocks_linkage(self) -> None:
@@ -142,7 +137,7 @@ class LiveSeqFeasibilityTests(unittest.TestCase):
         self.assertEqual(result["status"], "BLOCKED_MISSING_CELL_LINKAGE")
         self.assertEqual(result["cohort"]["missing_selected_sample_ids"], ["sampleD"])
 
-    def test_missing_required_metadata_column_is_machine_readable(self) -> None:
+    def test_missing_required_column_is_machine_readable(self) -> None:
         with METADATA.open("r", encoding="utf-8", newline="") as source:
             rows = list(csv.DictReader(source))
         fieldnames = [field for field in rows[0] if field != "mCherry.log.slope"]
@@ -159,7 +154,12 @@ class LiveSeqFeasibilityTests(unittest.TestCase):
 
         self.assertEqual(completed.returncode, 1, completed.stderr)
         result = json.loads(completed.stdout)
+        self.assertEqual(
+            result["schema"],
+            "kairos.dataset-readiness-compatibility-error.v0.1",
+        )
         self.assertEqual(result["status"], "BLOCKED_DATA_INTEGRITY")
+        self.assertTrue(result["deprecated_entrypoint"])
         self.assertIn("mCherry.log.slope", result["error"])
         self.assertNotIn("Traceback", completed.stderr)
 
