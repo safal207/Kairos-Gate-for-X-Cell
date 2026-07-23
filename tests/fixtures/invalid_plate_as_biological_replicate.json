@@ -1,0 +1,54 @@
+{
+  "schema_version": "0.1.0",
+  "study_id": "NEGATIVE-PLATE-REPLICATE",
+  "audit_scope": "Negative contract fixture",
+  "source_identity": {
+    "accession": "TEST",
+    "article_id": null,
+    "retrieved_at": "2026-07-23T00:00:00+03:00",
+    "evidence_refs": ["synthetic negative fixture"]
+  },
+  "resolved_experimental_unit": {
+    "unit_type": null,
+    "status": "not_established",
+    "evidence_level": "F1",
+    "rationale": "Only plate labels are available."
+  },
+  "technical_hierarchy": [],
+  "independence_status": {
+    "biological_independence": "not_established",
+    "plate_independence": "contradicted",
+    "run_independence": "technical_only",
+    "independent_counts_by_condition": {"control": null, "treated": null}
+  },
+  "unresolved_metadata": [],
+  "pseudoreplication_findings": [],
+  "admissible_analyses": [
+    {
+      "analysis": "pseudobulk differential expression by plate",
+      "status": "allowed",
+      "reason": "Incorrectly treats plates as biological replicates."
+    },
+    {
+      "analysis": "leave-one-plate-out biological validation",
+      "status": "allowed",
+      "reason": "Incorrectly claims external validity."
+    }
+  ],
+  "claim_firewall": {
+    "descriptive": {"status": "supported", "reason": "Synthetic."},
+    "association": {"status": "supported", "reason": "Synthetic."},
+    "prediction": {"status": "supported", "reason": "Synthetic."},
+    "generalization": {"status": "supported", "reason": "Invalid."},
+    "causal": {"status": "supported", "reason": "Invalid."},
+    "tissue": {"status": "supported", "reason": "Invalid."},
+    "clinical_therapeutic": {"status": "supported", "reason": "Invalid."}
+  },
+  "overall_verdict": "ACCEPT",
+  "next_valid_action": "Incorrectly publish the claim.",
+  "safety_status": {
+    "mode": "computational_only",
+    "physical_biology_authorized": false,
+    "notes": "Synthetic fixture."
+  }
+}
