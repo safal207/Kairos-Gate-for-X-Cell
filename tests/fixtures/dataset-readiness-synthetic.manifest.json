@@ -1,0 +1,37 @@
+{
+  "schema": "kairos.dataset-manifest.v0.1",
+  "dataset_id": "synthetic-ready",
+  "dataset_version": "0.1.0",
+  "adapter": {
+    "name": "tabular-v0.1",
+    "config": {
+      "id_field": "sample_id",
+      "response_field": "response",
+      "selection": [
+        {
+          "field": "include",
+          "equals": "yes"
+        }
+      ],
+      "independent_unit_fields": ["unit"],
+      "repeated_identity_field": "repeat_id",
+      "replicate_semantics": "verified"
+    }
+  },
+  "sources": [
+    {
+      "role": "metadata",
+      "url": "https://example.org/synthetic/meta-0.1.0.csv",
+      "version": "0.1.0",
+      "sha256": "sha256:79a6e007c3a9f289ec848f17a9da1730b5052def0776d35450876cea9ae917d4"
+    },
+    {
+      "role": "matrix",
+      "url": "https://example.org/synthetic/counts-0.1.0.csv",
+      "version": "0.1.0",
+      "sha256": "sha256:3f0b452b86a0b1af69e7fb4ea1548e6820dbebcb8e6bb12d3474ddb8ea66a526"
+    }
+  ],
+  "reuse_status": "clear",
+  "minimum_independent_units": 2
+}
