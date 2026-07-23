@@ -89,14 +89,20 @@ jobs:
           from pathlib import Path
 
           result_path = Path('.artifacts/live-seq-real/result.json')
-          snapshot_path = Path('evidence/live-seq-gse141064/feasibility.real.v0.1.json')
+          snapshot_path = Path(
+              'evidence/live-seq-gse141064/feasibility.real.v0.1.json'
+          )
           attestation = {
               'schema': 'kairos.real-input-exact-head-attestation.v0.1',
               'dataset_id': 'GSE141064',
               'exact_head': os.environ['EXACT_HEAD'],
-              'result_sha256': 'sha256:' + hashlib.sha256(result_path.read_bytes()).hexdigest(),
+              'result_sha256': 'sha256:' + hashlib.sha256(
+                  result_path.read_bytes()
+              ).hexdigest(),
               'committed_snapshot_path': str(snapshot_path),
-              'committed_snapshot_sha256': 'sha256:' + hashlib.sha256(snapshot_path.read_bytes()).hexdigest(),
+              'committed_snapshot_sha256': 'sha256:' + hashlib.sha256(
+                  snapshot_path.read_bytes()
+              ).hexdigest(),
               'authority': {
                   'classification': 'RESEARCH_ONLY',
                   'experiment_authorization': False,
@@ -106,7 +112,8 @@ jobs:
           }
           output = Path('.artifacts/live-seq-real/attestation.json')
           output.write_text(
-              json.dumps(attestation, indent=2, sort_keys=True, allow_nan=False) + '\n',
+              json.dumps(attestation, indent=2, sort_keys=True, allow_nan=False)
+              + '\n',
               encoding='utf-8',
           )
           print(output.read_text(encoding='utf-8'))
@@ -123,7 +130,9 @@ jobs:
           from pathlib import Path
 
           result_path = Path('.artifacts/live-seq-real/result.json')
-          snapshot_path = Path('evidence/live-seq-gse141064/feasibility.real.v0.1.json')
+          snapshot_path = Path(
+              'evidence/live-seq-gse141064/feasibility.real.v0.1.json'
+          )
           attestation_path = Path('.artifacts/live-seq-real/attestation.json')
           result = json.loads(result_path.read_text(encoding='utf-8'))
           snapshot = json.loads(snapshot_path.read_text(encoding='utf-8'))
@@ -173,7 +182,9 @@ jobs:
               'missing_selected_sample_ids': cohort.get('missing_selected_sample_ids'),
               'declared_replicate_groups': cohort.get('replicate_groups'),
               'repeated_measurement_rows': cohort.get('repeated_measurement_rows'),
-              'cross_group_repeated_measurement_ids': cohort.get('cross_group_repeated_measurement_ids'),
+              'cross_group_repeated_measurement_ids': cohort.get(
+                  'cross_group_repeated_measurement_ids'
+              ),
           }
           for field, actual in checks.items():
               if expected.get(field) != actual:
@@ -185,7 +196,9 @@ jobs:
           if attestation.get('exact_head') != os.environ['EXACT_HEAD']:
               raise SystemExit('attestation is not bound to the checked-out exact head')
           result_digest = 'sha256:' + hashlib.sha256(result_path.read_bytes()).hexdigest()
-          snapshot_digest = 'sha256:' + hashlib.sha256(snapshot_path.read_bytes()).hexdigest()
+          snapshot_digest = 'sha256:' + hashlib.sha256(
+              snapshot_path.read_bytes()
+          ).hexdigest()
           if attestation.get('result_sha256') != result_digest:
               raise SystemExit('attestation result digest mismatch')
           if attestation.get('committed_snapshot_sha256') != snapshot_digest:
