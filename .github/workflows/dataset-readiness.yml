@@ -100,9 +100,12 @@ jobs:
 
           if ready.get('status') != 'READY_FOR_PREREGISTRATION':
               raise SystemExit(f"generic fixture is not ready: {ready.get('status')!r}")
-          if ready.get('authority', {}).get('model_fitting_authorized') is not True:
-              raise SystemExit('ready result did not expose the bounded modelling gate')
-          if ready.get('authority', {}).get('experiment_authorization') is not False:
+          ready_authority = ready.get('authority', {})
+          if ready_authority.get('preregistration_gate_passed') is not True:
+              raise SystemExit('ready result did not pass the preregistration gate')
+          if ready_authority.get('model_fitting_authorized') is not False:
+              raise SystemExit('scanner must not authorize model fitting')
+          if ready_authority.get('experiment_authorization') is not False:
               raise SystemExit('scanner must never authorize experiments')
           if os.environ.get('BLOCKED_EXIT_CODE') != '2':
               raise SystemExit('blocked result must return exit code 2')
@@ -139,6 +142,7 @@ jobs:
               'blocked_result_sha256': digest(blocked_path),
               'authority': {
                   'classification': 'RESEARCH_ONLY',
+                  'model_fitting_authorized': False,
                   'experiment_authorization': False,
                   'clinical_authorization': False,
                   'merge_authorization': False,
