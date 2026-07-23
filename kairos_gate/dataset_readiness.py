@@ -40,8 +40,10 @@ def _reject_constant(value: str) -> None:
 def _validate_finite_numbers(value: Any, path: str = "$") -> None:
     if value is None or isinstance(value, (str, bool)):
         return
-    if isinstance(value, (int, float)):
-        if not math.isfinite(float(value)):
+    if isinstance(value, int):
+        return
+    if isinstance(value, float):
+        if not math.isfinite(value):
             raise DatasetReadinessError(f"{path} must be finite")
         return
     if isinstance(value, Mapping):
@@ -59,7 +61,9 @@ def _load_schema() -> Mapping[str, Any]:
             files(SCHEMA_PACKAGE).joinpath(SCHEMA_NAME).read_text(encoding="utf-8")
         )
     except (OSError, json.JSONDecodeError, ModuleNotFoundError) as exc:
-        raise DatasetReadinessError(f"unable to load dataset manifest schema: {exc}") from exc
+        raise DatasetReadinessError(
+            f"unable to load dataset manifest schema: {exc}"
+        ) from exc
     if not isinstance(schema, Mapping):
         raise DatasetReadinessError("dataset manifest schema root must be an object")
     return schema
@@ -67,7 +71,9 @@ def _load_schema() -> Mapping[str, Any]:
 
 def _is_immutable_source(source: Mapping[str, Any]) -> bool:
     digest = source.get("sha256")
-    if not isinstance(digest, str) or re.fullmatch(r"sha256:[0-9a-f]{64}", digest) is None:
+    if not isinstance(digest, str) or re.fullmatch(
+        r"sha256:[0-9a-f]{64}", digest
+    ) is None:
         return False
     url = source.get("url")
     if not isinstance(url, str) or not url.startswith("https://"):
@@ -92,7 +98,8 @@ def validate_manifest_record(manifest: Mapping[str, Any]) -> None:
         Draft202012Validator.check_schema(schema)
         validator = Draft202012Validator(schema, format_checker=FormatChecker())
         errors = sorted(
-            validator.iter_errors(manifest), key=lambda error: list(error.absolute_path)
+            validator.iter_errors(manifest),
+            key=lambda error: list(error.absolute_path),
         )
     except SchemaError as exc:
         raise DatasetReadinessError(
@@ -137,7 +144,9 @@ def _sha256(path: Path) -> str:
 def _source_by_role(manifest: Mapping[str, Any], role: str) -> Mapping[str, Any]:
     matches = [source for source in manifest["sources"] if source.get("role") == role]
     if len(matches) != 1:
-        raise DatasetReadinessError(f"manifest must contain exactly one {role!r} source")
+        raise DatasetReadinessError(
+            f"manifest must contain exactly one {role!r} source"
+        )
     return matches[0]
 
 
@@ -174,6 +183,8 @@ def evaluate_contract(
     records = contract.get("records", [])
     if not isinstance(records, list):
         raise DatasetReadinessError("canonical contract records must be an array")
+    if any(not isinstance(record, Mapping) for record in records):
+        raise DatasetReadinessError("canonical contract records must be objects")
 
     integrity_errors: list[str] = []
     if not metadata_ids or any(not value for value in metadata_ids):
@@ -183,21 +194,33 @@ def evaluate_contract(
     metadata_duplicates = _duplicates(metadata_ids)
     matrix_duplicates = _duplicates(matrix_ids)
     if metadata_duplicates:
-        integrity_errors.append(f"duplicate metadata identifiers: {metadata_duplicates}")
+        integrity_errors.append(
+            f"duplicate metadata identifiers: {metadata_duplicates}"
+        )
     if matrix_duplicates:
         integrity_errors.append(f"duplicate matrix identifiers: {matrix_duplicates}")
 
     selected = [record for record in records if record.get("selected") is True]
+    if not selected:
+        integrity_errors.append("no records satisfy the declared cohort selection")
     selected_ids = [str(record.get("sample_id", "")).strip() for record in selected]
     if any(not value for value in selected_ids):
         integrity_errors.append("selected records must have non-empty sample_id values")
     selected_duplicates = _duplicates(selected_ids)
     if selected_duplicates:
-        integrity_errors.append(f"duplicate selected identifiers: {selected_duplicates}")
+        integrity_errors.append(
+            f"duplicate selected identifiers: {selected_duplicates}"
+        )
 
+    metadata_set = set(metadata_ids)
     matrix_set = set(matrix_ids)
     missing_selected = sorted(set(selected_ids) - matrix_set)
-    full_id_sets_match = set(metadata_ids) == matrix_set
+    selected_missing_from_metadata = sorted(set(selected_ids) - metadata_set)
+    if selected_missing_from_metadata:
+        integrity_errors.append(
+            f"selected identifiers absent from metadata: {selected_missing_from_metadata}"
+        )
+    full_id_sets_match = metadata_set == matrix_set
     if not full_id_sets_match:
         integrity_errors.append(
             "full metadata identifier set does not exactly match matrix sample identifiers"
@@ -251,7 +274,9 @@ def evaluate_contract(
     elif semantics == "verified":
         status = READY
     else:
-        raise DatasetReadinessError(f"unsupported replicate semantics: {semantics!r}")
+        raise DatasetReadinessError(
+            f"unsupported replicate semantics: {semantics!r}"
+        )
 
     return {
         "schema": RESULT_SCHEMA,
@@ -263,7 +288,8 @@ def evaluate_contract(
         "status": status,
         "authority": {
             "classification": "RESEARCH_ONLY",
-            "model_fitting_authorized": status == READY,
+            "preregistration_gate_passed": status == READY,
+            "model_fitting_authorized": False,
             "experiment_authorization": False,
             "clinical_authorization": False,
             "merge_authorization": False,
