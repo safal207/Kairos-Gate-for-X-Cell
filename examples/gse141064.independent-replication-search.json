@@ -2,28 +2,30 @@
   "schema_version": "0.1.0",
   "target_study": "GSE141064 Batch 8_8",
   "target_claim": {
-    "statement": "Expression features are exploratorily associated with mCherry.log.slope in the observed Live-seq cells.",
+    "statement": "Basal single-cell expression features, especially Nfkbia, are exploratorily associated with the subsequent rate of LPS-induced Tnf-mCherry increase in the observed Live-seq RAW cells.",
     "claim_level": "association",
     "status": "supported_with_limits"
   },
   "search_fingerprint": {
-    "species": null,
-    "biological_system": "Live-seq cells with paired expression and mCherry.log.slope-like phenotype measurements",
-    "cell_state": null,
-    "perturbation_condition": "observational phenotype variation; no identified randomized intervention",
-    "phenotype_outcome": "mCherry.log.slope or a documented biologically comparable dynamic phenotype",
-    "assay": "single-cell transcriptomic measurement paired with live-cell phenotyping",
-    "time_structure": "cell collection across documented independent biological collection events",
-    "required_biological_unit": "independently collected biological material with a defensible grouping key",
+    "species": "Mus musculus",
+    "biological_system": "RAW264.7-like macrophages exposed to LPS, with single-cell transcriptomic and dynamic inflammatory-response measurements",
+    "cell_state": "unstimulated or pre-response macrophage state linked to a subsequent inflammatory phenotype",
+    "perturbation_condition": "LPS stimulation",
+    "phenotype_outcome": "Tnf-promoter activity, NF-kB signaling dynamics, or a documented biologically comparable single-cell inflammatory-response phenotype",
+    "assay": "single-cell transcriptomics paired at cell level, or in a defensibly matched design, with live-cell or fluorescent dynamic phenotyping",
+    "time_structure": "pre-response molecular state linked to a later response is preferred; post-stimulation matched-cell studies are conceptual rather than direct replication",
+    "required_biological_unit": "independently generated cells or primary macrophages from an experiment unrelated to GSE141064, with a defensible grouping key above technical containers",
     "acceptable_substitutions": [
-      "a documented comparable dynamic reporter phenotype",
-      "a compatible single-cell assay with raw or sufficiently processed data"
+      "same-cell NF-kB dynamics paired with scRNA-seq in an independent RAW264.7 experiment",
+      "primary mouse macrophage NF-kB dynamics plus scRNA-seq with documented biological replication",
+      "single-cell transcriptomics paired with a fluorescently resolved inflammatory phenotype"
     ],
     "unacceptable_substitutions": [
       "alternate plates from exp8",
       "alternate sequencing runs or flow cells from exp8",
       "reprocessed GSE141064 data",
-      "the same donor, clone, culture, extraction event, or pooled library material"
+      "the same donor, clone preparation, culture, extraction event, or pooled library material",
+      "a new accession that only republishes or repartitions the target samples"
     ],
     "excluded_relationships": [
       "same study under another accession",
@@ -35,50 +37,190 @@
   "sources_searched": [
     {
       "source": "NCBI GEO",
-      "query_or_scope": "paired live-cell phenotype and single-cell expression studies compatible with the target claim",
-      "status": "planned",
-      "searched_at": null
+      "query_or_scope": "GSE141064-related records; RAW264.7 LPS single-cell RNA-seq with live-cell NF-kB or fluorescent phenotype; macrophage single-cell response datasets",
+      "status": "searched",
+      "searched_at": "2026-07-23T13:11:18+03:00"
     },
     {
       "source": "NCBI SRA and BioProject relationships",
-      "query_or_scope": "candidate raw-data provenance and shared BioProject/sample identifiers",
-      "status": "planned",
-      "searched_at": null
+      "query_or_scope": "Target PRJNA591913 and candidate accession relationships, sample-level records, raw-data availability, and shared accession leakage",
+      "status": "searched",
+      "searched_at": "2026-07-23T13:11:18+03:00"
     },
     {
-      "source": "EMBL-EBI ArrayExpress and Single Cell Expression Atlas",
-      "query_or_scope": "independent compatible cellular systems and assay records",
-      "status": "planned",
-      "searched_at": null
+      "source": "EMBL-EBI Single Cell Expression Atlas",
+      "query_or_scope": "Mouse macrophage, NF-kB, LPS, live-cell imaging, and paired single-cell transcriptome studies",
+      "status": "searched",
+      "searched_at": "2026-07-23T13:11:18+03:00"
     },
     {
       "source": "article citations, supplements, and related-record links",
-      "query_or_scope": "conceptual and direct replication candidates plus shared-source leakage",
-      "status": "planned",
-      "searched_at": null
+      "query_or_scope": "Live-seq references, same-cell NF-kB imaging plus scRNA-seq studies, RAW G9 reporter studies, and public accession discovery",
+      "status": "searched",
+      "searched_at": "2026-07-23T13:11:18+03:00"
     }
   ],
-  "candidates": [],
-  "independence_leakage_findings": [],
+  "candidates": [
+    {
+      "candidate_id": "GSE94383",
+      "title": "Measuring signaling and RNA-Seq in the same cell links gene expression to dynamic patterns of NF-kB activation",
+      "evidence_level": "F3",
+      "independence_class": "independent_biological_experiment",
+      "replication_type": "conceptual_replication",
+      "shared_target_identifiers": [],
+      "compatibility": {
+        "biological_source_independence": "compatible",
+        "experimental_unit": "compatible",
+        "species": "compatible",
+        "biological_system": "compatible",
+        "phenotype_outcome": "partially_compatible",
+        "assay": "partially_compatible",
+        "provenance": "partial",
+        "sample_size": "limited"
+      },
+      "candidate_verdict": "ACCEPT_WITH_LIMITS",
+      "rationale": "Independent Stanford/Covert laboratory experiment on Mus musculus RAW264.7 cells. It links live single-cell LPS-induced NF-kB trajectories to scRNA-seq in the same cells and provides public dynamics and expression files. It is the strongest public conceptual candidate, but it measures transcriptomes after stimulation and uses NF-kB dynamics rather than future Tnf-mCherry slope, so it cannot directly replicate the temporal Nfkbia predictor claim without a narrowed secondary endpoint."
+    },
+    {
+      "candidate_id": "GSE162992",
+      "title": "Six distinct NF-kB signaling codons convey discrete information to distinguish stimuli and enable appropriate macrophage responses",
+      "evidence_level": "F3",
+      "independence_class": "independent_biological_experiment",
+      "replication_type": "conceptual_replication",
+      "shared_target_identifiers": [],
+      "compatibility": {
+        "biological_source_independence": "compatible",
+        "experimental_unit": "unknown",
+        "species": "compatible",
+        "biological_system": "partially_compatible",
+        "phenotype_outcome": "partially_compatible",
+        "assay": "partially_compatible",
+        "provenance": "partial",
+        "sample_size": "unknown"
+      },
+      "candidate_verdict": "HOLD",
+      "rationale": "Independent primary mouse bone-marrow-derived macrophage study with LPS, live-cell NF-kB dynamics, and single-cell RNA-seq. It supports the broader relationship between macrophage state, NF-kB dynamics, and transcription, but the public record does not establish a same-cell pre-response transcriptome to later Tnf-promoter phenotype mapping or a compatible grouping structure for the target endpoint."
+    },
+    {
+      "candidate_id": "GSE65528",
+      "title": "Single cell time course of macrophages exposed to Salmonella enterica subsp. typhimurium",
+      "evidence_level": "F3",
+      "independence_class": "independent_biological_experiment",
+      "replication_type": "conceptual_replication",
+      "shared_target_identifiers": [],
+      "compatibility": {
+        "biological_source_independence": "compatible",
+        "experimental_unit": "compatible",
+        "species": "compatible",
+        "biological_system": "partially_compatible",
+        "phenotype_outcome": "partially_compatible",
+        "assay": "partially_compatible",
+        "provenance": "partial",
+        "sample_size": "limited"
+      },
+      "candidate_verdict": "HOLD",
+      "rationale": "Independent mouse macrophage single-cell time course combining fluorescent infection-state labels with gene expression. It demonstrates phenotype-linked single-cell transcriptomics in an inflammatory macrophage system, but the stimulus, phenotype, and temporal question differ materially from basal Nfkbia predicting later LPS-induced Tnf-mCherry slope."
+    },
+    {
+      "candidate_id": "GSE65529",
+      "title": "Single cell analysis of macrophages exposed to beads coated with LPS from Salmonella enterica subsp. typhimurium",
+      "evidence_level": "F3",
+      "independence_class": "independent_biological_experiment",
+      "replication_type": "conceptual_replication",
+      "shared_target_identifiers": [],
+      "compatibility": {
+        "biological_source_independence": "compatible",
+        "experimental_unit": "compatible",
+        "species": "compatible",
+        "biological_system": "partially_compatible",
+        "phenotype_outcome": "partially_compatible",
+        "assay": "partially_compatible",
+        "provenance": "partial",
+        "sample_size": "limited"
+      },
+      "candidate_verdict": "HOLD",
+      "rationale": "Independent mouse macrophage dataset combining single-cell transcriptional analysis with fluorescently resolved LPS-bead internalization. It is useful for method and inflammatory-heterogeneity triangulation but does not measure TNF-promoter dynamics or a pre-response molecular predictor."
+    },
+    {
+      "candidate_id": "GSE146068",
+      "title": "NF-kB dynamics determine the stimulus-specificity of epigenomic reprogramming in macrophages",
+      "evidence_level": "F3",
+      "independence_class": "related_non_equivalent_system",
+      "replication_type": "method_transfer_only",
+      "shared_target_identifiers": [],
+      "compatibility": {
+        "biological_source_independence": "compatible",
+        "experimental_unit": "incompatible",
+        "species": "compatible",
+        "biological_system": "partially_compatible",
+        "phenotype_outcome": "partially_compatible",
+        "assay": "incompatible",
+        "provenance": "partial",
+        "sample_size": "unknown"
+      },
+      "candidate_verdict": "EXCLUDE",
+      "rationale": "Independent mouse macrophage LPS/NF-kB study relevant to mechanism, but its bulk transcriptomic and epigenomic design cannot reproduce a single-cell paired predictor-to-future-phenotype association."
+    },
+    {
+      "candidate_id": "GSE141064_INTERNAL_NFKBIA_BFP",
+      "title": "Within-study Nfkbia-BFP to Tnf-mCherry validation",
+      "evidence_level": "F2",
+      "independence_class": "excluded",
+      "replication_type": "not_a_replication",
+      "shared_target_identifiers": [
+        "same publication",
+        "same RAW-G9 research system"
+      ],
+      "compatibility": {
+        "biological_source_independence": "unknown",
+        "experimental_unit": "compatible",
+        "species": "compatible",
+        "biological_system": "compatible",
+        "phenotype_outcome": "compatible",
+        "assay": "partially_compatible",
+        "provenance": "partial",
+        "sample_size": "limited"
+      },
+      "candidate_verdict": "EXCLUDE",
+      "rationale": "The Live-seq paper reports a separate Nfkbia-BFP reporter validation and another biological replicate, which strengthens within-study construct validity. It is not an external public dataset and must not be counted as independent repository replication."
+    }
+  ],
+  "independence_leakage_findings": [
+    {
+      "severity": "blocking",
+      "candidate_id": "GSE141064_INTERNAL_NFKBIA_BFP",
+      "finding": "A separate biological replicate inside the same publication is valuable internal validation but cannot be promoted to external independent replication."
+    },
+    {
+      "severity": "blocking",
+      "candidate_id": "GSE141064",
+      "finding": "Alternate GSM, SRA, plate, lane, library, flow-cell, or reprocessed records attached to PRJNA591913 remain the target study and are not independent candidates."
+    },
+    {
+      "severity": "warning",
+      "candidate_id": "GSE94383",
+      "finding": "The temporal direction differs from the target: NF-kB dynamics precede or accompany post-LPS transcriptome collection, whereas the target asks whether a basal transcript predicts a later Tnf-promoter response."
+    }
+  ],
   "prespecified_test": {
     "status": "defined_not_run",
-    "primary_endpoint": "Reproduction of the prespecified directional association between expression-derived signal and the compatible dynamic phenotype on independent biological units.",
-    "expected_direction": "same prespecified direction as the target exploratory result",
-    "biological_grouping_key": "candidate-specific independently collected biological source or collection event",
+    "primary_endpoint": "In GSE94383, test whether Nfkbia expression is associated with prespecified single-cell NF-kB trajectory features and inflammatory cytokine-expression output, while explicitly treating this as conceptual replication rather than a direct test of future Tnf-mCherry slope.",
+    "expected_direction": "Higher Nfkbia expression is prespecified to associate with a weaker or more rapidly attenuated inflammatory NF-kB/TNF-related response, consistent with negative-feedback biology and the target direction.",
+    "biological_grouping_key": "independent experimental run or documented collection batch in GSE94383; individual cells remain nested observations and are not automatically biological replicates",
     "exclusion_criteria": [
       "shared biological material with GSE141064",
-      "unresolved biological experimental unit",
-      "plate, library, lane, or sequencing run used as the biological grouping key",
-      "target data reprocessing or derivative datasets",
-      "condition inseparable from incompatible batch structure"
+      "unresolved identity linkage between expression rows and trajectory rows",
+      "plate, library, lane, sequencing run, or cell count used as a substitute for biological replication",
+      "post hoc trajectory feature selection based on the most favorable Nfkbia result",
+      "condition inseparable from an undocumented technical batch"
     ],
-    "success_criteria": "A prespecified analysis on an independently verified compatible dataset reproduces the directional result with robustness to documented biological grouping and major candidate confounders."
+    "success_criteria": "The identity-linked GSE94383 data reproduce the prespecified direction across at least one biologically relevant NF-kB trajectory or cytokine-output endpoint, remain stable to documented grouping or batch sensitivity checks, and are reported only as conceptual replication because the temporal phenotype differs from GSE141064."
   },
-  "overall_verdict": "HOLD",
-  "next_valid_action": "Execute the repository search, classify every candidate for biological-source independence, and accept none until provenance and experimental units are verified.",
+  "overall_verdict": "ACCEPT_WITH_LIMITS",
+  "next_valid_action": "Download the GSE94383 cell_ids.csv, single_cell_dynamics.csv, and expression matrix; verify one-to-one cell identity and batch structure; then run the frozen Nfkbia conceptual-replication test without changing endpoints after outcome inspection.",
   "safety_status": {
     "mode": "computational_only",
     "physical_biology_authorized": false,
-    "notes": "No public candidate has yet been verified or analysed; physical experiments are outside this contract."
+    "notes": "Live repository search found one accepted conceptual candidate, not direct replication. No physical experiment is authorized."
   }
 }
