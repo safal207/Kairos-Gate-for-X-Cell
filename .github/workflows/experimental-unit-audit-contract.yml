@@ -5,21 +5,25 @@ on:
     paths:
       - ".agents/skills/bio-experimental-unit-auditor/**"
       - ".agents/skills/bio-provenance-confounder-graph/**"
+      - ".agents/skills/bio-independent-replication-finder/**"
       - "schemas/**"
       - "examples/**"
       - "tests/fixtures/**"
       - "scripts/validate_experimental_unit_audit.py"
       - "scripts/validate_provenance_confounder_graph.py"
+      - "scripts/validate_independent_replication_search.py"
       - ".github/workflows/experimental-unit-audit-contract.yml"
   push:
     paths:
       - ".agents/skills/bio-experimental-unit-auditor/**"
       - ".agents/skills/bio-provenance-confounder-graph/**"
+      - ".agents/skills/bio-independent-replication-finder/**"
       - "schemas/**"
       - "examples/**"
       - "tests/fixtures/**"
       - "scripts/validate_experimental_unit_audit.py"
       - "scripts/validate_provenance_confounder_graph.py"
+      - "scripts/validate_independent_replication_search.py"
       - ".github/workflows/experimental-unit-audit-contract.yml"
 
 permissions:
@@ -61,3 +65,22 @@ jobs:
             exit 1
           fi
           echo "negative hidden-batch fixture correctly blocked"
+
+      - name: Validate GSE141064 replication-search HOLD contract
+        run: |
+          python scripts/validate_independent_replication_search.py \
+            examples/gse141064.independent-replication-search.json
+
+      - name: Validate independent candidate acceptance path
+        run: |
+          python scripts/validate_independent_replication_search.py \
+            tests/fixtures/valid_independent_replication_candidate.json
+
+      - name: Confirm same-study replication leakage fails closed
+        run: |
+          if python scripts/validate_independent_replication_search.py \
+            tests/fixtures/invalid_same_study_as_replication.json; then
+            echo "same-study replication leakage was incorrectly accepted"
+            exit 1
+          fi
+          echo "same-study replication leakage correctly blocked"
