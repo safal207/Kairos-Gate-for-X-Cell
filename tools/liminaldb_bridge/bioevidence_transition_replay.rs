@@ -22,6 +22,7 @@ struct Bundle {
     transition_id: String,
     subject_id: String,
     action: String,
+    supersession: Supersession,
     records: Vec<Record>,
     storage_boundary: StorageBoundary,
 }
@@ -32,6 +33,13 @@ struct LiminalDbPin {
     commit: String,
     event_schema: String,
     ledger_profile: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct Supersession {
+    relation: String,
+    predecessor_transition_id: Option<String>,
+    predecessor_authorization_ref: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -80,6 +88,9 @@ struct Receipt {
     bundle_sha256: String,
     transition_id: String,
     subject_id: String,
+    supersession_relation: String,
+    predecessor_transition_id: Option<String>,
+    predecessor_authorization_ref: Option<String>,
     event_count_before_reopen: u64,
     event_count_after_reopen: u64,
     snapshot_digest: String,
@@ -198,7 +209,8 @@ fn main() -> Result<()> {
         return Err(anyhow!("unexpected extra arguments"));
     }
 
-    let bundle_bytes = fs::read(&bundle_path).with_context(|| format!("read {}", bundle_path.display()))?;
+    let bundle_bytes =
+        fs::read(&bundle_path).with_context(|| format!("read {}", bundle_path.display()))?;
     let bundle: Bundle = serde_json::from_slice(&bundle_bytes).context("parse bridge bundle")?;
 
     if bundle.schema_version != "0.1.0"
@@ -212,6 +224,14 @@ fn main() -> Result<()> {
     }
     if bundle.action != "GENEFORMER_RUNTIME_PREFLIGHT" {
         return Err(anyhow!("unexpected governed action"));
+    }
+    if bundle.supersession.relation != "ROOT"
+        || bundle.supersession.predecessor_transition_id.is_some()
+        || bundle.supersession.predecessor_authorization_ref.is_some()
+    {
+        return Err(anyhow!(
+            "runtime preflight must be a ROOT transition with no predecessor authorization"
+        ));
     }
     if !bundle.storage_boundary.temporary_ledger_only
         || bundle.storage_boundary.production_write
@@ -230,7 +250,8 @@ fn main() -> Result<()> {
     }
     fs::create_dir_all(&ledger_root).context("create temporary ledger root")?;
 
-    let mut ledger = TrustworthyTransitionLedger::open(&ledger_root).context("open temporary ledger")?;
+    let mut ledger =
+        TrustworthyTransitionLedger::open(&ledger_root).context("open temporary ledger")?;
     for record in bundle.records {
         if record.side_effect_committed {
             return Err(anyhow!("side effects are forbidden in this transition"));
@@ -266,7 +287,8 @@ fn main() -> Result<()> {
         .context("write snapshot")?;
     drop(ledger);
 
-    let reopened = TrustworthyTransitionLedger::open(&ledger_root).context("reopen and replay ledger")?;
+    let reopened =
+        TrustworthyTransitionLedger::open(&ledger_root).context("reopen and replay ledger")?;
     let projection_after = reopened
         .projection(&bundle.transition_id)
         .cloned()
@@ -276,7 +298,9 @@ fn main() -> Result<()> {
         return Err(anyhow!("projection changed after snapshot + full replay"));
     }
     if projection_after.side_effect_committed {
-        return Err(anyhow!("replayed projection committed a forbidden side effect"));
+        return Err(anyhow!(
+            "replayed projection committed a forbidden side effect"
+        ));
     }
 
     let receipt = Receipt {
@@ -286,6 +310,9 @@ fn main() -> Result<()> {
         bundle_sha256: sha256_ref(&bundle_bytes),
         transition_id: projection_after.transition_id.clone(),
         subject_id: projection_after.subject_id.clone(),
+        supersession_relation: bundle.supersession.relation,
+        predecessor_transition_id: bundle.supersession.predecessor_transition_id,
+        predecessor_authorization_ref: bundle.supersession.predecessor_authorization_ref,
         event_count_before_reopen: event_count_before,
         event_count_after_reopen: reopened.event_count(),
         snapshot_digest: snapshot.snapshot_digest().to_string(),
@@ -307,7 +334,8 @@ fn main() -> Result<()> {
     if let Some(parent) = receipt_path.parent() {
         fs::create_dir_all(parent).context("create receipt directory")?;
     }
-    fs::write(&receipt_path, serde_json::to_vec_pretty(&receipt)?).context("write replay receipt")?;
+    fs::write(&receipt_path, serde_json::to_vec_pretty(&receipt)?)
+        .context("write replay receipt")?;
     println!("{}", serde_json::to_string(&receipt)?);
     Ok(())
 }
