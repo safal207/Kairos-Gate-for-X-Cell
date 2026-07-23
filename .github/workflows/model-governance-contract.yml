@@ -37,13 +37,17 @@ on:
 permissions:
   contents: read
 
+env:
+  SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
 jobs:
   compatibility-contract:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout exact revision
+      - name: Checkout exact head revision
         uses: actions/checkout@v4
         with:
+          ref: ${{ env.SOURCE_SHA }}
           persist-credentials: false
 
       - name: Validate frozen JSON documents
@@ -74,9 +78,10 @@ jobs:
   passport-demo:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout exact revision
+      - name: Checkout exact head revision
         uses: actions/checkout@v4
         with:
+          ref: ${{ env.SOURCE_SHA }}
           persist-credentials: false
 
       - name: Generate deterministic passport twice
@@ -87,13 +92,13 @@ jobs:
             --output-artifact demo-results/run-a/output.json \
             --passport demo-results/run-a/passport.json \
             --created-at 2026-07-23T12:00:00Z \
-            --code-revision "${GITHUB_SHA}"
+            --code-revision "${SOURCE_SHA}"
           python scripts/generate_model_evidence_passport_demo.py \
             --input demo/human-single-cell-input-manifest.json \
             --output-artifact demo-results/run-b/output.json \
             --passport demo-results/run-b/passport.json \
             --created-at 2026-07-23T12:00:00Z \
-            --code-revision "${GITHUB_SHA}"
+            --code-revision "${SOURCE_SHA}"
           cmp demo-results/run-a/output.json demo-results/run-b/output.json
           cmp demo-results/run-a/passport.json demo-results/run-b/passport.json
 
@@ -111,10 +116,10 @@ jobs:
           fi
           echo "identity-free passport correctly blocked"
 
-      - name: Upload exact-run passport evidence
+      - name: Upload exact-head passport evidence
         uses: actions/upload-artifact@v4
         with:
-          name: model-evidence-passport-demo-${{ github.sha }}
+          name: model-evidence-passport-demo-${{ env.SOURCE_SHA }}
           path: |
             demo-results/run-a/output.json
             demo-results/run-a/passport.json
