@@ -1,21 +1,25 @@
-name: Experimental Unit Audit Contract
+name: Biological Evidence Contracts
 
 on:
   pull_request:
     paths:
       - ".agents/skills/bio-experimental-unit-auditor/**"
-      - "schemas/experimental-unit-audit.schema.json"
-      - "examples/**experimental-unit-audit.json"
+      - ".agents/skills/bio-provenance-confounder-graph/**"
+      - "schemas/**"
+      - "examples/**"
       - "tests/fixtures/**"
       - "scripts/validate_experimental_unit_audit.py"
+      - "scripts/validate_provenance_confounder_graph.py"
       - ".github/workflows/experimental-unit-audit-contract.yml"
   push:
     paths:
       - ".agents/skills/bio-experimental-unit-auditor/**"
-      - "schemas/experimental-unit-audit.schema.json"
-      - "examples/**experimental-unit-audit.json"
+      - ".agents/skills/bio-provenance-confounder-graph/**"
+      - "schemas/**"
+      - "examples/**"
       - "tests/fixtures/**"
       - "scripts/validate_experimental_unit_audit.py"
+      - "scripts/validate_provenance_confounder_graph.py"
       - ".github/workflows/experimental-unit-audit-contract.yml"
 
 permissions:
@@ -30,7 +34,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Validate accepted GSE141064 audit
+      - name: Validate accepted GSE141064 experimental-unit audit
         run: |
           python scripts/validate_experimental_unit_audit.py \
             examples/gse141064.experimental-unit-audit.json
@@ -39,7 +43,21 @@ jobs:
         run: |
           if python scripts/validate_experimental_unit_audit.py \
             tests/fixtures/invalid_plate_as_biological_replicate.json; then
-            echo "negative fixture was incorrectly accepted"
+            echo "negative pseudoreplication fixture was incorrectly accepted"
             exit 1
           fi
-          echo "negative fixture correctly blocked"
+          echo "negative pseudoreplication fixture correctly blocked"
+
+      - name: Validate accepted GSE141064 provenance graph
+        run: |
+          python scripts/validate_provenance_confounder_graph.py \
+            examples/gse141064.provenance-confounder-graph.json
+
+      - name: Confirm hidden batch fixture fails closed
+        run: |
+          if python scripts/validate_provenance_confounder_graph.py \
+            tests/fixtures/invalid_hidden_batch_path.json; then
+            echo "negative hidden-batch fixture was incorrectly accepted"
+            exit 1
+          fi
+          echo "negative hidden-batch fixture correctly blocked"
