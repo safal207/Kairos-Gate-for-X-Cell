@@ -28,14 +28,15 @@ Completed:
 - [x] Independent-replication finder
 - [x] Causal-hypothesis ranker
 - [x] Temporal-replication gate
+- [x] Partner-laboratory evidence handoff
 - [x] GSE141064 evidence audit
 - [x] GSE94383 conceptual-replication analysis
 - [x] Supplementary Table 4 diagnostic
 - [x] Direct-replication gap record
+- [x] Machine-readable roadmap and backlog
 
-In progress:
+Current focus:
 
-- [ ] Complete partner-laboratory evidence handoff — #25
 - [ ] Freeze and externally review PR #23 — #26
 
 v0.1 release gate:
@@ -48,7 +49,7 @@ v0.1 release gate:
 - external biology and statistics reviews are requested;
 - deferred v0.2 scope is explicit.
 
-After the freeze, PR #23 receives no new major modules.
+PR #23 is now scope-frozen. New major modules belong in v0.2 or later.
 
 ## Milestone 2 — Model governance v0.2
 
@@ -176,9 +177,8 @@ Monthly:
 
 ## Immediate sequence
 
-1. Complete #25.
-2. Freeze and review PR #23 through #26.
-3. Start v0.2 in a separate branch through #27.
-4. Continue dataset discovery through #28.
-5. Build the MVP through #29 after contracts stabilize.
-6. Prepare publication and outreach through #30.
+1. Freeze and review PR #23 through #26.
+2. Start v0.2 in a separate branch through #27.
+3. Continue dataset discovery through #28.
+4. Build the MVP through #29 after contracts stabilize.
+5. Prepare publication and outreach through #30.
