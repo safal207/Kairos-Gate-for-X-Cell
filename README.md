@@ -4,6 +4,12 @@ Kairos Gate is a computational evidence and safety layer for deciding when a pre
 
 > Before asking how to influence a biological system, can we prove the experimental units, trace every observation, expose competing explanations, locate genuinely independent evidence, enforce temporal identity, and state only the claims the evidence supports?
 
+Project navigation:
+
+- [`MASTER_ROADMAP.md`](MASTER_ROADMAP.md) — direction, milestones, gates, and deferred work;
+- [`BACKLOG.md`](BACKLOG.md) — ordered execution queue and definitions of done;
+- [Epic #24](https://github.com/safal207/Kairos-Gate-for-X-Cell/issues/24) — canonical GitHub roadmap.
+
 ## Biological evidence stack v0.1
 
 ### 1. `bio-experimental-unit-auditor`
@@ -51,7 +57,17 @@ Location: [`.agents/skills/bio-temporal-replication-gate/SKILL.md`](.agents/skil
 - separates direct temporal replication from partial, conceptual, cross-sectional, and method-transfer evidence;
 - records a machine-readable replication gap rather than lowering eligibility standards.
 
-All five skills are computational-only and do not authorize physical biological work.
+### 6. `bio-partner-lab-evidence-handoff`
+
+Location: [`.agents/skills/bio-partner-lab-evidence-handoff/SKILL.md`](.agents/skills/bio-partner-lab-evidence-handoff/SKILL.md)
+
+- converts a documented public-data gap into a bounded evidence question for an authorized institution;
+- defines biological-unit, timing, identity, model-comparison, data-return, stop, and governance contracts;
+- requires a decision matrix covering shared state, direct effect, marker-only, technical confounding, small effects, and null results;
+- contains no physical biological procedures;
+- explicitly separates `READY_FOR_PARTNER_SCIENTIFIC_REVIEW` from authorization to execute a study.
+
+All six skills are computational and documentary only. They do not authorize physical biological work.
 
 ## Reference case: GSE141064 Batch 8_8
 
@@ -73,6 +89,7 @@ Machine-readable records:
 - [`examples/gse141064.independent-replication-search.json`](examples/gse141064.independent-replication-search.json)
 - [`examples/gse141064.nfkbia-causal-hypotheses.json`](examples/gse141064.nfkbia-causal-hypotheses.json)
 - [`examples/gse141064.temporal-replication-gate.json`](examples/gse141064.temporal-replication-gate.json)
+- [`examples/gse141064.nfkbia-partner-lab-handoff.json`](examples/gse141064.nfkbia-partner-lab-handoff.json)
 
 ## Independent conceptual candidate: GSE94383
 
@@ -133,8 +150,6 @@ No independent public dataset found in the searched repository and literature su
 DIRECT_REPLICATION_GAP
 ```
 
-GSE94383 remains conceptual; GSE162992 is held as incomplete; GSE65528, GSE65529, and GSE161125 provide cross-sectional support; Raman2RNA is method-transfer evidence only.
-
 Persistent report:
 
 - [`reports/gse141064-direct-temporal-replication-gap-2026-07-23.md`](reports/gse141064-direct-temporal-replication-gap-2026-07-23.md)
@@ -154,7 +169,7 @@ The publisher workbook contains **362 tested genes** for prediction of later `Tn
 | Bootstrap p-value | **0.01198** |
 | Bootstrap FDR | **0.6056** |
 
-`Nfkbia` is the only gene with LM FDR ≤ 0.10, but **no gene** reaches bootstrap FDR ≤ 0.20.
+`Nfkbia` is the only gene with LM FDR at or below 0.10, but no gene reaches bootstrap FDR at or below 0.20.
 
 ```text
 TOP_DISCOVERY_CANDIDATE_NOT_STABLE_UNIQUE_DRIVER
@@ -162,9 +177,30 @@ TOP_DISCOVERY_CANDIDATE_NOT_STABLE_UNIQUE_DRIVER
 
 This supports `Nfkbia` as a strong discovery candidate in the original small sample, not as an externally replicated unique driver. Winner's-curse risk remains high.
 
-Persistent evidence:
+## Partner-laboratory evidence handoff
 
-- [`reports/gse141064-supplementary-table4-probe-2026-07-23.json`](reports/gse141064-supplementary-table4-probe-2026-07-23.json)
+The handoff is ready for review by a qualified institution:
+
+```text
+READY_FOR_PARTNER_SCIENTIFIC_REVIEW
+PHYSICAL_EXECUTION_NOT_AUTHORIZED
+AI_DOES_NOT_AUTHORIZE_EXECUTION
+```
+
+It freezes:
+
+- the evidence question;
+- six competing explanations;
+- biological-unit requirements;
+- pre-state, transition, and later-phenotype identity linkage;
+- candidate-only, broader-state, technical, combined, and negative-control model families;
+- machine-readable data-return requirements;
+- interpretation limits and automatic HOLD conditions;
+- institutional governance requirements.
+
+Persistent report:
+
+- [`reports/gse141064-nfkbia-partner-lab-handoff-2026-07-23.md`](reports/gse141064-nfkbia-partner-lab-handoff-2026-07-23.md)
 
 ## Validation
 
@@ -174,12 +210,13 @@ python scripts/validate_provenance_confounder_graph.py examples/gse141064.proven
 python scripts/validate_independent_replication_search.py examples/gse141064.independent-replication-search.json
 python scripts/validate_causal_hypothesis_ranking.py examples/gse141064.nfkbia-causal-hypotheses.json
 python scripts/validate_temporal_replication_gate.py examples/gse141064.temporal-replication-gate.json
+python scripts/validate_partner_lab_evidence_handoff.py examples/gse141064.nfkbia-partner-lab-handoff.json
 ```
 
 CI verifies:
 
-- five valid biological-evidence contracts;
-- four invalid cases that must fail closed plus the post-stimulation timing-leakage fixture;
+- six valid biological-evidence contracts;
+- six fail-closed leakage cases, including false physical authorization;
 - publisher checksums and exact cell-ID compatibility for GSE94383;
 - the frozen GSE94383 conceptual-replication analysis;
 - the original Live-seq Supplementary Table 4 structure and `Nfkbia` ranking;
@@ -189,7 +226,7 @@ CI verifies:
 
 Kairos Gate is a computational research protocol. It does not provide or authorize wet-lab procedures, biological modification, human experimentation, treatment, or clinical decisions.
 
-Physical validation must be performed through a competent authorized institution with scientific supervision, applicable ethics approval, biosafety review, consent, data governance, containment, and stop criteria.
+Physical validation must be performed through a competent authorized institution with scientific supervision and every scientific, ethical, biosafety, legal, quality, consent, containment, and data-governance process it determines is applicable.
 
 ## Roadmap
 
@@ -200,6 +237,8 @@ Physical validation must be performed through a competent authorized institution
 - [x] Causal hypothesis ranking.
 - [x] Direct temporal replication gate and gap record.
 - [x] Original Supplementary Table 4 diagnostic.
+- [x] Non-operational partner-laboratory evidence handoff.
+- [ ] Freeze and externally review BioEvidence OS v0.1.
 - [ ] Resolve GSE94383 ID-prefix and collection-batch semantics.
-- [ ] Build safe partner-laboratory evidence handoff.
+- [ ] Build NVIDIA BioNeMo compatibility gate in v0.2.
 - [ ] Add result reconciliation and negative-result memory.
