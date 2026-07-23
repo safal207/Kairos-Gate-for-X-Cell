@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/experimental-unit-audit.schema.json",
+  "title": "Experimental Unit Audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "study_id",
+    "audit_scope",
+    "source_identity",
+    "resolved_experimental_unit",
+    "technical_hierarchy",
+    "independence_status",
+    "unresolved_metadata",
+    "pseudoreplication_findings",
+    "admissible_analyses",
+    "claim_firewall",
+    "overall_verdict",
+    "next_valid_action",
+    "safety_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "study_id": {"type": "string", "minLength": 1},
+    "audit_scope": {"type": "string", "minLength": 1},
+    "source_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accession", "retrieved_at", "evidence_refs"],
+      "properties": {
+        "accession": {"type": "string", "minLength": 1},
+        "article_id": {"type": ["string", "null"]},
+        "retrieved_at": {"type": "string", "format": "date-time"},
+        "evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "resolved_experimental_unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit_type", "status", "evidence_level", "rationale"],
+      "properties": {
+        "unit_type": {"type": ["string", "null"]},
+        "status": {"enum": ["established", "partially_established", "not_established"]},
+        "evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4", "F5"]},
+        "rationale": {"type": "string", "minLength": 1}
+      }
+    },
+    "technical_hierarchy": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entity_type", "entity_label", "parent_label", "evidence_level", "role"],
+        "properties": {
+          "entity_type": {
+            "enum": [
+              "biological_source",
+              "biological_experimental_unit",
+              "derived_biological_unit",
+              "technical_container",
+              "library_preparation_unit",
+              "measurement_run",
+              "analysis_unit",
+              "unknown_unit"
+            ]
+          },
+          "entity_label": {"type": "string", "minLength": 1},
+          "parent_label": {"type": ["string", "null"]},
+          "evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4", "F5"]},
+          "role": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "independence_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["biological_independence", "plate_independence", "run_independence", "independent_counts_by_condition"],
+      "properties": {
+        "biological_independence": {"enum": ["established", "not_established", "contradicted"]},
+        "plate_independence": {"enum": ["established", "not_established", "contradicted"]},
+        "run_independence": {"enum": ["established", "technical_only", "not_established"]},
+        "independent_counts_by_condition": {
+          "type": "object",
+          "additionalProperties": {"type": ["integer", "null"], "minimum": 0}
+        }
+      }
+    },
+    "unresolved_metadata": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "impact", "status"],
+        "properties": {
+          "field": {"type": "string", "minLength": 1},
+          "impact": {"type": "string", "minLength": 1},
+          "status": {"enum": ["unknown", "requested", "unavailable", "resolved"]}
+        }
+      }
+    },
+    "pseudoreplication_findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "finding", "affected_claims"],
+        "properties": {
+          "severity": {"enum": ["info", "warning", "blocking"]},
+          "finding": {"type": "string", "minLength": 1},
+          "affected_claims": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
+    "confounder_graph": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to", "relationship_status", "risk"],
+        "properties": {
+          "from": {"type": "string", "minLength": 1},
+          "to": {"type": "string", "minLength": 1},
+          "relationship_status": {"enum": ["observed", "documented", "inferred", "unknown"]},
+          "risk": {"enum": ["low", "medium", "high", "unknown"]}
+        }
+      }
+    },
+    "admissible_analyses": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["analysis", "status", "reason"],
+        "properties": {
+          "analysis": {"type": "string", "minLength": 1},
+          "status": {"enum": ["allowed", "allowed_with_warning", "exploratory_only", "blocked"]},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "claim_firewall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["descriptive", "association", "prediction", "generalization", "causal", "tissue", "clinical_therapeutic"],
+      "properties": {
+        "descriptive": {"$ref": "#/$defs/claimVerdict"},
+        "association": {"$ref": "#/$defs/claimVerdict"},
+        "prediction": {"$ref": "#/$defs/claimVerdict"},
+        "generalization": {"$ref": "#/$defs/claimVerdict"},
+        "causal": {"$ref": "#/$defs/claimVerdict"},
+        "tissue": {"$ref": "#/$defs/claimVerdict"},
+        "clinical_therapeutic": {"$ref": "#/$defs/claimVerdict"}
+      }
+    },
+    "overall_verdict": {"enum": ["ACCEPT", "ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"]},
+    "next_valid_action": {"type": "string", "minLength": 1},
+    "safety_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "physical_biology_authorized"],
+      "properties": {
+        "mode": {"const": "computational_only"},
+        "physical_biology_authorized": {"const": false},
+        "notes": {"type": "string"}
+      }
+    }
+  },
+  "$defs": {
+    "claimVerdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason"],
+      "properties": {
+        "status": {"enum": ["supported", "supported_with_limits", "not_established", "blocked"]},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
