@@ -2,7 +2,7 @@
 
 Kairos Gate is a computational evidence and safety layer for deciding when a predicted cellular transition is sufficiently supported to move from hypothesis to authorized biological validation.
 
-> Before asking how to influence a biological system, can we prove the experimental units, trace every observation, expose competing batch explanations, locate genuinely independent evidence, and state only the claims the evidence supports?
+> Before asking how to influence a biological system, can we prove the experimental units, trace every observation, expose competing batch explanations, locate genuinely independent evidence, compare causal explanations, and state only the claims the evidence supports?
 
 ## Biological evidence stack v0.1
 
@@ -39,7 +39,18 @@ Location: [`.agents/skills/bio-independent-replication-finder/SKILL.md`](.agents
 - requires at least F3 machine-checkable evidence for an accepted candidate;
 - requires a prespecified endpoint, grouping key, exclusions, and success criteria.
 
-All three skills are computational-only and do not authorize physical biological work.
+### 4. `bio-causal-hypothesis-ranker`
+
+Location: [`.agents/skills/bio-causal-hypothesis-ranker/SKILL.md`](.agents/skills/bio-causal-hypothesis-ranker/SKILL.md)
+
+- converts an association into competing causal, non-causal, technical, and null explanations;
+- ranks explanations without translating rank into causal identification;
+- requires evidence for, evidence against, predictions, falsifiers, and a discriminator for every hypothesis;
+- compares direct action, shared state, marker-only, technical confounding, small-effect, and chance explanations;
+- carries experimental-unit, provenance, confounder, replication, and temporal constraints forward unchanged;
+- blocks causal identification unless temporal, experimental-unit, identifying-design, confounder, and independent-validation gates all pass.
+
+All four skills are computational-only and do not authorize physical biological work.
 
 ## Reference case: GSE141064 Batch 8_8
 
@@ -59,6 +70,7 @@ Machine-readable records:
 - [`examples/gse141064.experimental-unit-audit.json`](examples/gse141064.experimental-unit-audit.json)
 - [`examples/gse141064.provenance-confounder-graph.json`](examples/gse141064.provenance-confounder-graph.json)
 - [`examples/gse141064.independent-replication-search.json`](examples/gse141064.independent-replication-search.json)
+- [`examples/gse141064.nfkbia-causal-hypotheses.json`](examples/gse141064.nfkbia-causal-hypotheses.json)
 
 ## First live independent candidate: GSE94383
 
@@ -93,6 +105,27 @@ Persistent evidence:
 - [`reports/gse94383-conceptual-replication-2026-07-23.json`](reports/gse94383-conceptual-replication-2026-07-23.json)
 - [`scripts/analyze_gse94383_conceptual_replication.py`](scripts/analyze_gse94383_conceptual_replication.py)
 
+## First causal-hypothesis ranking
+
+The `Nfkbia` case currently ranks the explanations as:
+
+1. **Shared upstream cellular state** — best-supported explanation.
+2. **Direct Nfkbia negative-feedback effect** — mechanistically plausible but not identified.
+3. **Small context-specific real effect** — compatible with the weak independent signal.
+4. **Technical confounding** — remains plausible because collection structure is incomplete.
+5. **State marker only** — Nfkbia may track rather than control inflammatory readiness.
+6. **Chance or overfitting** — weakened by independent pathway triangulation but still live for the exact 17-cell target result.
+
+Current verdict:
+
+```text
+RANKED_NOT_IDENTIFIED
+```
+
+Rank 1 is not a causal winner. The direct-effect hypothesis has no identifying intervention, the experimental unit is unresolved, major confounders are not separable, and direct external replication is absent.
+
+The highest-information next action is a frozen comparison of `Nfkbia`-only, broader baseline-state, and technical-confounder models on an independent dataset containing pre-stimulation transcriptomes linked to later inflammatory phenotypes.
+
 ## Validation
 
 ```bash
@@ -104,12 +137,15 @@ python scripts/validate_provenance_confounder_graph.py \
 
 python scripts/validate_independent_replication_search.py \
   examples/gse141064.independent-replication-search.json
+
+python scripts/validate_causal_hypothesis_ranking.py \
+  examples/gse141064.nfkbia-causal-hypotheses.json
 ```
 
 CI verifies:
 
-- three valid biological-evidence contracts;
-- three invalid cases that must fail closed;
+- four valid biological-evidence contracts;
+- four invalid cases that must fail closed;
 - publisher checksums for GSE94383;
 - exact cell-ID compatibility;
 - the frozen GSE94383 conceptual-replication analysis;
@@ -127,8 +163,8 @@ Physical validation must be performed through a competent authorized institution
 - [x] Biological provenance and confounder graph.
 - [x] Independent-dataset replication finder contract.
 - [x] Live repository search and first conceptual-replication run.
+- [x] Causal hypothesis ranking with uncertainty.
 - [ ] Resolve GSE94383 ID-prefix and collection-batch semantics.
 - [ ] Find a pre-stimulation transcriptome linked to a later TNF-promoter phenotype.
-- [ ] Causal hypothesis ranking with uncertainty.
 - [ ] Safe handoff specification for partner laboratories.
 - [ ] Result reconciliation and negative-result memory.
