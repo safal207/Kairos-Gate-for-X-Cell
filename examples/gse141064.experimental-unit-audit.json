@@ -1,0 +1,199 @@
+{
+  "schema_version": "0.1.0",
+  "study_id": "GSE141064",
+  "audit_scope": "Batch 8_8 experimental-unit semantics and admissible claim boundary",
+  "source_identity": {
+    "accession": "GSE141064",
+    "article_id": null,
+    "retrieved_at": "2026-07-23T10:26:00+03:00",
+    "evidence_refs": [
+      "GEO repository metadata for GSE141064",
+      "Author correspondence from Bart Deplancke, 2026-07-23",
+      "Batch 8_8 sample and plate labels"
+    ]
+  },
+  "resolved_experimental_unit": {
+    "unit_type": null,
+    "status": "not_established",
+    "evidence_level": "F4",
+    "rationale": "Author correspondence clarifies that plates and exp8 sequencing runs are technical structures, while the exact independent collection event or batch identity for each cell was not retained."
+  },
+  "technical_hierarchy": [
+    {
+      "entity_type": "derived_biological_unit",
+      "entity_label": "individual Live-seq cell",
+      "parent_label": "unknown collection event",
+      "evidence_level": "F4",
+      "role": "cell-level biological observation nested within incompletely documented collection rounds"
+    },
+    {
+      "entity_type": "technical_container",
+      "entity_label": "plate1/plate2/plate3/...",
+      "parent_label": "exp8 library preparation",
+      "evidence_level": "F4",
+      "role": "library-preparation plate label; not an independent biological experiment"
+    },
+    {
+      "entity_type": "library_preparation_unit",
+      "entity_label": "exp8",
+      "parent_label": null,
+      "evidence_level": "F4",
+      "role": "pooled library-preparation experiment containing cells collected across multiple rounds"
+    },
+    {
+      "entity_type": "measurement_run",
+      "entity_label": "exp8_*",
+      "parent_label": "exp8",
+      "evidence_level": "F4",
+      "role": "sequencing run or flow cell; technical measurement repetition"
+    },
+    {
+      "entity_type": "analysis_unit",
+      "entity_label": "cell expression profile",
+      "parent_label": "individual Live-seq cell",
+      "evidence_level": "F3",
+      "role": "row used in exploratory mCherry.log.slope analysis"
+    }
+  ],
+  "independence_status": {
+    "biological_independence": "not_established",
+    "plate_independence": "contradicted",
+    "run_independence": "technical_only",
+    "independent_counts_by_condition": {
+      "low_mCherry_log_slope": null,
+      "high_mCherry_log_slope": null
+    }
+  },
+  "unresolved_metadata": [
+    {
+      "field": "per-cell collection day or extraction round",
+      "impact": "Prevents reconstruction of independent collection events and day-related confounding.",
+      "status": "unavailable"
+    },
+    {
+      "field": "per-cell biological batch identity",
+      "impact": "Prevents a defensible biological grouping key for pseudobulk or leave-group-out validation.",
+      "status": "unavailable"
+    },
+    {
+      "field": "imaging-session equivalence across collection days",
+      "impact": "Leaves an unresolved technical path between imaging conditions and phenotype measurement.",
+      "status": "requested"
+    }
+  ],
+  "pseudoreplication_findings": [
+    {
+      "severity": "blocking",
+      "finding": "Cells cannot be treated as independent biological replicates when collection-event nesting is unknown.",
+      "affected_claims": [
+        "population-level association",
+        "generalization to new biological material",
+        "causal effect"
+      ]
+    },
+    {
+      "severity": "blocking",
+      "finding": "Plate labels represent technical library-preparation containers and cannot define biological folds.",
+      "affected_claims": [
+        "leave-one-plate-out biological validation",
+        "independent replication"
+      ]
+    }
+  ],
+  "confounder_graph": [
+    {
+      "from": "collection day",
+      "to": "cell state",
+      "relationship_status": "unknown",
+      "risk": "high"
+    },
+    {
+      "from": "collection round",
+      "to": "plate assignment",
+      "relationship_status": "unknown",
+      "risk": "high"
+    },
+    {
+      "from": "plate assignment",
+      "to": "library preparation",
+      "relationship_status": "documented",
+      "risk": "medium"
+    },
+    {
+      "from": "exp8 sequencing run",
+      "to": "measured expression",
+      "relationship_status": "documented",
+      "risk": "medium"
+    },
+    {
+      "from": "imaging session",
+      "to": "mCherry.log.slope",
+      "relationship_status": "unknown",
+      "risk": "unknown"
+    }
+  ],
+  "admissible_analyses": [
+    {
+      "analysis": "cell-level descriptive visualization",
+      "status": "allowed_with_warning",
+      "reason": "Useful for describing the observed cells when nesting and uncertainty are stated explicitly."
+    },
+    {
+      "analysis": "exploratory association with mCherry.log.slope",
+      "status": "exploratory_only",
+      "reason": "The observed association may generate hypotheses but lacks established independent biological replication."
+    },
+    {
+      "analysis": "leave-one-plate-out sensitivity analysis",
+      "status": "allowed_with_warning",
+      "reason": "Can reveal dependence on a technical container but cannot demonstrate biological generalization."
+    },
+    {
+      "analysis": "pseudobulk differential expression by plate",
+      "status": "blocked",
+      "reason": "Plate is not a defensible biological grouping key."
+    },
+    {
+      "analysis": "causal tissue-restoration inference",
+      "status": "blocked",
+      "reason": "The dataset does not establish independent biological replication, intervention assignment, or tissue-level response."
+    }
+  ],
+  "claim_firewall": {
+    "descriptive": {
+      "status": "supported_with_limits",
+      "reason": "Descriptions are limited to the observed cells and documented technical structure."
+    },
+    "association": {
+      "status": "supported_with_limits",
+      "reason": "Only exploratory within-dataset association is supportable."
+    },
+    "prediction": {
+      "status": "not_established",
+      "reason": "No independent biological validation set is available."
+    },
+    "generalization": {
+      "status": "blocked",
+      "reason": "Independent biological units and external replication are not established."
+    },
+    "causal": {
+      "status": "blocked",
+      "reason": "No randomized or otherwise identifiable intervention contrast is present."
+    },
+    "tissue": {
+      "status": "blocked",
+      "reason": "Cell-level repository observations do not establish tissue-level effects."
+    },
+    "clinical_therapeutic": {
+      "status": "blocked",
+      "reason": "No clinical evidence, therapeutic intervention, safety assessment, or authorized translational study is present."
+    }
+  },
+  "overall_verdict": "ACCEPT_WITH_LIMITS",
+  "next_valid_action": "Locate an independent dataset with documented biological grouping or obtain additional independently collected biological replicates through an authorized partner laboratory.",
+  "safety_status": {
+    "mode": "computational_only",
+    "physical_biology_authorized": false,
+    "notes": "This audit does not authorize physical manipulation of cells, tissues, organisms, or patients."
+  }
+}
