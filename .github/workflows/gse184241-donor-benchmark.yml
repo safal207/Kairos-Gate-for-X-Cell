@@ -8,6 +8,7 @@ on:
       - "scripts/run_gse184241_donor_baselines_v2.py"
       - "scripts/run_gse184241_donor_baselines_entry.py"
       - "scripts/validate_gse184241_donor_benchmark.py"
+      - "scripts/compare_gse184241_benchmark_evidence.py"
       - "schemas/gse184241-donor-benchmark.schema.json"
       - "examples/gse184241.donor-held-out-benchmark.json"
       - "tests/fixtures/invalid_gse184241_cell_random_split.json"
@@ -20,6 +21,7 @@ on:
       - "scripts/run_gse184241_donor_baselines_v2.py"
       - "scripts/run_gse184241_donor_baselines_entry.py"
       - "scripts/validate_gse184241_donor_benchmark.py"
+      - "scripts/compare_gse184241_benchmark_evidence.py"
       - "schemas/gse184241-donor-benchmark.schema.json"
       - "examples/gse184241.donor-held-out-benchmark.json"
       - "tests/fixtures/invalid_gse184241_cell_random_split.json"
@@ -130,17 +132,9 @@ jobs:
 
       - name: Confirm canonical evidence has not drifted
         run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          generated = json.loads(Path('benchmark-results/donor-held-out-baselines.json').read_text())
-          canonical = json.loads(Path('examples/gse184241.donor-held-out-benchmark.json').read_text())
-          generated.pop('source_revision', None)
-          canonical.pop('source_revision', None)
-          if generated != canonical:
-              raise SystemExit('generated benchmark differs from canonical evidence')
-          print('canonical benchmark reproduced exactly apart from source_revision')
-          PY
+          python scripts/compare_gse184241_benchmark_evidence.py \
+            benchmark-results/donor-held-out-baselines.json \
+            examples/gse184241.donor-held-out-benchmark.json
 
       - name: Confirm cell-random donor leakage fails closed
         run: |
