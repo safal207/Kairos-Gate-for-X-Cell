@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import json
+import sys
+import traceback
 from pathlib import Path
 from typing import Any
 
@@ -193,4 +195,10 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except SystemExit:
+        raise
+    except Exception:
+        traceback.print_exc(file=sys.stdout)
+        raise SystemExit(1)
