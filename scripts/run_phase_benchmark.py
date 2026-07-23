@@ -22,6 +22,13 @@ def _reject_constant(value: str) -> None:
     raise BenchmarkError(f"non-finite JSON constant: {value}")
 
 
+def _require_finite(name: str, value: float) -> float:
+    """Return a finite metric or fail closed before interpretation or serialization."""
+    if not math.isfinite(value):
+        raise BenchmarkError(f"{name} must be finite")
+    return value
+
+
 def _load(path: Path) -> Mapping[str, Any]:
     """Load and validate the minimal synthetic dataset contract."""
     try:
@@ -52,7 +59,10 @@ def _load(path: Path) -> Mapping[str, Any]:
         required = {"id", "split", "perturbation", "phase", "response"}
         if set(record) != required:
             raise BenchmarkError(f"record {index} must contain exactly {sorted(required)}")
-        if not all(isinstance(record[field], str) and record[field] for field in required - {"response"}):
+        if not all(
+            isinstance(record[field], str) and record[field]
+            for field in required - {"response"}
+        ):
             raise BenchmarkError(f"record {index} contains an invalid string field")
         if record["id"] in seen_ids:
             raise BenchmarkError(f"duplicate record id: {record['id']}")
@@ -80,7 +90,12 @@ def _means(
     grouped: dict[Hashable, list[float]] = defaultdict(list)
     for record in records:
         grouped[key_fn(record)].append(float(record["response"]))
-    return {key: sum(values) / len(values) for key, values in grouped.items()}
+
+    means: dict[Hashable, float] = {}
+    for key, values in grouped.items():
+        mean = sum(values) / len(values)
+        means[key] = _require_finite(f"fitted mean for group {key!r}", mean)
+    return means
 
 
 def _mse(
@@ -88,15 +103,22 @@ def _mse(
     model: Mapping[Hashable, float],
     key_fn: Callable[[Mapping[str, Any]], Hashable],
 ) -> float:
-    """Calculate held-out mean squared error and fail on unseen groups."""
+    """Calculate held-out mean squared error and fail on unseen or non-finite groups."""
     errors: list[float] = []
     for record in test_records:
         key = key_fn(record)
         if key not in model:
             raise BenchmarkError(f"test group absent from training data: {key}")
-        error = model[key] - float(record["response"])
-        errors.append(error * error)
-    return sum(errors) / len(errors)
+        error = _require_finite(
+            f"prediction error for record {record['id']}",
+            model[key] - float(record["response"]),
+        )
+        squared_error = _require_finite(
+            f"squared error for record {record['id']}",
+            error * error,
+        )
+        errors.append(squared_error)
+    return _require_finite("mean squared error", sum(errors) / len(errors))
 
 
 def run_benchmark(path: Path) -> dict[str, Any]:
@@ -129,6 +151,9 @@ def run_benchmark(path: Path) -> dict[str, Any]:
     shuffled_mse = _mse(
         test, shuffled, lambda record: (record["perturbation"], record["phase"])
     )
+    absolute_improvement = _require_finite(
+        "absolute improvement", baseline_mse - conditioned_mse
+    )
 
     if conditioned_mse < baseline_mse and shuffled_mse >= baseline_mse:
         interpretation = "SUPPORTED_SYNTHETIC_ONLY"
@@ -150,7 +175,7 @@ def run_benchmark(path: Path) -> dict[str, Any]:
             "phase_conditioned_mse": conditioned_mse,
             "phase_ablation_mse": baseline_mse,
             "phase_shuffle_mse": shuffled_mse,
-            "absolute_improvement": baseline_mse - conditioned_mse,
+            "absolute_improvement": absolute_improvement,
         },
         "interpretation": interpretation,
         "limitations": [
@@ -168,10 +193,16 @@ def main() -> int:
     args = parser.parse_args()
     try:
         result = run_benchmark(args.dataset)
-    except BenchmarkError as exc:
-        print(json.dumps({"status": "BLOCKED", "error": str(exc)}))
+        output = json.dumps(
+            result,
+            indent=2,
+            sort_keys=True,
+            allow_nan=False,
+        )
+    except (BenchmarkError, ValueError) as exc:
+        print(json.dumps({"status": "BLOCKED", "error": str(exc)}, allow_nan=False))
         return 1
-    print(json.dumps(result, indent=2, sort_keys=True))
+    print(output)
     return 0
 
 
