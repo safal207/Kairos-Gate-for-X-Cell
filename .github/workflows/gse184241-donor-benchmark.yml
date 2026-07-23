@@ -6,6 +6,7 @@ on:
       - "scripts/probe_gse184241_inputs.py"
       - "scripts/run_gse184241_donor_baselines.py"
       - "scripts/run_gse184241_donor_baselines_v2.py"
+      - "scripts/run_gse184241_donor_baselines_entry.py"
       - "scripts/validate_gse184241_donor_benchmark.py"
       - "schemas/gse184241-donor-benchmark.schema.json"
       - "examples/gse184241.donor-held-out-benchmark.json"
@@ -17,6 +18,7 @@ on:
       - "scripts/probe_gse184241_inputs.py"
       - "scripts/run_gse184241_donor_baselines.py"
       - "scripts/run_gse184241_donor_baselines_v2.py"
+      - "scripts/run_gse184241_donor_baselines_entry.py"
       - "scripts/validate_gse184241_donor_benchmark.py"
       - "schemas/gse184241-donor-benchmark.schema.json"
       - "examples/gse184241.donor-held-out-benchmark.json"
@@ -82,7 +84,7 @@ jobs:
       - name: Run baseline and capture diagnostics
         run: |
           set +e
-          python scripts/run_gse184241_donor_baselines_v2.py \
+          python scripts/run_gse184241_donor_baselines_entry.py \
             --counts benchmark-inputs/GSE184241_combined_raw_counts.txt.gz \
             --barcodes benchmark-inputs/GSE184241_barcode_sequences.xlsx \
             --output-json benchmark-results/donor-held-out-baselines.json \
@@ -136,7 +138,7 @@ jobs:
         run: |
           python - <<'PY'
           import json
-          from pathlib import import Path
+          from pathlib import Path
           data = json.loads(Path('benchmark-results/donor-held-out-baselines.json').read_text())
           assert data['split_contract']['biological_unit'] == 'donor'
           assert data['split_contract']['strategy'] == 'leave_one_donor_out'
