@@ -143,7 +143,11 @@ def main() -> int:
         for key, value, json_path in walk(record):
             if key in PROHIBITED_TRUE_KEYS and value is True:
                 errors.append(f"unsafe true flag in accepted example {module['example']} at {json_path}")
-            if key in {"causal", "tissue", "clinical_therapeutic"} and value in {"supported", "supported_with_limits"}:
+            if (
+                key in {"causal", "tissue", "clinical_therapeutic"}
+                and isinstance(value, str)
+                and value in {"supported", "supported_with_limits"}
+            ):
                 errors.append(f"overclaimed boundary in {module['example']} at {json_path}: {value}")
 
     required_workflow_fragments = [
