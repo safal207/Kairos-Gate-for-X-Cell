@@ -49,6 +49,8 @@ env:
   SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   COUNTS_URL: https://ftp.ncbi.nlm.nih.gov/geo/series/GSE184nnn/GSE184241/suppl/GSE184241_combined_raw_counts.txt.gz
   BARCODES_URL: https://ftp.ncbi.nlm.nih.gov/geo/series/GSE184nnn/GSE184241/suppl/GSE184241_barcode_sequences.xlsx
+  EXPECTED_COUNTS_SHA256: 8e2482438215dc48ead81fa97a10a57ddf11633c83384dd3b11fbe39cb60830d
+  EXPECTED_BARCODES_SHA256: 806c5b2ecb11cb4ec7a66d42608fddfb920722cbc53b23a9c000085391bb47dd
   LIMINALDB_REPOSITORY: safal207/LiminalDB
   LIMINALDB_COMMIT: ae51ac3a9d765492ba13e65ae3f7e8a09fa3191d
   CAPTURED_AT_MS: "1784826000000"
@@ -98,7 +100,7 @@ jobs:
             scripts/validate_liminaldb_geneformer_inference_transition.py \
             scripts/apply_json_mutation_fixture.py
 
-      - name: Download exact official GSE184241 inputs
+      - name: Download and verify exact official GSE184241 inputs
         run: |
           set -o pipefail
           mkdir -p inference-inputs inference-results model-cache
@@ -108,6 +110,14 @@ jobs:
           curl --fail --location --retry 4 --retry-all-errors \
             --output inference-inputs/GSE184241_barcode_sequences.xlsx \
             "$BARCODES_URL"
+          printf '%s  %s\n%s  %s\n' \
+            "$EXPECTED_COUNTS_SHA256" \
+            inference-inputs/GSE184241_combined_raw_counts.txt.gz \
+            "$EXPECTED_BARCODES_SHA256" \
+            inference-inputs/GSE184241_barcode_sequences.xlsx \
+            > inference-results/expected-input-sha256.txt
+          sha256sum --check --strict inference-results/expected-input-sha256.txt \
+            | tee inference-results/input-digest-verification.log
           sha256sum inference-inputs/* | tee inference-results/input-sha256.txt
 
       - name: Execute exact Geneformer V1 encoder inference or durable HOLD
