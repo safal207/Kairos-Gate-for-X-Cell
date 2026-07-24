@@ -41,11 +41,26 @@
       "impact": "blocking"
     }
   ],
+  "scoring_model": {
+    "formula_version": "bioevidence.priority.v0.1",
+    "formula": "max(0, weighted_positive_sum - uncertainty_penalty_weight * uncertainty_penalty)",
+    "weights": {
+      "temporal_fit": 2,
+      "experimental_unit_fit": 3,
+      "cross_dataset_support": 2,
+      "confounder_resilience": 3,
+      "mechanistic_coherence": 5,
+      "intervention_support": 5,
+      "falsifiability": 1,
+      "effect_relevance": 4
+    },
+    "uncertainty_penalty_weight": 2
+  },
   "hypotheses": [
     {
       "hypothesis_id": "H1_SHARED_UPSTREAM_STATE",
       "rank": 1,
-      "priority_score": 74,
+      "priority_score": 53,
       "statement": "A broader pre-existing inflammatory or signaling state drives both basal Nfkbia expression and the later Tnf-mCherry response.",
       "mechanism_class": "shared_upstream_state",
       "status": "supported_explanation",
@@ -96,7 +111,7 @@
     {
       "hypothesis_id": "H2_DIRECT_NFKBIA_EFFECT",
       "rank": 2,
-      "priority_score": 61,
+      "priority_score": 46,
       "statement": "Basal Nfkbia directly changes the magnitude or dynamics of the later inflammatory response through negative-feedback control.",
       "mechanism_class": "direct_causal_effect",
       "status": "not_identified",
@@ -148,11 +163,11 @@
     },
     {
       "hypothesis_id": "H3_SMALL_CONTEXT_SPECIFIC_EFFECT",
-      "rank": 3,
-      "priority_score": 58,
+      "rank": 4,
+      "priority_score": 41,
       "statement": "The association is biologically real but small, context-specific, and insufficient for broad prediction or intervention claims.",
       "mechanism_class": "small_real_effect",
-      "status": "supported_explanation",
+      "status": "plausible",
       "evidence_level": "F3",
       "scores": {
         "temporal_fit": 3,
@@ -196,8 +211,8 @@
     },
     {
       "hypothesis_id": "H4_TECHNICAL_CONFOUNDING",
-      "rank": 4,
-      "priority_score": 56,
+      "rank": 5,
+      "priority_score": 32,
       "statement": "Collection day, extraction round, imaging conditions, plate structure, or another technical factor produces or amplifies the target association.",
       "mechanism_class": "technical_confounding",
       "status": "plausible",
@@ -246,8 +261,8 @@
     },
     {
       "hypothesis_id": "H5_STATE_MARKER_ONLY",
-      "rank": 5,
-      "priority_score": 54,
+      "rank": 3,
+      "priority_score": 44,
       "statement": "Nfkbia is a useful marker of inflammatory readiness but is not itself load-bearing for the later phenotype.",
       "mechanism_class": "state_marker_only",
       "status": "plausible",
@@ -295,7 +310,7 @@
     {
       "hypothesis_id": "H6_CHANCE_OR_OVERFITTING",
       "rank": 6,
-      "priority_score": 38,
+      "priority_score": 19,
       "statement": "The target association is mainly sampling noise, flexible analysis, or overfitting in a very small dataset.",
       "mechanism_class": "chance_or_overfitting",
       "status": "weakened",
@@ -313,7 +328,7 @@
       },
       "score_rationale": [
         "Seventeen cells and unclear biological replication create high overfitting risk.",
-        "The frozen independent GSE94383 result weakens a pure-chance explanation for pathway coupling but does not replicate the target endpoint.",
+        "The independent GSE94383 result weakens a pure-chance explanation for pathway coupling but does not replicate the target endpoint.",
         "The target association still lacks a direct external validation set."
       ],
       "evidence_for": [
@@ -322,7 +337,7 @@
         "Potential analysis flexibility is large relative to the number of cells."
       ],
       "evidence_against": [
-        "A prespecified independent computation found related Nfkbia/NF-kB coupling.",
+        "An independent computation found related Nfkbia/NF-kB coupling.",
         "The candidate has coherent pathway relevance rather than being an arbitrary feature."
       ],
       "unresolved_assumptions": [
