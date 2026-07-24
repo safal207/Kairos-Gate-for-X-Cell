@@ -132,14 +132,28 @@
     "prespecified_test": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "primary_endpoint", "biological_grouping_key", "success_criteria"],
+      "required": [
+        "status",
+        "primary_endpoint",
+        "biological_grouping_key",
+        "success_criteria",
+        "criteria_frozen_at_commit",
+        "freeze_verification",
+        "observed_result"
+      ],
       "properties": {
         "status": {"enum": ["not_defined", "defined_not_run", "run_incomplete", "completed"]},
         "primary_endpoint": {"type": ["string", "null"]},
         "expected_direction": {"type": ["string", "null"]},
         "biological_grouping_key": {"type": ["string", "null"]},
         "exclusion_criteria": {"type": "array", "items": {"type": "string"}},
-        "success_criteria": {"type": ["string", "null"]}
+        "success_criteria": {"type": ["string", "null"]},
+        "criteria_frozen_at_commit": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "freeze_verification": {"enum": ["commit_bound", "not_commit_bound", "not_applicable"]},
+        "observed_result": {"type": ["string", "null"]}
       }
     },
     "overall_verdict": {"enum": ["ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"]},
