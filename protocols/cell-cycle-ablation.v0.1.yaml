@@ -1,0 +1,69 @@
+protocol_id: kairos.cell-cycle-ablation.v0.1
+status: preregistered_synthetic_demonstration
+authority: RESEARCH_ONLY
+experiment_authorization: false
+
+question: >-
+  Does adding a pre-intervention cell-cycle phase variable improve held-out
+  response prediction relative to a matched static-state baseline in the
+  declared synthetic fixture?
+
+null_hypothesis: >-
+  Phase conditioning provides no reduction in held-out mean squared error
+  relative to the static-state baseline.
+
+alternative_hypothesis: >-
+  Phase conditioning reduces held-out mean squared error, while a deterministic
+  phase-shuffle negative control removes that advantage.
+
+scope:
+  organism: synthetic
+  cell_context: synthetic_fixture_only
+  perturbations: [A, B]
+  phases: [G1, S]
+  response: scalar_synthetic_response
+
+models:
+  baseline:
+    inputs: [perturbation]
+    estimator: training_group_mean
+  phase_conditioned:
+    inputs: [perturbation, phase]
+    estimator: training_group_mean
+  phase_ablation:
+    definition: identical_to_baseline_without_phase
+  phase_shuffle:
+    definition: deterministic_training_phase_label_swap
+
+split:
+  field: split
+  train_value: train
+  test_value: test
+  leakage_rule: test responses may not influence any training mean
+
+primary_metric:
+  name: held_out_mse
+  direction: lower_is_better
+
+predeclared_interpretation:
+  supported_synthetic_only:
+    - phase_conditioned_mse < baseline_mse
+    - phase_shuffle_mse >= baseline_mse
+  unsupported:
+    - phase_conditioned_mse >= baseline_mse
+  control_failure:
+    - phase_shuffle_mse < baseline_mse
+
+required_outputs:
+  - baseline_mse
+  - phase_conditioned_mse
+  - phase_ablation_mse
+  - phase_shuffle_mse
+  - absolute_improvement
+  - interpretation
+
+non_claims:
+  - no biological effect is tested
+  - no causal timing is established
+  - no therapeutic or clinical conclusion is permitted
+  - no wet-lab, animal, or human experiment is authorized
