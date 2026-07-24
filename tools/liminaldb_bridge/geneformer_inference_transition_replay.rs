@@ -244,6 +244,9 @@ fn main() -> Result<()> {
     if bundle.records.len() != 7 {
         return Err(anyhow!("expected exactly seven transition records"));
     }
+    if bundle.records[0].kind != "authorization" {
+        return Err(anyhow!("first record must be the authorization record"));
+    }
     let current_authorization = bundle.records[0].record_ref.clone();
     if current_authorization == EXPECTED_PREDECESSOR_AUTHORIZATION {
         return Err(anyhow!("current authorization equals predecessor authorization"));
