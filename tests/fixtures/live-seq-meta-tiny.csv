@@ -1,0 +1,6 @@
+sample_ID,sample_name,original_sample_name,Batch,Cell_type,sampling_type,treatment,Probe,Date,nFeature_RNA,percent.mt,percent.rRNA,input.reads,uniquely.mapped,nCount_RNA,mCherry.log.intercept,mCherry.log.slope,mCherry.AUC,double_extraction,double_extraction_order
+sampleA,a,a,8_8,Raw264.7_G9,Live_seq,not_treated,probe1,2020-01-01,1500,10,10,10000,6000,4000,1.0,0.2,10,NA,NA
+sampleB,b,b,8_8,Raw264.7_G9,Live_seq,not_treated,probe2,2020-01-02,1600,11,11,11000,7000,5000,1.1,0.3,11,NA,NA
+sampleC,c,c,8_8,Raw264.7_G9,Live_seq,not_treated,probe1,2020-01-01,1700,12,12,12000,8000,6000,1.2,0.4,12,pair-1,1
+sampleD,d,d,8_8,Raw264.7_G9,Live_seq,not_treated,probe2,2020-01-02,1800,13,13,13000,9000,7000,1.3,0.5,13,pair-1,2
+sampleE,e,e,7,Raw264.7,Live_seq,LPS_treated,probe3,2020-01-03,1900,14,14,14000,10000,8000,NA,NA,NA,NA,NA

@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/tip-kairos-handoff.schema.json",
+  "title": "TIP to Kairos Handoff v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "handoff_id", "created_at", "tip_export", "kairos_request", "authority"],
+  "properties": {
+    "schema": {"const": "tip.kairos.handoff.v0.1"},
+    "handoff_id": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "tip_export": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "protocol_version", "repository", "commit_ref",
+        "starting_state_ref", "tension", "cause", "proposed_transition",
+        "smallest_research_step", "evidence_refs", "provenance"
+      ],
+      "properties": {
+        "protocol": {"const": "Transition Intelligence Protocol"},
+        "protocol_version": {"type": "string", "minLength": 1},
+        "repository": {"const": "https://github.com/safal207/transition-intelligence-protocol"},
+        "commit_ref": {
+          "type": "string",
+          "pattern": "^https://github\\.com/safal207/transition-intelligence-protocol/commit/[0-9a-f]{40}$"
+        },
+        "starting_state_ref": {"type": "string", "minLength": 1},
+        "tension": {"type": "string", "minLength": 1},
+        "cause": {"type": "string", "minLength": 1},
+        "proposed_transition": {"type": "string", "minLength": 1},
+        "smallest_research_step": {"type": "string", "minLength": 1},
+        "evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "anyOf": [
+              {
+                "pattern": "^https://github\\.com/[^/]+/[^/]+/blob/[0-9a-f]{40}/.+$"
+              },
+              {
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              }
+            ]
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["producer", "produced_at", "data_digest"],
+          "properties": {
+            "producer": {"type": "string", "minLength": 1},
+            "produced_at": {"type": "string", "format": "date-time"},
+            "data_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+          }
+        }
+      }
+    },
+    "kairos_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_schema", "repository", "research_question",
+        "phase_variables", "forecast_horizon_hours"
+      ],
+      "properties": {
+        "target_schema": {"const": "kairos.transition.v0.1"},
+        "repository": {"const": "https://github.com/safal207/Kairos-Gate-for-X-Cell"},
+        "research_question": {"type": "string", "minLength": 1},
+        "phase_variables": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["cell_cycle", "calcium", "membrane_potential", "metabolic", "circadian"]
+          }
+        },
+        "forecast_horizon_hours": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "execution_authorized", "clinical_authorized", "merge_authorized"],
+      "properties": {
+        "classification": {"const": "RESEARCH_ONLY"},
+        "execution_authorized": {"const": false},
+        "clinical_authorized": {"const": false},
+        "merge_authorized": {"const": false}
+      }
+    }
+  }
+}

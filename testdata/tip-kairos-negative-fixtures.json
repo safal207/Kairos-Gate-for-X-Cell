@@ -1,0 +1,30 @@
+{
+  "schema": "tip.kairos.negative-fixtures.v0.1",
+  "canonical_ref": "examples/tip-kairos-handoff.json",
+  "cases": [
+    {
+      "id": "missing-starting-state",
+      "operation": "remove",
+      "path": ["tip_export", "starting_state_ref"],
+      "expected_error": "required property"
+    },
+    {
+      "id": "missing-cause",
+      "operation": "remove",
+      "path": ["tip_export", "cause"],
+      "expected_error": "required property"
+    },
+    {
+      "id": "missing-evidence",
+      "operation": "remove",
+      "path": ["tip_export", "evidence_refs"],
+      "expected_error": "required property"
+    },
+    {
+      "id": "missing-provenance",
+      "operation": "remove",
+      "path": ["tip_export", "provenance"],
+      "expected_error": "required property"
+    }
+  ]
+}

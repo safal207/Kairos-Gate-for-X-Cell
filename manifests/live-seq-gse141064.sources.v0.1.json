@@ -1,0 +1,73 @@
+{
+  "schema": "kairos.open-data-source-manifest.v0.1",
+  "dataset_id": "GSE141064",
+  "title": "Live-seq for live cell transcriptome profiling",
+  "organism": "Mus musculus",
+  "retrieved_for_audit_on": "2026-07-22",
+  "sources": {
+    "geo_record": {
+      "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE141064",
+      "role": "authoritative dataset record"
+    },
+    "count_matrix": {
+      "url": "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE141064&file=GSE141064_count.final.csv.gz&format=file",
+      "published_size": "10.4 MB",
+      "sha256": "sha256:0e8a07d36a4b06bc8ced881bf97114adc2b55681b5ccf00d29e4f80e05107b22",
+      "digest_status": "VERIFIED_BY_GITHUB_ACTIONS"
+    },
+    "geo_metadata": {
+      "url": "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE141064&file=GSE141064_Meta_data.xls.gz&format=file",
+      "published_size": "141.7 KB",
+      "sha256": null,
+      "digest_status": "NOT_USED_BY_V0.1_AUDIT"
+    },
+    "analysis_metadata_csv": {
+      "url": "https://raw.githubusercontent.com/DeplanckeLab/Live-seq/6633d4d468f56031ea197474e09921088d878512/data/meta.final.csv",
+      "repository_commit": "6633d4d468f56031ea197474e09921088d878512",
+      "sha256": "sha256:dcce9bea9444857a6a042fc64be3a5c7b31a00095a21eabc1488e516abd689c8",
+      "digest_status": "VERIFIED_BY_GITHUB_ACTIONS"
+    },
+    "analysis_repository": {
+      "repository": "https://github.com/DeplanckeLab/Live-seq",
+      "commit": "6633d4d468f56031ea197474e09921088d878512",
+      "metadata_csv": "https://github.com/DeplanckeLab/Live-seq/blob/6633d4d468f56031ea197474e09921088d878512/data/meta.final.csv",
+      "analysis_script": "https://github.com/DeplanckeLab/Live-seq/blob/6633d4d468f56031ea197474e09921088d878512/05_Liveseq_with_LiveCell_imaging/5_Liveseq_with_LiveCell_imaging.R",
+      "preprocessing_script": "https://github.com/DeplanckeLab/Live-seq/blob/6633d4d468f56031ea197474e09921088d878512/01_preprocessing/1_preprocessing.R",
+      "software_license": "GPL-3.0"
+    },
+    "archived_code": {
+      "doi": "10.5281/zenodo.6611232"
+    },
+    "publication": {
+      "doi": "10.1038/s41586-022-05046-9",
+      "pmid": "35978187"
+    }
+  },
+  "real_input_audit": {
+    "auditor_commit": "0c192294de5ccabf8ecc0132e6fa3692ae233729",
+    "workflow_run": 29895312004,
+    "artifact_name": "live-seq-real-audit-0c192294de5ccabf8ecc0132e6fa3692ae233729",
+    "artifact_digest": "sha256:1f8e375339785a9d6a9c84b8d8ac75f5c928719b6b4887c7b50c48e166b2a8b4",
+    "metadata_rows": 1012,
+    "count_matrix_sample_columns": 1012,
+    "full_id_sets_match": true,
+    "selection_uses_response_label": false,
+    "selected_recorded_cells": 17,
+    "response_complete_cells": 17,
+    "missing_response_sample_ids": [],
+    "missing_selected_sample_ids": [],
+    "declared_replicate_groups": [],
+    "status": "BLOCKED_INSUFFICIENT_REPLICATES"
+  },
+  "reuse_boundary": {
+    "software_license_verified": true,
+    "publication_open_access": true,
+    "dataset_redistribution_terms_verified": false,
+    "rule": "Do not commit or redistribute source data until dataset reuse terms are explicitly documented. Local analysis with provenance is separate from redistribution."
+  },
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "experiment_authorization": false,
+    "clinical_authorization": false
+  }
+}

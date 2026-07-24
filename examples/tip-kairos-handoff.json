@@ -1,0 +1,38 @@
+{
+  "schema": "tip.kairos.handoff.v0.1",
+  "handoff_id": "tip-kairos-synthetic-001",
+  "created_at": "2026-07-22T05:00:00Z",
+  "tip_export": {
+    "protocol": "Transition Intelligence Protocol",
+    "protocol_version": "v0.1-development",
+    "repository": "https://github.com/safal207/transition-intelligence-protocol",
+    "commit_ref": "https://github.com/safal207/transition-intelligence-protocol/commit/55e691a29656c79335797d441493d16483a3a882",
+    "starting_state_ref": "urn:kairos:synthetic-state:001",
+    "tension": "The same synthetic perturbation has phase-dependent response values.",
+    "cause": "The fixture assigns different synthetic response regimes to G1 and S phase.",
+    "proposed_transition": "Evaluate phase-conditioned prediction before considering a candidate window.",
+    "smallest_research_step": "Run the preregistered synthetic baseline, ablation, and shuffle controls.",
+    "evidence_refs": [
+      "https://github.com/safal207/Kairos-Gate-for-X-Cell/blob/79ca1baa810fced03aa8376998c7aa763e229e46/protocols/cell-cycle-ablation.v0.1.yaml",
+      "https://github.com/safal207/Kairos-Gate-for-X-Cell/blob/79ca1baa810fced03aa8376998c7aa763e229e46/testdata/phase-window-tiny.json"
+    ],
+    "provenance": {
+      "producer": "kairos-gate synthetic handoff example",
+      "produced_at": "2026-07-22T05:00:00Z",
+      "data_digest": "sha256:92f350223aca6d37e00a8f125a5ef02e705a61c21eb5f13ec0f62b89789d61b4"
+    }
+  },
+  "kairos_request": {
+    "target_schema": "kairos.transition.v0.1",
+    "repository": "https://github.com/safal207/Kairos-Gate-for-X-Cell",
+    "research_question": "Does pre-intervention cell-cycle phase improve held-out synthetic response prediction?",
+    "phase_variables": ["cell_cycle"],
+    "forecast_horizon_hours": 24
+  },
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "execution_authorized": false,
+    "clinical_authorized": false,
+    "merge_authorized": false
+  }
+}

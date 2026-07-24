@@ -1,0 +1,22 @@
+{
+  "schema": "kairos.synthetic-phase-benchmark.v0.1",
+  "dataset_id": "phase-window-tiny",
+  "version": "0.1.0",
+  "provenance_class": "synthetic",
+  "license": "CC0-1.0",
+  "description": "Tiny deterministic fixture for testing phase ablation and shuffle controls. It is not biological data.",
+  "records": [
+    {"id": "tr-a-g1-1", "split": "train", "perturbation": "A", "phase": "G1", "response": 0.20},
+    {"id": "tr-a-g1-2", "split": "train", "perturbation": "A", "phase": "G1", "response": 0.22},
+    {"id": "tr-a-s-1", "split": "train", "perturbation": "A", "phase": "S", "response": 0.80},
+    {"id": "tr-a-s-2", "split": "train", "perturbation": "A", "phase": "S", "response": 0.82},
+    {"id": "tr-b-g1-1", "split": "train", "perturbation": "B", "phase": "G1", "response": 0.40},
+    {"id": "tr-b-g1-2", "split": "train", "perturbation": "B", "phase": "G1", "response": 0.42},
+    {"id": "tr-b-s-1", "split": "train", "perturbation": "B", "phase": "S", "response": 0.70},
+    {"id": "tr-b-s-2", "split": "train", "perturbation": "B", "phase": "S", "response": 0.72},
+    {"id": "te-a-g1", "split": "test", "perturbation": "A", "phase": "G1", "response": 0.21},
+    {"id": "te-a-s", "split": "test", "perturbation": "A", "phase": "S", "response": 0.81},
+    {"id": "te-b-g1", "split": "test", "perturbation": "B", "phase": "G1", "response": 0.41},
+    {"id": "te-b-s", "split": "test", "perturbation": "B", "phase": "S", "response": 0.71}
+  ]
+}
