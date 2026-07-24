@@ -7,7 +7,7 @@ import json
 import sys
 import traceback
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/experimental-unit-audit-contract.yml"
@@ -89,9 +89,12 @@ PROHIBITED_TRUE_KEYS = {
     "biological_modification_instructions_included",
     "human_experimentation_instructions_included",
 }
+PROHIBITED_CLAIM_KEYS = {"causal", "tissue", "clinical_therapeutic"}
+PROHIBITED_CLAIM_STATUSES = {"supported", "supported_with_limits"}
 
 
-def walk(value: Any, path: str = "$"):
+def walk(value: Any, path: str = "$") -> Iterator[tuple[str, Any, str]]:
+    """Yield every dictionary key, child value, and JSON path recursively."""
     if isinstance(value, dict):
         for key, child in value.items():
             child_path = f"{path}.{key}"
@@ -103,6 +106,7 @@ def walk(value: Any, path: str = "$"):
 
 
 def load_json(relative: str, errors: list[str]) -> Any:
+    """Load a repository-relative JSON file and accumulate parse errors."""
     path = ROOT / relative
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -111,7 +115,18 @@ def load_json(relative: str, errors: list[str]) -> Any:
         return None
 
 
+def claim_status(value: Any) -> str | None:
+    """Normalize flat and nested claim-boundary representations."""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        nested = value.get("status")
+        return nested if isinstance(nested, str) else None
+    return None
+
+
 def main() -> int:
+    """Run the release audit and return a fail-closed process exit code."""
     errors: list[str] = []
 
     for module in MODULES:
@@ -142,13 +157,16 @@ def main() -> int:
             continue
         for key, value, json_path in walk(record):
             if key in PROHIBITED_TRUE_KEYS and value is True:
-                errors.append(f"unsafe true flag in accepted example {module['example']} at {json_path}")
-            if (
-                key in {"causal", "tissue", "clinical_therapeutic"}
-                and isinstance(value, str)
-                and value in {"supported", "supported_with_limits"}
-            ):
-                errors.append(f"overclaimed boundary in {module['example']} at {json_path}: {value}")
+                errors.append(
+                    f"unsafe true flag in accepted example {module['example']} at {json_path}"
+                )
+            if key not in PROHIBITED_CLAIM_KEYS:
+                continue
+            normalized = claim_status(value)
+            if normalized in PROHIBITED_CLAIM_STATUSES:
+                errors.append(
+                    f"overclaimed boundary in {module['example']} at {json_path}: {normalized}"
+                )
 
     required_workflow_fragments = [
         "curl --fail --location --retry 3 --retry-all-errors",
@@ -166,12 +184,19 @@ def main() -> int:
     handoff_negative = load_json(handoff_negative_path, errors)
     if isinstance(handoff_negative, dict):
         unsafe_signals = [
-            handoff_negative.get("governance_gates", {}).get("execution_authorized") is True,
-            handoff_negative.get("operational_content", {}).get("physical_protocol_included") is True,
-            handoff_negative.get("safety_status", {}).get("ai_authorizes_execution") is True,
+            handoff_negative.get("governance_gates", {}).get("execution_authorized")
+            is True,
+            handoff_negative.get("operational_content", {}).get(
+                "physical_protocol_included"
+            )
+            is True,
+            handoff_negative.get("safety_status", {}).get("ai_authorizes_execution")
+            is True,
         ]
         if not all(unsafe_signals):
-            errors.append("false-authorization fixture no longer exercises all required unsafe signals")
+            errors.append(
+                "false-authorization fixture no longer exercises all required unsafe signals"
+            )
 
     release_notes = (ROOT / "RELEASE_NOTES_v0.1.md").read_text(encoding="utf-8")
     combined = readme_text + "\n" + release_notes
@@ -182,7 +207,9 @@ def main() -> int:
         "AI_DOES_NOT_AUTHORIZE_EXECUTION",
     ):
         if required_statement not in combined:
-            errors.append(f"release documentation missing boundary statement: {required_statement}")
+            errors.append(
+                f"release documentation missing boundary statement: {required_statement}"
+            )
 
     if errors:
         print("BLOCK BioEvidence OS v0.1 release audit")
