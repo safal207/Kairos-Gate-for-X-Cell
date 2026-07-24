@@ -6,6 +6,7 @@ on:
       - ".agents/skills/gse184241-geneformer-v1-inference/**"
       - "scripts/run_gse184241_geneformer_v1_inference.py"
       - "scripts/run_gse184241_geneformer_v1_encoder_only.py"
+      - "scripts/verify_gse184241_geneformer_v1_forward_equivalence.py"
       - "scripts/validate_gse184241_geneformer_v1_inference.py"
       - "scripts/export_liminaldb_geneformer_inference_transition.py"
       - "scripts/validate_liminaldb_geneformer_inference_transition.py"
@@ -25,6 +26,7 @@ on:
       - ".agents/skills/gse184241-geneformer-v1-inference/**"
       - "scripts/run_gse184241_geneformer_v1_inference.py"
       - "scripts/run_gse184241_geneformer_v1_encoder_only.py"
+      - "scripts/verify_gse184241_geneformer_v1_forward_equivalence.py"
       - "scripts/validate_gse184241_geneformer_v1_inference.py"
       - "scripts/export_liminaldb_geneformer_inference_transition.py"
       - "scripts/validate_liminaldb_geneformer_inference_transition.py"
@@ -54,7 +56,7 @@ env:
 jobs:
   inference-and-replay:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
     steps:
       - name: Checkout exact Kairos Gate head
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -90,6 +92,7 @@ jobs:
           python -m py_compile \
             scripts/run_gse184241_geneformer_v1_inference.py \
             scripts/run_gse184241_geneformer_v1_encoder_only.py \
+            scripts/verify_gse184241_geneformer_v1_forward_equivalence.py \
             scripts/validate_gse184241_geneformer_v1_inference.py \
             scripts/export_liminaldb_geneformer_inference_transition.py \
             scripts/validate_liminaldb_geneformer_inference_transition.py \
@@ -125,6 +128,22 @@ jobs:
             --batch-size 4 \
             2>&1 | tee inference-results/inference.log
 
+      - name: Verify full masked-language-model and encoder-only equivalence
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+          HF_HUB_DISABLE_TELEMETRY: "1"
+          OMP_NUM_THREADS: "4"
+          MKL_NUM_THREADS: "4"
+        run: |
+          set -o pipefail
+          python scripts/verify_gse184241_geneformer_v1_forward_equivalence.py \
+            --tokens inference-results/geneformer-v1-tokenized-inputs.npz \
+            --canonical-embeddings inference-results/geneformer-v1-cell-embeddings.npz \
+            --checkpoint model-cache/Geneformer-V1-10M \
+            --output inference-results/geneformer-v1-forward-equivalence.json \
+            --batch-size 2 \
+            2>&1 | tee inference-results/forward-equivalence.log
+
       - name: Validate inference evidence and Model Evidence Passport
         run: |
           set -o pipefail
@@ -140,6 +159,11 @@ jobs:
               data = json.loads(Path(data_path).read_text())
               Draft202012Validator(schema).validate(data)
               print(f'JSON Schema validation passed: {data_path}')
+          equivalence = json.loads(Path('inference-results/geneformer-v1-forward-equivalence.json').read_text())
+          assert equivalence['status'] == 'EXACT_FORWARD_EQUIVALENCE_VERIFIED'
+          assert all(equivalence['checks'].values())
+          assert all(value == 0.0 for value in equivalence['maximum_absolute_difference'].values())
+          print('Full-vs-encoder equivalence validation passed')
           PY
           python scripts/validate_gse184241_geneformer_v1_inference.py \
             inference-results/geneformer-v1-inference.json \
@@ -152,19 +176,74 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          manifest_args=()
-          if [ -f inference-results/geneformer-v1-input-manifest.json ]; then
-            manifest_args=(--input-manifest inference-results/geneformer-v1-input-manifest.json)
-          fi
           python scripts/export_liminaldb_geneformer_inference_transition.py \
             --inference inference-results/geneformer-v1-inference.json \
             --benchmark examples/gse184241.donor-held-out-benchmark.json \
             --passport inference-results/model-evidence-passport.json \
-            "${manifest_args[@]}" \
+            --input-manifest inference-results/geneformer-v1-input-manifest.json \
             --output inference-results/liminaldb-geneformer-inference-transition.json \
             --source-revision "$SOURCE_SHA" \
             --captured-at-ms "$CAPTURED_AT_MS" \
             2>&1 | tee inference-results/ledger-export.log
+
+      - name: Reject unbound passport and manifest inputs
+        run: |
+          set -o pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          passport_path = Path('inference-results/model-evidence-passport.json')
+          passport = json.loads(passport_path.read_text())
+          passport['passport_id'] += '-tampered'
+          Path('inference-results/tampered-model-evidence-passport.json').write_text(
+              json.dumps(passport, indent=2, sort_keys=True) + '\n'
+          )
+          manifest_path = Path('inference-results/geneformer-v1-input-manifest.json')
+          manifest = json.loads(manifest_path.read_text())
+          manifest['cells'] = manifest['cells'] - 1
+          Path('inference-results/tampered-geneformer-v1-input-manifest.json').write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + '\n'
+          )
+          PY
+          common=(
+            --inference inference-results/geneformer-v1-inference.json
+            --benchmark examples/gse184241.donor-held-out-benchmark.json
+            --source-revision "$SOURCE_SHA"
+            --captured-at-ms "$CAPTURED_AT_MS"
+          )
+          if python scripts/export_liminaldb_geneformer_inference_transition.py \
+            "${common[@]}" \
+            --passport inference-results/tampered-model-evidence-passport.json \
+            --input-manifest inference-results/geneformer-v1-input-manifest.json \
+            --output inference-results/invalid-passport-ledger.json \
+            > inference-results/invalid-passport-export.log 2>&1; then
+            cat inference-results/invalid-passport-export.log
+            echo "tampered passport was accepted"
+            exit 1
+          fi
+          if python scripts/export_liminaldb_geneformer_inference_transition.py \
+            "${common[@]}" \
+            --passport inference-results/model-evidence-passport.json \
+            --input-manifest inference-results/tampered-geneformer-v1-input-manifest.json \
+            --output inference-results/invalid-manifest-ledger.json \
+            > inference-results/invalid-manifest-export.log 2>&1; then
+            cat inference-results/invalid-manifest-export.log
+            echo "tampered input manifest was accepted"
+            exit 1
+          fi
+          if python scripts/export_liminaldb_geneformer_inference_transition.py \
+            "${common[@]}" \
+            --passport inference-results/model-evidence-passport.json \
+            --input-manifest inference-results/does-not-exist.json \
+            --output inference-results/missing-manifest-ledger.json \
+            > inference-results/missing-manifest-export.log 2>&1; then
+            cat inference-results/missing-manifest-export.log
+            echo "missing explicit input manifest was accepted"
+            exit 1
+          fi
+          cat inference-results/invalid-passport-export.log
+          cat inference-results/invalid-manifest-export.log
+          cat inference-results/missing-manifest-export.log
 
       - name: Validate superseding ledger and authority misuse rejection
         run: |
@@ -201,6 +280,7 @@ jobs:
           from pathlib import Path
           result = json.loads(Path('inference-results/geneformer-v1-inference.json').read_text())
           ledger = json.loads(Path('inference-results/liminaldb-geneformer-inference-transition.json').read_text())
+          equivalence = json.loads(Path('inference-results/geneformer-v1-forward-equivalence.json').read_text())
           expected = {
               'relation': 'SUPERSEDES',
               'predecessor_transition_id': 'gse184241-geneformer-runtime-preflight-v0-1',
@@ -208,14 +288,16 @@ jobs:
           }
           assert ledger['supersession'] == expected
           current_auth = ledger['records'][0]['record_ref']
+          assert ledger['records'][0]['kind'] == 'authorization'
           assert current_auth != expected['predecessor_authorization_ref']
           assert all(record['links']['authorization_ref'] == current_auth for record in ledger['records'][1:])
           assert ledger['claim_boundary']['incremental_value_established'] is False
           assert ledger['storage_boundary']['production_write'] is False
+          assert equivalence['status'] == 'EXACT_FORWARD_EQUIVALENCE_VERIFIED'
           completed = result['status'] == 'GENEFORMER_INFERENCE_COMPLETED_REPORT_ONLY'
           assert ledger['claim_boundary']['model_inference_executed'] is completed
           assert ledger['records'][-1]['dimensions']['continuity_posture'] == ('REPORT_ONLY' if completed else 'BLOCKED')
-          print(json.dumps({'status': result['status'], 'completed': completed, 'current_authorization_ref': current_auth}, sort_keys=True))
+          print(json.dumps({'status': result['status'], 'completed': completed, 'current_authorization_ref': current_auth, 'forward_equivalence': equivalence['status']}, sort_keys=True))
           PY
 
       - name: Checkout exact LiminalDB compatibility pin
