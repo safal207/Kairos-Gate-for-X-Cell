@@ -14,6 +14,7 @@ REQUIRED_TOP_LEVEL = {
     "case_id",
     "target_claim",
     "inherited_constraints",
+    "scoring_model",
     "hypotheses",
     "pairwise_discriminators",
     "causal_identification",
@@ -40,14 +41,29 @@ IDENTIFICATION_FLAGS = {
     "major_confounders_separable",
     "independent_validation_present",
 }
+SCORING_FORMULA_VERSION = "bioevidence.priority.v0.1"
+SCORING_FORMULA = "max(0, weighted_positive_sum - uncertainty_penalty_weight * uncertainty_penalty)"
+SCORING_WEIGHTS = {
+    "temporal_fit": 2,
+    "experimental_unit_fit": 3,
+    "cross_dataset_support": 2,
+    "confounder_resilience": 3,
+    "mechanistic_coherence": 5,
+    "intervention_support": 5,
+    "falsifiability": 1,
+    "effect_relevance": 4,
+}
+UNCERTAINTY_PENALTY_WEIGHT = 2
 
 
 def require(condition: bool, message: str, errors: list[str]) -> None:
+    """Append a validation error when a required condition is false."""
     if not condition:
         errors.append(message)
 
 
 def load_json(path: Path) -> dict[str, Any]:
+    """Load one causal-ranking JSON record."""
     with path.open("r", encoding="utf-8") as handle:
         value = json.load(handle)
     if not isinstance(value, dict):
@@ -55,7 +71,26 @@ def load_json(path: Path) -> dict[str, Any]:
     return value
 
 
+def compute_priority(scores: dict[str, Any]) -> int | None:
+    """Recompute the published inquiry-priority score from bounded components."""
+    values: dict[str, int] = {}
+    for key in (*SCORING_WEIGHTS, "uncertainty_penalty"):
+        value = scores.get(key)
+        if not isinstance(value, int) or not 0 <= value <= 4:
+            return None
+        values[key] = value
+    weighted_positive_sum = sum(
+        SCORING_WEIGHTS[key] * values[key] for key in SCORING_WEIGHTS
+    )
+    return max(
+        0,
+        weighted_positive_sum
+        - UNCERTAINTY_PENALTY_WEIGHT * values["uncertainty_penalty"],
+    )
+
+
 def validate(record: dict[str, Any]) -> list[str]:
+    """Return every contract violation found in one causal-ranking record."""
     errors: list[str] = []
 
     missing = sorted(REQUIRED_TOP_LEVEL - record.keys())
@@ -68,7 +103,14 @@ def validate(record: dict[str, Any]) -> list[str]:
     target = record.get("target_claim", {})
     require(isinstance(target, dict), "target_claim must be an object", errors)
     if isinstance(target, dict):
-        for key in ("candidate", "phenotype", "temporal_order", "biological_system", "claim_level", "statement"):
+        for key in (
+            "candidate",
+            "phenotype",
+            "temporal_order",
+            "biological_system",
+            "claim_level",
+            "statement",
+        ):
             require(bool(target.get(key)), f"target_claim.{key} is required", errors)
 
     constraints = record.get("inherited_constraints", [])
@@ -80,12 +122,20 @@ def validate(record: dict[str, Any]) -> list[str]:
                 require(item.get("evidence_level") in EVIDENCE_ORDER, f"constraint {index}: invalid evidence_level", errors)
                 require(item.get("impact") in {"informational", "limiting", "blocking"}, f"constraint {index}: invalid impact", errors)
 
+    scoring_model = record.get("scoring_model", {})
+    require(isinstance(scoring_model, dict), "scoring_model must be an object", errors)
+    if isinstance(scoring_model, dict):
+        require(scoring_model.get("formula_version") == SCORING_FORMULA_VERSION, "unsupported scoring formula version", errors)
+        require(scoring_model.get("formula") == SCORING_FORMULA, "scoring formula text does not match the executable formula", errors)
+        require(scoring_model.get("weights") == SCORING_WEIGHTS, "scoring weights do not match the executable formula", errors)
+        require(scoring_model.get("uncertainty_penalty_weight") == UNCERTAINTY_PENALTY_WEIGHT, "uncertainty penalty weight does not match the executable formula", errors)
+
     hypotheses = record.get("hypotheses", [])
     require(isinstance(hypotheses, list) and len(hypotheses) >= 3, "at least three competing hypotheses are required", errors)
 
     hypothesis_ids: set[str] = set()
     ranks: list[int] = []
-    ordered_scores: list[tuple[int, float]] = []
+    published_by_id: dict[str, tuple[int, int]] = {}
     identified_hypotheses = 0
 
     if isinstance(hypotheses, list):
@@ -103,11 +153,9 @@ def validate(record: dict[str, Any]) -> list[str]:
             rank = hypothesis.get("rank")
             score = hypothesis.get("priority_score")
             require(isinstance(rank, int) and rank >= 1, f"hypothesis {hypothesis_id}: invalid rank", errors)
-            require(isinstance(score, (int, float)) and 0 <= score <= 100, f"hypothesis {hypothesis_id}: invalid priority_score", errors)
+            require(isinstance(score, int) and 0 <= score <= 100, f"hypothesis {hypothesis_id}: invalid priority_score", errors)
             if isinstance(rank, int):
                 ranks.append(rank)
-            if isinstance(rank, int) and isinstance(score, (int, float)):
-                ordered_scores.append((rank, float(score)))
 
             status = hypothesis.get("status")
             evidence = hypothesis.get("evidence_level")
@@ -126,34 +174,27 @@ def validate(record: dict[str, Any]) -> list[str]:
                 require(bool(discriminator.get("required_evidence")), f"hypothesis {hypothesis_id}: discriminator evidence required", errors)
                 require(discriminator.get("operational_protocol_included") is False, f"hypothesis {hypothesis_id}: operational protocol must be false", errors)
 
-            scores = hypothesis.get("scores", {})
-            require(isinstance(scores, dict), f"hypothesis {hypothesis_id}: scores must be an object", errors)
-            if isinstance(scores, dict):
-                for key in (
-                    "temporal_fit",
-                    "experimental_unit_fit",
-                    "cross_dataset_support",
-                    "confounder_resilience",
-                    "mechanistic_coherence",
-                    "intervention_support",
-                    "falsifiability",
-                    "effect_relevance",
-                    "uncertainty_penalty",
-                ):
-                    value = scores.get(key)
-                    require(isinstance(value, int) and 0 <= value <= 4, f"hypothesis {hypothesis_id}: invalid score {key}", errors)
+            component_scores = hypothesis.get("scores", {})
+            require(isinstance(component_scores, dict), f"hypothesis {hypothesis_id}: scores must be an object", errors)
+            recomputed = compute_priority(component_scores) if isinstance(component_scores, dict) else None
+            require(recomputed is not None, f"hypothesis {hypothesis_id}: score components must be integers from 0 to 4", errors)
+            if recomputed is not None and isinstance(score, int):
+                require(score == recomputed, f"hypothesis {hypothesis_id}: priority_score {score} != recomputed {recomputed}", errors)
+            if isinstance(hypothesis_id, str) and isinstance(rank, int) and recomputed is not None:
+                published_by_id[hypothesis_id] = (rank, recomputed)
 
             if status == "causally_identified_with_limits":
                 identified_hypotheses += 1
                 require(EVIDENCE_ORDER.get(evidence, -1) >= EVIDENCE_ORDER["F4"], f"hypothesis {hypothesis_id}: causal identification requires F4 or F5", errors)
-                if isinstance(scores, dict):
-                    require(scores.get("intervention_support", 0) > 0, f"hypothesis {hypothesis_id}: causal identification requires intervention support", errors)
+                if isinstance(component_scores, dict):
+                    require(component_scores.get("intervention_support", 0) > 0, f"hypothesis {hypothesis_id}: causal identification requires intervention support", errors)
 
         if ranks:
             require(sorted(ranks) == list(range(1, len(ranks) + 1)), "hypothesis ranks must be unique and contiguous from 1", errors)
-        if ordered_scores:
-            by_rank = [score for _, score in sorted(ordered_scores)]
-            require(all(left >= right for left, right in zip(by_rank, by_rank[1:])), "priority_score must be non-increasing by rank", errors)
+        expected_order = sorted(published_by_id, key=lambda item: (-published_by_id[item][1], item))
+        for expected_rank, hypothesis_id in enumerate(expected_order, start=1):
+            published_rank = published_by_id[hypothesis_id][0]
+            require(published_rank == expected_rank, f"hypothesis {hypothesis_id}: rank {published_rank} != deterministic rank {expected_rank}", errors)
 
     discriminators = record.get("pairwise_discriminators", [])
     require(isinstance(discriminators, list) and len(discriminators) > 0, "pairwise_discriminators must be non-empty", errors)
@@ -188,8 +229,10 @@ def validate(record: dict[str, Any]) -> list[str]:
     require(isinstance(boundary, dict), "claim_boundary must be an object", errors)
     overall = record.get("overall_verdict")
     if isinstance(boundary, dict):
-        for key in ("association", "prediction", "causal", "tissue", "clinical_therapeutic"):
+        for key in ("association", "prediction"):
             require(boundary.get(key) in {"supported", "supported_with_limits", "not_established", "blocked"}, f"claim_boundary.{key} is invalid", errors)
+        for key in ("causal", "tissue", "clinical_therapeutic"):
+            require(boundary.get(key) in {"supported_with_limits", "not_established", "blocked"}, f"claim_boundary.{key} is invalid", errors)
 
         if not identified:
             require(boundary.get("causal") in {"not_established", "blocked"}, "causal claim must remain not_established or blocked without identification", errors)
@@ -214,6 +257,7 @@ def validate(record: dict[str, Any]) -> list[str]:
 
 
 def main(argv: list[str]) -> int:
+    """Validate all supplied ranking records and return a process exit code."""
     if len(argv) < 2:
         print("usage: validate_causal_hypothesis_ranking.py RANKING.json [RANKING.json ...]", file=sys.stderr)
         return 2
