@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import time
 from pathlib import Path
 from typing import Any, Callable
@@ -20,6 +21,8 @@ from run_gse184241_geneformer_v1_inference import embedding_benchmark
 EXPECTED_CELLS = 1710
 EXPECTED_TOKENS = 2048
 EXPECTED_DIMENSIONS = 256
+CANONICAL_EMBEDDING_ATOL = 2e-6
+CANONICAL_METRIC_ATOL = 1e-6
 
 
 def array_sha256(value: np.ndarray) -> str:
@@ -34,6 +37,38 @@ def array_sha256(value: np.ndarray) -> str:
 def canonical_json(value: Any) -> str:
     """Serialize metrics deterministically for exact comparison."""
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
+
+
+def structures_close(left: Any, right: Any, tolerance: float) -> tuple[bool, float]:
+    """Compare nested metric structures while preserving non-numeric identity."""
+    if isinstance(left, bool) or isinstance(right, bool):
+        return left == right, 0.0
+    if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+        if not math.isfinite(float(left)) or not math.isfinite(float(right)):
+            return False, math.inf
+        difference = abs(float(left) - float(right))
+        return difference <= tolerance, difference
+    if isinstance(left, dict) and isinstance(right, dict):
+        if set(left) != set(right):
+            return False, math.inf
+        valid = True
+        maximum = 0.0
+        for key in sorted(left):
+            child_valid, child_maximum = structures_close(left[key], right[key], tolerance)
+            valid = valid and child_valid
+            maximum = max(maximum, child_maximum)
+        return valid, maximum
+    if isinstance(left, list) and isinstance(right, list):
+        if len(left) != len(right):
+            return False, math.inf
+        valid = True
+        maximum = 0.0
+        for left_item, right_item in zip(left, right, strict=True):
+            child_valid, child_maximum = structures_close(left_item, right_item, tolerance)
+            valid = valid and child_valid
+            maximum = max(maximum, child_maximum)
+        return valid, maximum
+    return left == right, 0.0
 
 
 def extract_embeddings(
@@ -64,7 +99,7 @@ def extract_embeddings(
 
 
 def main() -> int:
-    """Run both paths on one token artifact and reject any divergence."""
+    """Run both paths on one token artifact and reject any forward divergence."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--tokens", required=True)
     parser.add_argument("--canonical-embeddings", required=True)
@@ -140,30 +175,56 @@ def main() -> int:
     encoder_folds, encoder_macro = embedding_benchmark(encoder_embeddings, metadata)
     canonical_folds, canonical_macro = embedding_benchmark(canonical_embeddings, metadata)
 
+    full_vs_canonical_fold_close, full_vs_canonical_fold_max = structures_close(
+        full_folds, canonical_folds, CANONICAL_METRIC_ATOL
+    )
+    encoder_vs_canonical_fold_close, encoder_vs_canonical_fold_max = structures_close(
+        encoder_folds, canonical_folds, CANONICAL_METRIC_ATOL
+    )
+    full_vs_canonical_macro_close, full_vs_canonical_macro_max = structures_close(
+        full_macro, canonical_macro, CANONICAL_METRIC_ATOL
+    )
+    encoder_vs_canonical_macro_close, encoder_vs_canonical_macro_max = structures_close(
+        encoder_macro, canonical_macro, CANONICAL_METRIC_ATOL
+    )
+
+    full_vs_encoder_max = float(np.max(np.abs(full_embeddings - encoder_embeddings)))
+    full_vs_canonical_max = float(np.max(np.abs(full_embeddings - canonical_embeddings)))
+    encoder_vs_canonical_max = float(np.max(np.abs(encoder_embeddings - canonical_embeddings)))
     checks = {
         "identical_token_artifact_for_both_paths": True,
         "token_and_canonical_cell_order_equal": bool(np.array_equal(cell_ids, canonical_cell_ids)),
         "token_and_canonical_lengths_equal": bool(np.array_equal(lengths, canonical_lengths)),
         "full_vs_encoder_embeddings_exact_equal": bool(np.array_equal(full_embeddings, encoder_embeddings)),
-        "full_vs_canonical_embeddings_exact_equal": bool(np.array_equal(full_embeddings, canonical_embeddings)),
-        "encoder_vs_canonical_embeddings_exact_equal": bool(np.array_equal(encoder_embeddings, canonical_embeddings)),
         "full_vs_encoder_fold_metrics_exact_equal": canonical_json(full_folds) == canonical_json(encoder_folds),
-        "full_vs_canonical_fold_metrics_exact_equal": canonical_json(full_folds) == canonical_json(canonical_folds),
-        "encoder_vs_canonical_fold_metrics_exact_equal": canonical_json(encoder_folds) == canonical_json(canonical_folds),
         "full_vs_encoder_macro_metrics_exact_equal": canonical_json(full_macro) == canonical_json(encoder_macro),
-        "full_vs_canonical_macro_metrics_exact_equal": canonical_json(full_macro) == canonical_json(canonical_macro),
-        "encoder_vs_canonical_macro_metrics_exact_equal": canonical_json(encoder_macro) == canonical_json(canonical_macro),
+        "full_vs_canonical_embeddings_within_float32_tolerance": full_vs_canonical_max <= CANONICAL_EMBEDDING_ATOL,
+        "encoder_vs_canonical_embeddings_within_float32_tolerance": encoder_vs_canonical_max <= CANONICAL_EMBEDDING_ATOL,
+        "full_vs_canonical_fold_metrics_within_tolerance": full_vs_canonical_fold_close,
+        "encoder_vs_canonical_fold_metrics_within_tolerance": encoder_vs_canonical_fold_close,
+        "full_vs_canonical_macro_metrics_within_tolerance": full_vs_canonical_macro_close,
+        "encoder_vs_canonical_macro_metrics_within_tolerance": encoder_vs_canonical_macro_close,
     }
-    max_differences = {
-        "full_vs_encoder": float(np.max(np.abs(full_embeddings - encoder_embeddings))),
-        "full_vs_canonical": float(np.max(np.abs(full_embeddings - canonical_embeddings))),
-        "encoder_vs_canonical": float(np.max(np.abs(encoder_embeddings - canonical_embeddings))),
+    exact_forward_differences = {"full_vs_encoder": full_vs_encoder_max}
+    canonical_reference_differences = {
+        "full_vs_canonical_embeddings": full_vs_canonical_max,
+        "encoder_vs_canonical_embeddings": encoder_vs_canonical_max,
+        "full_vs_canonical_fold_metrics": full_vs_canonical_fold_max,
+        "encoder_vs_canonical_fold_metrics": encoder_vs_canonical_fold_max,
+        "full_vs_canonical_macro_metrics": full_vs_canonical_macro_max,
+        "encoder_vs_canonical_macro_metrics": encoder_vs_canonical_macro_max,
     }
-    valid = all(checks.values()) and all(value == 0.0 for value in max_differences.values())
+    valid = all(checks.values()) and full_vs_encoder_max == 0.0
     receipt = {
-        "schema_version": "0.1.0",
+        "schema_version": "0.2.0",
         "artifact_type": "geneformer_v1_forward_equivalence_receipt",
         "status": "EXACT_FORWARD_EQUIVALENCE_VERIFIED" if valid else "BLOCK_FORWARD_DIVERGENCE",
+        "contract": {
+            "full_vs_encoder": "bit_exact_same_tokens_same_batch",
+            "canonical_reference": "float32_numerical_consistency_across_batch_partitioning",
+            "canonical_embedding_absolute_tolerance": CANONICAL_EMBEDDING_ATOL,
+            "canonical_metric_absolute_tolerance": CANONICAL_METRIC_ATOL,
+        },
         "inputs": {
             "token_artifact": token_path.name,
             "token_artifact_sha256": sha256_file(token_path),
@@ -173,7 +234,7 @@ def main() -> int:
             "cells": EXPECTED_CELLS,
             "tokens": EXPECTED_TOKENS,
             "dimensions": EXPECTED_DIMENSIONS,
-            "batch_size": args.batch_size,
+            "equivalence_batch_size": args.batch_size,
         },
         "array_sha256": {
             "input_ids": array_sha256(input_ids),
@@ -188,7 +249,8 @@ def main() -> int:
             "encoder_only": encoder_seconds,
         },
         "checks": checks,
-        "maximum_absolute_difference": max_differences,
+        "maximum_absolute_difference": exact_forward_differences,
+        "canonical_reference_maximum_absolute_difference": canonical_reference_differences,
         "macro_metrics": {
             "full": full_macro,
             "encoder": encoder_macro,
@@ -197,7 +259,12 @@ def main() -> int:
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps({"status": receipt["status"], "checks": checks, "maximum_absolute_difference": max_differences}, sort_keys=True))
+    print(json.dumps({
+        "status": receipt["status"],
+        "checks": checks,
+        "maximum_absolute_difference": exact_forward_differences,
+        "canonical_reference_maximum_absolute_difference": canonical_reference_differences,
+    }, sort_keys=True))
     return 0 if valid else 1
 
 
