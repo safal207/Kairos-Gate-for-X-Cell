@@ -7,6 +7,16 @@
     "later_phenotype": "subsequent same-cell Tnf-promoter-driven mCherry response dynamics, especially log-slope",
     "identity_linkage": "one-to-one linkage from pre-state transcriptome to later phenotype in the same cell",
     "biological_unit": "independently collected biological cell or higher biological source with a grouping key above plate, library, lane, and sequencing run",
+    "acceptable_endpoint_substitutions": [
+      "a prespecified same-cell TNF-promoter dynamic metric with a documented mapping to Tnf-mCherry log-slope",
+      "a later same-cell inflammatory-response phenotype demonstrated before analysis to measure the same target construct"
+    ],
+    "forbidden_substitutions": [
+      "post-LPS transcriptome represented as the basal pre-state",
+      "NF-kB activity represented as the exact later TNF-promoter endpoint without a frozen compatibility mapping",
+      "measurements from different cells represented as longitudinal same-cell data",
+      "same-study internal validation represented as independent external replication"
+    ],
     "competing_models": [
       "Nfkbia-only model",
       "broader baseline-state model",
