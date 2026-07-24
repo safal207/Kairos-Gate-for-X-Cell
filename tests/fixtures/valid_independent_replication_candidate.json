@@ -56,7 +56,10 @@
     "expected_direction": "same prespecified direction",
     "biological_grouping_key": "independent source batch",
     "exclusion_criteria": ["shared target material", "unresolved unit identity"],
-    "success_criteria": "The prespecified direction is reproduced under biological-unit-aware analysis and robustness checks."
+    "success_criteria": "The prespecified direction is reproduced under biological-unit-aware analysis and robustness checks.",
+    "criteria_frozen_at_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "freeze_verification": "commit_bound",
+    "observed_result": null
   },
   "overall_verdict": "ACCEPT_WITH_LIMITS",
   "next_valid_action": "Run the prespecified analysis without changing the target endpoint or grouping key.",
