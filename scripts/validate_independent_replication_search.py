@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -32,14 +33,18 @@ NON_INDEPENDENT_CLASSES = {
 
 VALID_INDEPENDENT_ACCEPT_CLASS = "independent_biological_experiment"
 EVIDENCE_ORDER = {"F0": 0, "F1": 1, "F2": 2, "F3": 3, "F4": 4, "F5": 5}
+SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+OUTCOME_MARKERS = ("completed on ", "rho ", "95% ci", "permutation p 0", "observed result")
 
 
 def require(condition: bool, message: str, errors: list[str]) -> None:
+    """Append a validation error when a required condition is false."""
     if not condition:
         errors.append(message)
 
 
 def load_json(path: Path) -> dict[str, Any]:
+    """Load one replication-search record as a JSON object."""
     with path.open("r", encoding="utf-8") as handle:
         value = json.load(handle)
     if not isinstance(value, dict):
@@ -48,6 +53,7 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def validate(record: dict[str, Any]) -> list[str]:
+    """Return all contract violations found in one replication-search record."""
     errors: list[str] = []
 
     missing = sorted(REQUIRED_TOP_LEVEL - record.keys())
@@ -181,10 +187,30 @@ def validate(record: dict[str, Any]) -> list[str]:
     if isinstance(test, dict):
         status = test.get("status")
         require(status in {"not_defined", "defined_not_run", "run_incomplete", "completed"}, "invalid prespecified_test.status", errors)
+        freeze_verification = test.get("freeze_verification")
+        require(
+            freeze_verification in {"commit_bound", "not_commit_bound", "not_applicable"},
+            "invalid prespecified_test.freeze_verification",
+            errors,
+        )
         if status != "not_defined":
             require(bool(test.get("primary_endpoint")), "primary_endpoint is required once test is defined", errors)
             require(bool(test.get("biological_grouping_key")), "biological_grouping_key is required once test is defined", errors)
             require(bool(test.get("success_criteria")), "success_criteria is required once test is defined", errors)
+            require(freeze_verification != "not_applicable", "defined tests require a freeze-verification status", errors)
+        if freeze_verification == "commit_bound":
+            frozen_commit = test.get("criteria_frozen_at_commit")
+            require(isinstance(frozen_commit, str) and SHA_RE.fullmatch(frozen_commit) is not None, "commit-bound criteria require a 40-character commit SHA", errors)
+        if freeze_verification == "not_commit_bound":
+            require(test.get("criteria_frozen_at_commit") is None, "not-commit-bound criteria must not claim a commit SHA", errors)
+        if status == "completed":
+            observed = test.get("observed_result")
+            require(isinstance(observed, str) and bool(observed.strip()), "completed tests require observed_result", errors)
+            success = test.get("success_criteria")
+            require(success != observed, "success_criteria and observed_result must be separate", errors)
+            if isinstance(success, str):
+                lowered = success.lower()
+                require(not any(marker in lowered for marker in OUTCOME_MARKERS), "success_criteria appears to contain observed statistics", errors)
 
     overall = record.get("overall_verdict")
     if accepted_candidates == 0:
@@ -192,7 +218,7 @@ def validate(record: dict[str, Any]) -> list[str]:
     if overall == "ACCEPT_WITH_LIMITS":
         require(accepted_candidates > 0, "accepted overall verdict requires an accepted candidate", errors)
         if isinstance(test, dict):
-            require(test.get("status") in {"defined_not_run", "run_incomplete", "completed"}, "accepted overall verdict requires a prespecified test", errors)
+            require(test.get("status") in {"defined_not_run", "run_incomplete", "completed"}, "accepted overall verdict requires a defined test", errors)
 
     safety = record.get("safety_status", {})
     require(isinstance(safety, dict), "safety_status must be an object", errors)
@@ -204,6 +230,7 @@ def validate(record: dict[str, Any]) -> list[str]:
 
 
 def main(argv: list[str]) -> int:
+    """Validate each path from argv and return a process exit code."""
     if len(argv) < 2:
         print("usage: validate_independent_replication_search.py SEARCH.json [SEARCH.json ...]", file=sys.stderr)
         return 2
