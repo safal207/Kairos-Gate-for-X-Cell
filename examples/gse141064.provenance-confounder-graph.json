@@ -104,7 +104,10 @@
       "evidence_level": "F4",
       "confidence": 0.2,
       "load_bearing": true,
-      "source_ref": "Author correspondence: exact per-cell collection grouping not retained"
+      "source_ref": "Author correspondence: exact per-cell collection grouping not retained",
+      "ordering": "biological source precedes an unresolved per-cell collection event",
+      "transformation_reversibility": "unknown",
+      "missing_input_impact": "Without the collection log, cells cannot be assigned to independent collection-day or extraction-round groups."
     },
     {
       "edge_id": "e2",
@@ -115,7 +118,10 @@
       "evidence_level": "F4",
       "confidence": 0.4,
       "load_bearing": true,
-      "source_ref": "Cells were collected across multiple days and rounds"
+      "source_ref": "Cells were collected across multiple days and rounds",
+      "ordering": "collection precedes cell extraction and transcriptome measurement",
+      "transformation_reversibility": "unknown",
+      "missing_input_impact": "The missing per-cell event identity prevents biological-unit and confounder separation."
     },
     {
       "edge_id": "e3",
@@ -126,7 +132,10 @@
       "evidence_level": "F4",
       "confidence": 0.95,
       "load_bearing": false,
-      "source_ref": "Author correspondence"
+      "source_ref": "Author correspondence",
+      "ordering": "cell assignment precedes plate-level library handling",
+      "transformation_reversibility": "reversible",
+      "missing_input_impact": null
     },
     {
       "edge_id": "e4",
@@ -137,7 +146,10 @@
       "evidence_level": "F4",
       "confidence": 0.95,
       "load_bearing": false,
-      "source_ref": "Author correspondence"
+      "source_ref": "Author correspondence",
+      "ordering": "plate material is pooled during exp8 library preparation",
+      "transformation_reversibility": "irreversible",
+      "missing_input_impact": "Loss of plate membership records would prevent tracing pooled library material back to technical containers."
     },
     {
       "edge_id": "e5",
@@ -148,7 +160,10 @@
       "evidence_level": "F4",
       "confidence": 0.95,
       "load_bearing": false,
-      "source_ref": "Author correspondence"
+      "source_ref": "Author correspondence",
+      "ordering": "library preparation precedes sequencing run or flow-cell measurement",
+      "transformation_reversibility": "irreversible",
+      "missing_input_impact": "Missing run membership would prevent run-effect auditing."
     },
     {
       "edge_id": "e6",
@@ -159,7 +174,10 @@
       "evidence_level": "F3",
       "confidence": 0.9,
       "load_bearing": false,
-      "source_ref": "Repository files and processed matrix"
+      "source_ref": "Repository files and processed matrix",
+      "ordering": "sequencing measurement precedes generation of processed expression profiles",
+      "transformation_reversibility": "irreversible",
+      "missing_input_impact": "Without raw-run or processing manifests, the processed matrix cannot be independently regenerated."
     },
     {
       "edge_id": "e7",
@@ -170,7 +188,10 @@
       "evidence_level": "F3",
       "confidence": 0.9,
       "load_bearing": true,
-      "source_ref": "Analysis workflow"
+      "source_ref": "Analysis workflow",
+      "ordering": "processed expression and phenotype inputs precede the association analysis",
+      "transformation_reversibility": "reversible",
+      "missing_input_impact": "Missing code, parameters, or exact input versions would make the reported association non-reproducible."
     },
     {
       "edge_id": "e8",
@@ -181,7 +202,10 @@
       "evidence_level": "F3",
       "confidence": 0.75,
       "load_bearing": true,
-      "source_ref": "Within-dataset exploratory result"
+      "source_ref": "Within-dataset exploratory result",
+      "ordering": "analysis output precedes the bounded descriptive interpretation",
+      "transformation_reversibility": "reversible",
+      "missing_input_impact": "Without the analysis output, the descriptive claim has no executable support path."
     },
     {
       "edge_id": "e9",
@@ -192,7 +216,10 @@
       "evidence_level": "F0",
       "confidence": 0.1,
       "load_bearing": true,
-      "source_ref": null
+      "source_ref": null,
+      "ordering": "the unsupported generalization is downstream of the exploratory analysis",
+      "transformation_reversibility": "reversible",
+      "missing_input_impact": "Independent biological validation is absent, so the generalization path remains blocked."
     },
     {
       "edge_id": "e10",
@@ -203,13 +230,17 @@
       "evidence_level": "F0",
       "confidence": 0.05,
       "load_bearing": true,
-      "source_ref": null
+      "source_ref": null,
+      "ordering": "the unsupported tissue claim is downstream of the exploratory analysis",
+      "transformation_reversibility": "reversible",
+      "missing_input_impact": "No identifying intervention or tissue-level evidence exists, so the path is blocked."
     }
   ],
   "confounders": [
     {
       "confounder_id": "c1",
       "label": "collection day or extraction round",
+      "edge_class": "may_influence",
       "condition_path": "unknown collection event may structure the observed mCherry.log.slope groups",
       "outcome_path": "collection timing may influence cell state and measured expression",
       "separability": "unknown",
@@ -220,6 +251,7 @@
     {
       "confounder_id": "c2",
       "label": "imaging session",
+      "edge_class": "may_influence",
       "condition_path": "imaging session may affect measured mCherry.log.slope",
       "outcome_path": "imaging conditions may coincide with collection timing or cell state",
       "separability": "unknown",
@@ -230,6 +262,7 @@
     {
       "confounder_id": "c3",
       "label": "plate",
+      "edge_class": "coincides_with",
       "condition_path": "plate may be imbalanced across the observed phenotype groups",
       "outcome_path": "plate may affect library preparation and measured expression",
       "separability": "partially_separable",
@@ -240,6 +273,7 @@
     {
       "confounder_id": "c4",
       "label": "exp8 sequencing run or flow cell",
+      "edge_class": "coincides_with",
       "condition_path": "run membership may be imbalanced across cells",
       "outcome_path": "run effects may influence measured expression",
       "separability": "partially_separable",
@@ -254,18 +288,22 @@
       "complete_path": true,
       "weakest_evidence_level": "F3",
       "unknown_edge_count": 2,
+      "inferred_edge_count": 0,
       "high_risk_confounders": ["c1", "c2"],
       "independent_validation": "absent",
+      "reproducible_from_frozen_inputs": false,
       "verdict": "ACCEPT_WITH_LIMITS",
-      "reason": "The observed-cell association is reachable and executable, but source-to-cell collection lineage is incomplete and high-risk confounders remain unresolved."
+      "reason": "The observed-cell association is reachable and executable, but source-to-cell collection lineage is incomplete, exact source/code freezing is incomplete, and high-risk confounders remain unresolved."
     },
     {
       "claim_node_id": "claim:generalization",
       "complete_path": false,
       "weakest_evidence_level": "F0",
       "unknown_edge_count": 2,
+      "inferred_edge_count": 1,
       "high_risk_confounders": ["c1", "c2"],
       "independent_validation": "absent",
+      "reproducible_from_frozen_inputs": false,
       "verdict": "BLOCK",
       "reason": "No independent biological validation path exists and the only support edge is inferred."
     },
@@ -274,8 +312,10 @@
       "complete_path": false,
       "weakest_evidence_level": "F0",
       "unknown_edge_count": 2,
+      "inferred_edge_count": 1,
       "high_risk_confounders": ["c1", "c2"],
       "independent_validation": "absent",
+      "reproducible_from_frozen_inputs": false,
       "verdict": "BLOCK",
       "reason": "Cell-level observational data do not provide an intervention path, tissue response evidence, or authorized translational validation."
     }
