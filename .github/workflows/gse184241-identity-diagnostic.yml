@@ -53,7 +53,7 @@ jobs:
             --output identity-inputs/GSE184241_barcode_sequences.xlsx \
             "$BARCODES_URL"
 
-      - name: Produce exact identity diagnostic
+      - name: Produce fail-closed exact identity diagnostic
         run: |
           set -o pipefail
           python scripts/diagnose_gse184241_identity.py \
@@ -61,6 +61,31 @@ jobs:
             --barcodes identity-inputs/GSE184241_barcode_sequences.xlsx \
             --output identity-results/gse184241-cell-identity.json \
             2>&1 | tee identity-results/diagnostic.log
+
+      - name: Verify exact identity receipt
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          receipt = json.loads(Path('identity-results/gse184241-cell-identity.json').read_text())
+          assert receipt['status'] == 'EXACT_IDENTITY_VERIFIED'
+          assert receipt['expected_cells'] == 1710
+          assert receipt['counts']['matrix_shape'] == [23895, 1710]
+          assert receipt['counts']['identifier_count'] == 1710
+          assert receipt['counts']['unique_identifier_count'] == 1710
+          assert receipt['workbook_shared_clean']['identifier_count'] == 1710
+          assert receipt['workbook_shared_clean']['unique_identifier_count'] == 1710
+          assert receipt['workbook_inline_clean']['identifier_count'] == 1710
+          assert receipt['workbook_inline_clean']['unique_identifier_count'] == 1710
+          assert all(receipt['checks'].values())
+          assert receipt['comparison'] == {
+              'missing_in_workbook_shared': [],
+              'missing_in_counts_shared': [],
+              'missing_in_workbook_inline': [],
+              'missing_in_counts_inline': [],
+          }
+          print(json.dumps({'status': receipt['status'], 'checks': receipt['checks']}, sort_keys=True))
+          PY
 
       - name: Upload exact-head identity evidence
         if: always()
