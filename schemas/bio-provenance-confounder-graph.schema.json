@@ -75,7 +75,18 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["edge_id", "from", "to", "edge_class", "status", "evidence_level", "confidence", "load_bearing"],
+        "required": [
+          "edge_id",
+          "from",
+          "to",
+          "edge_class",
+          "status",
+          "evidence_level",
+          "confidence",
+          "load_bearing",
+          "transformation_reversibility",
+          "missing_input_impact"
+        ],
         "properties": {
           "edge_id": {"type": "string", "minLength": 1},
           "from": {"type": "string", "minLength": 1},
@@ -100,7 +111,10 @@
           "evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4", "F5"]},
           "confidence": {"type": "number", "minimum": 0, "maximum": 1},
           "load_bearing": {"type": "boolean"},
-          "source_ref": {"type": ["string", "null"]}
+          "source_ref": {"type": ["string", "null"]},
+          "ordering": {"type": ["string", "null"]},
+          "transformation_reversibility": {"enum": ["reversible", "irreversible", "unknown"]},
+          "missing_input_impact": {"type": ["string", "null"]}
         }
       }
     },
@@ -109,15 +123,16 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["confounder_id", "label", "condition_path", "outcome_path", "separability", "risk", "status", "load_bearing"],
+        "required": ["confounder_id", "label", "edge_class", "condition_path", "outcome_path", "separability", "risk", "status", "load_bearing"],
         "properties": {
           "confounder_id": {"type": "string", "minLength": 1},
           "label": {"type": "string", "minLength": 1},
+          "edge_class": {"enum": ["may_influence", "coincides_with", "determines_assignment", "partially_determines_assignment", "unknown_relationship"]},
           "condition_path": {"type": "string", "minLength": 1},
           "outcome_path": {"type": "string", "minLength": 1},
           "separability": {"enum": ["separable", "partially_separable", "aliased", "unknown"]},
           "risk": {"enum": ["low", "medium", "high", "blocking", "unknown"]},
-          "status": {"enum": ["observed", "documented", "inferred", "unknown"]},
+          "status": {"enum": ["observed", "documented", "executable", "author_confirmed", "inferred", "unknown"]},
           "load_bearing": {"type": "boolean"}
         }
       }
@@ -128,17 +143,30 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["claim_node_id", "complete_path", "weakest_evidence_level", "unknown_edge_count", "high_risk_confounders", "independent_validation", "verdict", "reason"],
+        "required": [
+          "claim_node_id",
+          "complete_path",
+          "weakest_evidence_level",
+          "unknown_edge_count",
+          "inferred_edge_count",
+          "high_risk_confounders",
+          "independent_validation",
+          "reproducible_from_frozen_inputs",
+          "verdict",
+          "reason"
+        ],
         "properties": {
           "claim_node_id": {"type": "string", "minLength": 1},
           "complete_path": {"type": "boolean"},
           "weakest_evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4", "F5"]},
           "unknown_edge_count": {"type": "integer", "minimum": 0},
+          "inferred_edge_count": {"type": "integer", "minimum": 0},
           "high_risk_confounders": {
             "type": "array",
             "items": {"type": "string", "minLength": 1}
           },
           "independent_validation": {"enum": ["present", "absent", "not_established"]},
+          "reproducible_from_frozen_inputs": {"type": "boolean"},
           "verdict": {"enum": ["ACCEPT", "ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"]},
           "reason": {"type": "string", "minLength": 1}
         }
