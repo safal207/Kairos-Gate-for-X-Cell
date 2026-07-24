@@ -50,7 +50,10 @@
       "evidence_level": "F0",
       "confidence": 0.1,
       "load_bearing": true,
-      "source_ref": null
+      "source_ref": null,
+      "ordering": null,
+      "transformation_reversibility": "unknown",
+      "missing_input_impact": "The hidden batch prevents reconstruction of biological assignment."
     },
     {
       "edge_id": "e2",
@@ -61,7 +64,10 @@
       "evidence_level": "F1",
       "confidence": 0.2,
       "load_bearing": true,
-      "source_ref": null
+      "source_ref": null,
+      "ordering": null,
+      "transformation_reversibility": "unknown",
+      "missing_input_impact": "The model output cannot be separated from hidden-batch structure."
     },
     {
       "edge_id": "e3",
@@ -72,13 +78,17 @@
       "evidence_level": "F0",
       "confidence": 0.1,
       "load_bearing": true,
-      "source_ref": null
+      "source_ref": null,
+      "ordering": null,
+      "transformation_reversibility": "reversible",
+      "missing_input_impact": "No identifying evidence supports the causal interpretation."
     }
   ],
   "confounders": [
     {
       "confounder_id": "c-hidden",
       "label": "Hidden collection batch",
+      "edge_class": "determines_assignment",
       "condition_path": "Batch determines condition assignment",
       "outcome_path": "Batch may determine measured outcome",
       "separability": "aliased",
@@ -93,8 +103,10 @@
       "complete_path": false,
       "weakest_evidence_level": "F0",
       "unknown_edge_count": 1,
+      "inferred_edge_count": 2,
       "high_risk_confounders": ["c-hidden"],
       "independent_validation": "absent",
+      "reproducible_from_frozen_inputs": false,
       "verdict": "ACCEPT",
       "reason": "Incorrectly accepts a causal claim despite hidden batch confounding."
     }
