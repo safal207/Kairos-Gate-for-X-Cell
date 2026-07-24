@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -22,6 +23,7 @@ HOLDS = {
 EXPECTED_MODEL_REVISION = "04c2b2e84da7c0f385c3f9ad8f3ec24bab6650e5"
 EXPECTED_PREDECESSOR = "gse184241-geneformer-runtime-preflight-v0-1"
 EXPECTED_PREDECESSOR_AUTH = "sha256:550df034e0eceb773ef69d2de8a9fbb9bb48b092a2b6bdee8a53988764eb0665"
+METRICS = ["roc_auc", "average_precision", "balanced_accuracy", "log_loss"]
 
 
 def require(condition: bool, message: str, errors: list[str]) -> None:
@@ -33,6 +35,11 @@ def require(condition: bool, message: str, errors: list[str]) -> None:
 def valid_sha(value: Any) -> bool:
     """Return whether a value is an exact lowercase SHA-256 hex digest."""
     return isinstance(value, str) and bool(SHA256.fullmatch(value))
+
+
+def numeric(value: Any) -> bool:
+    """Return whether a value is a finite non-boolean number."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value))
 
 
 def main() -> int:
@@ -129,8 +136,16 @@ def main() -> int:
         require(len(benchmark.get("folds", [])) == 3, "exactly three donor folds are required", errors)
         require(benchmark.get("incremental_value_established") is False, "three-donor comparison cannot establish incremental value", errors)
         require(benchmark.get("interpretation") == "DESCRIPTIVE_COMPARISON_ONLY_TRAINING_OVERLAP_HOLD", "benchmark interpretation must remain held", errors)
-        for metric in ["roc_auc", "average_precision", "balanced_accuracy", "log_loss"]:
-            require(isinstance(benchmark.get("geneformer_macro_metrics", {}).get(metric), (int, float)), f"Geneformer metric {metric} missing", errors)
+        geneformer_metrics = benchmark.get("geneformer_macro_metrics", {})
+        pca_metrics = benchmark.get("frozen_baseline_macro_metrics", {}).get("PCA_state", {})
+        deltas = benchmark.get("descriptive_delta_vs_PCA_state", {})
+        for metric in METRICS:
+            require(numeric(geneformer_metrics.get(metric)), f"Geneformer metric {metric} missing", errors)
+            require(numeric(pca_metrics.get(metric)), f"PCA_state metric {metric} missing", errors)
+            require(numeric(deltas.get(metric)), f"Geneformer-vs-PCA delta {metric} missing", errors)
+            if numeric(geneformer_metrics.get(metric)) and numeric(pca_metrics.get(metric)) and numeric(deltas.get(metric)):
+                expected_delta = float(geneformer_metrics[metric]) - float(pca_metrics[metric])
+                require(abs(float(deltas[metric]) - expected_delta) <= 1e-12, f"Geneformer-vs-PCA delta {metric} mismatch", errors)
 
         evidence = data.get("evidence", {})
         require(valid_sha(evidence.get("input_manifest_sha256")), "input manifest sha256 missing", errors)
