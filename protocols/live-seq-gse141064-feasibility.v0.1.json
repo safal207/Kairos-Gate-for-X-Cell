@@ -1,0 +1,84 @@
+{
+  "schema": "kairos.open-data-feasibility-protocol.v0.1",
+  "protocol_id": "kairos.live-seq-gse141064.feasibility.v0.1",
+  "status": "AMENDED_BEFORE_MODEL_FITTING_TO_REMOVE_RESPONSE_SELECTION",
+  "dataset_id": "GSE141064",
+  "research_question": "Can the public Live-seq data support a leakage-controlled comparison of basal-transcriptome-only and pre-intervention-cell-cycle-conditioned prediction of downstream LPS-induced Tnf-mCherry response?",
+  "cohort_rule": {
+    "sampling_type": "Live_seq",
+    "cell_type": "Raw264.7_G9",
+    "treatment": "not_treated",
+    "batch": "8_8",
+    "mCherry_log_intercept": "> 0",
+    "uses_response_label": false
+  },
+  "outcome_availability_rule": {
+    "field": "mCherry.log.slope",
+    "requirement": "finite and non-missing for every selected cohort member",
+    "missing_outcome": "BLOCKED_MISSING_RESPONSE_LABELS",
+    "rule": "Outcome availability is evaluated only after cohort membership is frozen."
+  },
+  "required_metadata_columns": [
+    "sample_ID",
+    "sample_name",
+    "original_sample_name",
+    "Batch",
+    "Cell_type",
+    "sampling_type",
+    "treatment",
+    "Probe",
+    "Date",
+    "nFeature_RNA",
+    "percent.mt",
+    "percent.rRNA",
+    "input.reads",
+    "uniquely.mapped",
+    "nCount_RNA",
+    "mCherry.log.intercept",
+    "mCherry.log.slope",
+    "mCherry.AUC",
+    "double_extraction",
+    "double_extraction_order"
+  ],
+  "linkage_rule": "Every selected metadata sample_ID must occur exactly once in the count-matrix columns. Repeated measurements of the same cell must remain in one split.",
+  "replicate_candidates": ["Probe", "Date"],
+  "excluded_predictors": [
+    "mCherry.log.intercept",
+    "mCherry.log.slope",
+    "mCherry.AUC",
+    "treatment",
+    "post-LPS measurements",
+    "response-derived annotations"
+  ],
+  "phase_representation": {
+    "primary": ["training-derived S.Score", "training-derived G2M.Score"],
+    "secondary": "categorical phase derived from training-fitted scoring procedure",
+    "evidence_class": "INFERRED_PRE_INTERVENTION",
+    "post_intervention_phase_allowed": false
+  },
+  "future_model_comparison": {
+    "static_baseline": "basal transcriptome features -> mCherry.log.slope",
+    "phase_conditioned": "same basal transcriptome representation plus pre-intervention cell-cycle representation -> mCherry.log.slope",
+    "controls": ["phase ablation", "phase shuffle within allowed grouping", "identical held-out split"]
+  },
+  "audit_outcomes": [
+    "READY_FOR_PREREGISTRATION",
+    "BLOCKED_MISSING_CELL_LINKAGE",
+    "BLOCKED_MISSING_RESPONSE_LABELS",
+    "BLOCKED_INSUFFICIENT_REPLICATES",
+    "BLOCKED_LICENSE_UNCLEAR",
+    "BLOCKED_DATA_INTEGRITY"
+  ],
+  "amendment_note": "The initial feasibility draft incorrectly included response availability in cohort membership. This amendment removes target-dependent selection before any model fitting or performance estimation.",
+  "non_claims": [
+    "This audit does not evaluate X-Cell.",
+    "This audit does not establish causal timing.",
+    "This audit does not establish biological safety or therapeutic efficacy.",
+    "This audit does not authorize wet-lab, animal, human, or clinical work."
+  ],
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "experiment_authorization": false,
+    "clinical_authorization": false
+  }
+}
