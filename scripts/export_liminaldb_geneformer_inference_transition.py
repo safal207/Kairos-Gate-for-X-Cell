@@ -28,13 +28,18 @@ def sha256_ref(value: Any) -> str:
     return "sha256:" + hashlib.sha256(canonical_bytes(value)).hexdigest()
 
 
-def file_sha256_ref(path: Path) -> str:
-    """Return a lowercase sha256 reference over exact file bytes."""
+def file_sha256(path: Path) -> str:
+    """Return the lowercase SHA-256 digest over exact file bytes."""
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
-    return "sha256:" + digest.hexdigest()
+    return digest.hexdigest()
+
+
+def file_sha256_ref(path: Path) -> str:
+    """Return a lowercase sha256 reference over exact file bytes."""
+    return "sha256:" + file_sha256(path)
 
 
 def empty_links() -> dict[str, Any]:
@@ -66,13 +71,35 @@ def main() -> int:
     passport_path = Path(args.passport)
     input_manifest_path = Path(args.input_manifest) if args.input_manifest else None
     output_path = Path(args.output)
+    if input_manifest_path is not None and not input_manifest_path.is_file():
+        raise ValueError(f"--input-manifest path does not exist: {input_manifest_path}")
+
     inference = json.loads(inference_path.read_text(encoding="utf-8"))
     benchmark = json.loads(benchmark_path.read_text(encoding="utf-8"))
     passport = json.loads(passport_path.read_text(encoding="utf-8"))
-    input_manifest = json.loads(input_manifest_path.read_text(encoding="utf-8")) if input_manifest_path is not None and input_manifest_path.is_file() else None
+    input_manifest = json.loads(input_manifest_path.read_text(encoding="utf-8")) if input_manifest_path is not None else None
+    completed = inference.get("status") == COMPLETED_STATUS
+    if completed and input_manifest_path is None:
+        raise ValueError("completed inference requires --input-manifest")
+
+    evidence = inference.get("evidence", {})
+    passport_sha256 = file_sha256(passport_path)
+    expected_passport_sha256 = evidence.get("model_evidence_passport_sha256")
+    if passport_sha256 != expected_passport_sha256:
+        raise ValueError(
+            "passport digest mismatch: "
+            f"expected={expected_passport_sha256!r} actual={passport_sha256!r}"
+        )
+    manifest_sha256 = file_sha256(input_manifest_path) if input_manifest_path is not None else None
+    expected_manifest_sha256 = evidence.get("input_manifest_sha256")
+    if input_manifest_path is not None and manifest_sha256 != expected_manifest_sha256:
+        raise ValueError(
+            "input manifest digest mismatch: "
+            f"expected={expected_manifest_sha256!r} actual={manifest_sha256!r}"
+        )
     if inference.get("predecessor") != {"transition_id": PREDECESSOR_TRANSITION_ID, "authorization_ref": PREDECESSOR_AUTHORIZATION_REF}:
         raise ValueError("inference predecessor does not match exact preflight record")
-    completed = inference.get("status") == COMPLETED_STATUS
+
     captured = args.captured_at_ms
     records: list[dict[str, Any]] = []
     payloads: dict[str, dict[str, Any]] = {}
@@ -121,8 +148,8 @@ def main() -> int:
         "dataset": inference.get("dataset"),
         "model": inference.get("model"),
         "tokenization": inference.get("tokenization"),
-        "input_manifest_file": input_manifest_path.name if input_manifest_path and input_manifest_path.is_file() else None,
-        "input_manifest_file_sha256": file_sha256_ref(input_manifest_path) if input_manifest_path and input_manifest_path.is_file() else None,
+        "input_manifest_file": input_manifest_path.name if input_manifest_path is not None else None,
+        "input_manifest_file_sha256": f"sha256:{manifest_sha256}" if manifest_sha256 is not None else None,
         "input_manifest": input_manifest,
     }
     record, model_ref = make_record("observation", model_payload, current_links.copy(), captured + 2)
@@ -134,11 +161,11 @@ def main() -> int:
         "inference_file": inference_path.name,
         "inference_file_sha256": file_sha256_ref(inference_path),
         "passport_file": passport_path.name,
-        "passport_file_sha256": file_sha256_ref(passport_path),
+        "passport_file_sha256": f"sha256:{passport_sha256}",
         "execution": inference.get("execution"),
         "inference": inference.get("inference"),
         "benchmark": inference.get("benchmark"),
-        "evidence": inference.get("evidence"),
+        "evidence": evidence,
         "passport_identity": {"passport_id": passport.get("passport_id"), "execution_status": passport.get("execution", {}).get("status"), "compatibility_verdict": passport.get("compatibility_verdict"), "training_overlap_status": passport.get("uncertainty", {}).get("training_overlap_status")},
         "model_inference_executed": bool(completed),
         "embedding_generated": bool(completed),
@@ -149,7 +176,7 @@ def main() -> int:
     payloads[execution_ref] = execution_payload
     observation_refs = sorted([benchmark_ref, model_ref, execution_ref])
 
-    integrity_payload = {"payload_schema": "kairos-gate.geneformer-v1-response-integrity.v0.1", "verdict": "VERIFIED", "observation_refs": observation_refs, "verification": {"payload_digests_recomputed": True, "record_refs_recomputed": True, "observation_set_exact": True, "current_authorization_distinct_from_predecessor": True, "passport_and_inference_files_digest_bound": True}}
+    integrity_payload = {"payload_schema": "kairos-gate.geneformer-v1-response-integrity.v0.1", "verdict": "VERIFIED", "observation_refs": observation_refs, "verification": {"payload_digests_recomputed": True, "record_refs_recomputed": True, "observation_set_exact": True, "current_authorization_distinct_from_predecessor": True, "passport_and_inference_files_digest_bound": True, "input_manifest_digest_bound": input_manifest_path is not None}}
     integrity_links = current_links.copy()
     integrity_links["observation_refs"] = observation_refs
     record, integrity_ref = make_record("response_integrity", integrity_payload, integrity_links, captured + 4)
