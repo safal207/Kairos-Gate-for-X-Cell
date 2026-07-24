@@ -17,11 +17,26 @@
       "impact": "blocking"
     }
   ],
+  "scoring_model": {
+    "formula_version": "bioevidence.priority.v0.1",
+    "formula": "max(0, weighted_positive_sum - uncertainty_penalty_weight * uncertainty_penalty)",
+    "weights": {
+      "temporal_fit": 2,
+      "experimental_unit_fit": 3,
+      "cross_dataset_support": 2,
+      "confounder_resilience": 3,
+      "mechanistic_coherence": 5,
+      "intervention_support": 5,
+      "falsifiability": 1,
+      "effect_relevance": 4
+    },
+    "uncertainty_penalty_weight": 2
+  },
   "hypotheses": [
     {
       "hypothesis_id": "H1_DIRECT",
       "rank": 1,
-      "priority_score": 90,
+      "priority_score": 42,
       "statement": "Nfkbia directly causes the response.",
       "mechanism_class": "direct_causal_effect",
       "status": "causally_identified_with_limits",
@@ -52,7 +67,7 @@
     {
       "hypothesis_id": "H2_STATE",
       "rank": 2,
-      "priority_score": 40,
+      "priority_score": 31,
       "statement": "A shared state causes both measurements.",
       "mechanism_class": "shared_upstream_state",
       "status": "plausible",
@@ -83,7 +98,7 @@
     {
       "hypothesis_id": "H3_TECHNICAL",
       "rank": 3,
-      "priority_score": 30,
+      "priority_score": 22,
       "statement": "Technical structure creates the association.",
       "mechanism_class": "technical_confounding",
       "status": "plausible",
