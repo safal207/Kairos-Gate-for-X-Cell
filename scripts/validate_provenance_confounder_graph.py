@@ -28,14 +28,24 @@ REQUIRED = {
 VERDICTS = {"ACCEPT", "ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"}
 LEVELS = {"F0", "F1", "F2", "F3", "F4", "F5"}
 EDGE_STATUSES = {"observed", "documented", "executable", "author_confirmed", "inferred", "unknown"}
+CONFOUNDER_EDGE_CLASSES = {
+    "may_influence",
+    "coincides_with",
+    "determines_assignment",
+    "partially_determines_assignment",
+    "unknown_relationship",
+}
+REVERSIBILITY = {"reversible", "irreversible", "unknown"}
 
 
 def require(condition: bool, message: str, errors: list[str]) -> None:
+    """Append a validation error when a required condition is false."""
     if not condition:
         errors.append(message)
 
 
 def load(path: Path) -> dict[str, Any]:
+    """Load one provenance graph JSON object."""
     with path.open("r", encoding="utf-8") as handle:
         value = json.load(handle)
     if not isinstance(value, dict):
@@ -44,6 +54,7 @@ def load(path: Path) -> dict[str, Any]:
 
 
 def has_cycle(node_ids: set[str], edges: list[dict[str, Any]]) -> bool:
+    """Return whether the directed provenance graph contains a cycle."""
     adjacency: dict[str, list[str]] = defaultdict(list)
     indegree = {node_id: 0 for node_id in node_ids}
     for edge in edges:
@@ -66,6 +77,7 @@ def has_cycle(node_ids: set[str], edges: list[dict[str, Any]]) -> bool:
 
 
 def validate(record: dict[str, Any]) -> list[str]:
+    """Return all contract violations found in one provenance graph."""
     errors: list[str] = []
 
     missing = sorted(REQUIRED - record.keys())
@@ -124,6 +136,10 @@ def validate(record: dict[str, Any]) -> list[str]:
             require(edge.get("status") in EDGE_STATUSES, f"edge {edge_id} has invalid status", errors)
             confidence = edge.get("confidence")
             require(isinstance(confidence, (int, float)) and 0 <= confidence <= 1, f"edge {edge_id} confidence must be between 0 and 1", errors)
+            require(edge.get("transformation_reversibility") in REVERSIBILITY, f"edge {edge_id} has invalid transformation_reversibility", errors)
+            require("missing_input_impact" in edge, f"edge {edge_id} must record missing_input_impact", errors)
+            impact = edge.get("missing_input_impact")
+            require(impact is None or (isinstance(impact, str) and bool(impact.strip())), f"edge {edge_id} missing_input_impact must be null or non-empty text", errors)
 
     if node_ids and isinstance(edges, list):
         require(not has_cycle(node_ids, [edge for edge in edges if isinstance(edge, dict)]), "provenance graph must be acyclic", errors)
@@ -140,6 +156,8 @@ def validate(record: dict[str, Any]) -> list[str]:
                 continue
             confounder_id = item.get("confounder_id")
             require(bool(confounder_id), f"confounders[{index}].confounder_id is required", errors)
+            require(item.get("edge_class") in CONFOUNDER_EDGE_CLASSES, f"confounder {confounder_id} has invalid edge_class", errors)
+            require(item.get("status") in EDGE_STATUSES, f"confounder {confounder_id} has invalid status", errors)
             require(item.get("separability") in {"separable", "partially_separable", "aliased", "unknown"}, f"confounder {confounder_id} has invalid separability", errors)
             require(item.get("risk") in {"low", "medium", "high", "blocking", "unknown"}, f"confounder {confounder_id} has invalid risk", errors)
             if item.get("load_bearing") is True and item.get("risk") in {"high", "blocking", "unknown"}:
@@ -160,17 +178,21 @@ def validate(record: dict[str, Any]) -> list[str]:
             require(claim.get("weakest_evidence_level") in LEVELS, f"claim {claim_id} has invalid weakest_evidence_level", errors)
             require(claim.get("verdict") in VERDICTS, f"claim {claim_id} has invalid verdict", errors)
             unknown_count = claim.get("unknown_edge_count")
+            inferred_count = claim.get("inferred_edge_count")
             require(isinstance(unknown_count, int) and unknown_count >= 0, f"claim {claim_id} has invalid unknown_edge_count", errors)
+            require(isinstance(inferred_count, int) and inferred_count >= 0, f"claim {claim_id} has invalid inferred_edge_count", errors)
+            require(isinstance(claim.get("reproducible_from_frozen_inputs"), bool), f"claim {claim_id} must record frozen-input reproducibility", errors)
             high_risk = claim.get("high_risk_confounders")
             require(isinstance(high_risk, list), f"claim {claim_id}.high_risk_confounders must be an array", errors)
 
-            # Fail closed when the path is incomplete or has load-bearing high-risk confounding.
             if claim.get("complete_path") is not True:
                 require(claim.get("verdict") in {"HOLD", "BLOCK"}, f"incomplete claim path {claim_id} must HOLD or BLOCK", errors)
             if claim.get("independent_validation") != "present" and claim.get("weakest_evidence_level") in {"F0", "F1", "F2"}:
                 require(claim.get("verdict") in {"HOLD", "BLOCK"}, f"weak unvalidated claim {claim_id} must HOLD or BLOCK", errors)
             if isinstance(high_risk, list) and blocking_confounders.intersection(map(str, high_risk)):
                 require(claim.get("verdict") != "ACCEPT", f"claim {claim_id} cannot ACCEPT with load-bearing high-risk confounders", errors)
+            if claim.get("reproducible_from_frozen_inputs") is not True:
+                require(claim.get("verdict") != "ACCEPT", f"claim {claim_id} cannot ACCEPT without frozen-input reproducibility", errors)
 
     missing_claim_rows = sorted(claim_ids - seen_claims)
     require(not missing_claim_rows, f"missing reachability rows for claims: {missing_claim_rows}", errors)
@@ -189,6 +211,7 @@ def validate(record: dict[str, Any]) -> list[str]:
 
 
 def main(argv: list[str]) -> int:
+    """Validate all supplied graph records and return a process exit code."""
     if len(argv) < 2:
         print("usage: validate_provenance_confounder_graph.py GRAPH.json [GRAPH.json ...]", file=sys.stderr)
         return 2
