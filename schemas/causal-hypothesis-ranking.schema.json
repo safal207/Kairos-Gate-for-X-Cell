@@ -9,6 +9,7 @@
     "case_id",
     "target_claim",
     "inherited_constraints",
+    "scoring_model",
     "hypotheses",
     "pairwise_discriminators",
     "causal_identification",
@@ -48,6 +49,31 @@
         }
       }
     },
+    "scoring_model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["formula_version", "formula", "weights", "uncertainty_penalty_weight"],
+      "properties": {
+        "formula_version": {"const": "bioevidence.priority.v0.1"},
+        "formula": {"const": "max(0, weighted_positive_sum - uncertainty_penalty_weight * uncertainty_penalty)"},
+        "weights": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["temporal_fit", "experimental_unit_fit", "cross_dataset_support", "confounder_resilience", "mechanistic_coherence", "intervention_support", "falsifiability", "effect_relevance"],
+          "properties": {
+            "temporal_fit": {"const": 2},
+            "experimental_unit_fit": {"const": 3},
+            "cross_dataset_support": {"const": 2},
+            "confounder_resilience": {"const": 3},
+            "mechanistic_coherence": {"const": 5},
+            "intervention_support": {"const": 5},
+            "falsifiability": {"const": 1},
+            "effect_relevance": {"const": 4}
+          }
+        },
+        "uncertainty_penalty_weight": {"const": 2}
+      }
+    },
     "hypotheses": {
       "type": "array",
       "minItems": 3,
@@ -74,7 +100,7 @@
         "properties": {
           "hypothesis_id": {"type": "string", "minLength": 1},
           "rank": {"type": "integer", "minimum": 1},
-          "priority_score": {"type": "number", "minimum": 0, "maximum": 100},
+          "priority_score": {"type": "integer", "minimum": 0, "maximum": 100},
           "statement": {"type": "string", "minLength": 1},
           "mechanism_class": {
             "enum": [
@@ -161,9 +187,9 @@
       "properties": {
         "association": {"enum": ["supported", "supported_with_limits", "not_established", "blocked"]},
         "prediction": {"enum": ["supported", "supported_with_limits", "not_established", "blocked"]},
-        "causal": {"enum": ["supported", "supported_with_limits", "not_established", "blocked"]},
-        "tissue": {"enum": ["supported", "supported_with_limits", "not_established", "blocked"]},
-        "clinical_therapeutic": {"enum": ["supported", "supported_with_limits", "not_established", "blocked"]}
+        "causal": {"enum": ["supported_with_limits", "not_established", "blocked"]},
+        "tissue": {"enum": ["supported_with_limits", "not_established", "blocked"]},
+        "clinical_therapeutic": {"enum": ["supported_with_limits", "not_established", "blocked"]}
       }
     },
     "overall_verdict": {"enum": ["RANKED_NOT_IDENTIFIED", "IDENTIFIED_WITH_LIMITS", "BLOCK"]},
