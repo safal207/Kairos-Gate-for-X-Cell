@@ -51,8 +51,8 @@ def load_counts(path: Path) -> pd.DataFrame:
         index_col=0,
         quotechar='"',
         engine="c",
-        dtype=np.float32,
     )
+    frame = frame.apply(pd.to_numeric, errors="raise").astype(np.float32)
     frame.index = pd.Index([clean_identifier(value) for value in frame.index], dtype="object")
     frame.columns = pd.Index([clean_identifier(value) for value in frame.columns], dtype="object")
     if frame.index.has_duplicates:

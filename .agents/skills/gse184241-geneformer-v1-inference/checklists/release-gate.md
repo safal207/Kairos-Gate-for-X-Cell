@@ -1,0 +1,22 @@
+# Geneformer V1 inference release gate
+
+- [ ] Branch starts from exact PR #38 head.
+- [ ] GSE184241 counts and barcode digests equal the frozen benchmark.
+- [ ] Exact 1,710-cell identity and cell-order digest are preserved.
+- [ ] Exact Geneformer revision, checkpoint and six required files are digest-bound.
+- [ ] Raw counts reach tokenization without feature selection.
+- [ ] V1 median-scaled rank tokenization uses input size 2048 and no special tokens.
+- [ ] Token artifact and cell-order hashes are retained.
+- [ ] Checkpoint config is 2048 positions, 256 hidden units and six layers.
+- [ ] Embeddings use second-to-last hidden-state mean pooling over non-padding genes.
+- [ ] Embedding artifact is 1,710 × 256 float32 or execution is an explicit HOLD.
+- [ ] Frozen leave-one-donor-out folds are reused without cell-random leakage.
+- [ ] Metrics are descriptive and incremental value remains not established.
+- [ ] Model Evidence Passport validates and retains training-overlap uncertainty.
+- [ ] New authorization differs from the predecessor authorization.
+- [ ] `SUPERSEDES` ancestry is exact and separate from current authorization links.
+- [ ] Negative authority/claim escalation fixture is rejected.
+- [ ] Temporary LiminalDB WAL, snapshot, close, reopen and replay are exact.
+- [ ] Final dimensions are report-only for completed execution or blocked for HOLD.
+- [ ] No physical, clinical, production-write, deployment, submission or merge authority is granted.
+- [ ] Exact-head artifacts and CI receipts are retained before review-ready status.

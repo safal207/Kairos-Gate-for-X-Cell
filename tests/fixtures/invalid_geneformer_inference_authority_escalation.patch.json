@@ -1,0 +1,15 @@
+{
+  "fixture_version": "0.1",
+  "fixture_type": "deterministic_mutation_patch",
+  "description": "Illegally imports predecessor authority into the current inference chain and escalates bounded report-only evidence into causal, production and side-effect authority.",
+  "set": {
+    "records[1].links.authorization_ref": "sha256:550df034e0eceb773ef69d2de8a9fbb9bb48b092a2b6bdee8a53988764eb0665",
+    "claim_boundary.incremental_value_established": true,
+    "claim_boundary.causal_effect_established": true,
+    "storage_boundary.production_write": true,
+    "records[6].dimensions.causal_validity": "VALID",
+    "records[6].dimensions.continuity_posture": "CONTINUE_SIDE_EFFECT",
+    "records[6].side_effect_committed": true
+  },
+  "expected_verdict": "BLOCK"
+}
