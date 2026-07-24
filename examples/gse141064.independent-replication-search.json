@@ -79,7 +79,7 @@
         "sample_size": "limited"
       },
       "candidate_verdict": "ACCEPT_WITH_LIMITS",
-      "rationale": "Independent Stanford/Covert laboratory experiment on Mus musculus RAW264.7 cells linking LPS-induced NF-kB trajectories to scRNA-seq in the same 823 cells. Exact cell-ID sets and publisher checksums were verified. The frozen post-LPS conceptual endpoint was supported (rho 0.178, bootstrap 95% CI 0.110 to 0.243, stratified permutation p 0.0002), but the transcriptome follows stimulation and the phenotype is NF-kB activity rather than future Tnf-mCherry slope, so this is not direct temporal replication."
+      "rationale": "Independent Stanford/Covert laboratory experiment on Mus musculus RAW264.7 cells linking LPS-induced NF-kB trajectories to scRNA-seq in the same 823 cells. Exact cell-ID sets and publisher checksums were verified. The completed diagnostic found rho 0.178, bootstrap 95% CI 0.110 to 0.243, and stratified permutation p 0.0002, but the analysis was not demonstrably bound to a pre-analysis commit. The transcriptome follows stimulation and the phenotype is NF-kB activity rather than future Tnf-mCherry slope, so this is conceptual support only, not direct temporal replication."
     },
     {
       "candidate_id": "GSE162992",
@@ -214,13 +214,16 @@
       "post hoc trajectory feature selection based on the most favorable Nfkbia result",
       "condition inseparable from an undocumented technical batch"
     ],
-    "success_criteria": "Completed on 823 identity-matched cells. The prespecified positive direction was observed with rho 0.178, bootstrap 95% CI 0.110 to 0.243, stratified permutation p 0.0002, and leave-one-ID-prefix-out rho 0.153 to 0.200. This satisfies conceptual signal support only and does not satisfy direct replication."
+    "success_criteria": "Conceptual pathway triangulation requires a positive prespecified association, a stratified permutation p-value below 0.05, a bootstrap 95% confidence interval excluding zero, and positive leave-one-ID-prefix-out sensitivity estimates. Passing this criterion never qualifies as direct temporal replication.",
+    "criteria_frozen_at_commit": null,
+    "freeze_verification": "not_commit_bound",
+    "observed_result": "Completed on 823 identity-matched cells. The association was positive with rho 0.178, bootstrap 95% CI 0.110 to 0.243, stratified permutation p 0.0002, and leave-one-ID-prefix-out rho 0.153 to 0.200. The result supports conceptual pathway coupling only; the repository cannot demonstrate that the criterion was commit-bound before outcome inspection."
   },
   "overall_verdict": "ACCEPT_WITH_LIMITS",
-  "next_valid_action": "Document GSE94383 ID-prefix and collection-batch semantics, preserve the result as conceptual triangulation, and continue searching for pre-stimulation RNA linked to a later TNF-promoter phenotype for direct replication.",
+  "next_valid_action": "Document GSE94383 ID-prefix and collection-batch semantics, preserve the result as non-commit-bound conceptual triangulation, and continue searching for pre-stimulation RNA linked to a later TNF-promoter phenotype for direct replication.",
   "safety_status": {
     "mode": "computational_only",
     "physical_biology_authorized": false,
-    "notes": "One independent conceptual candidate was successfully analysed. Direct replication, causal inference, and physical experimentation remain outside the supported claim."
+    "notes": "One independent conceptual candidate was analysed. Direct replication, causal inference, and physical experimentation remain outside the supported claim."
   }
 }
