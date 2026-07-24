@@ -7,6 +7,12 @@
     "later_phenotype": "future TNF response",
     "identity_linkage": "same cell",
     "biological_unit": "independent biological cell collection",
+    "acceptable_endpoint_substitutions": [
+      "a prespecified compatible later TNF-response endpoint"
+    ],
+    "forbidden_substitutions": [
+      "post-stimulation RNA represented as the basal pre-state"
+    ],
     "competing_models": ["candidate-only", "broader state", "technical confounders"]
   },
   "sources_searched": [
