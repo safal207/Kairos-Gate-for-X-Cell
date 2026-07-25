@@ -23,7 +23,72 @@ env:
   BIOEVIDENCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
-  schema-first-contracts:
+  accepted-record:
+    name: accepted — ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: experimental-unit
+            contract: experimental-unit
+            record: examples/gse141064.experimental-unit-audit.json
+          - name: provenance-confounder
+            contract: provenance-confounder
+            record: examples/gse141064.provenance-confounder-graph.json
+          - name: independent-replication
+            contract: independent-replication
+            record: examples/gse141064.independent-replication-search.json
+          - name: valid-independent-candidate
+            contract: independent-replication
+            record: tests/fixtures/valid_independent_replication_candidate.json
+          - name: causal-hypothesis
+            contract: causal-hypothesis
+            record: examples/gse141064.nfkbia-causal-hypotheses.json
+          - name: temporal-replication
+            contract: temporal-replication
+            record: examples/gse141064.temporal-replication-gate.json
+          - name: partner-handoff
+            contract: partner-handoff
+            record: examples/gse141064.nfkbia-partner-lab-handoff.json
+    steps:
+      - name: Checkout exact pull-request head
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          ref: ${{ env.BIOEVIDENCE_HEAD_SHA }}
+          persist-credentials: false
+
+      - name: Verify checked-out head identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$BIOEVIDENCE_HEAD_SHA"
+          echo "exact_head=$BIOEVIDENCE_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned schema runtime
+        run: |
+          python -m pip install --disable-pip-version-check \
+            jsonschema==4.23.0 \
+            referencing==0.35.1 \
+            rpds-py==0.20.0 \
+            attrs==24.2.0 \
+            jsonschema-specifications==2024.10.1 \
+            rfc3339-validator==0.1.4
+
+      - name: Validate ${{ matrix.record }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_bioevidence_contract.py \
+            "${{ matrix.contract }}" "${{ matrix.record }}"
+
+  misuse-regressions:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -66,24 +131,6 @@ jobs:
             scripts/validate_temporal_replication_gate.py \
             scripts/validate_partner_lab_evidence_handoff.py
 
-      - name: Validate all accepted records schema first
-        shell: bash
-        run: |
-          set -euo pipefail
-          python scripts/validate_bioevidence_contract.py experimental-unit \
-            examples/gse141064.experimental-unit-audit.json
-          python scripts/validate_bioevidence_contract.py provenance-confounder \
-            examples/gse141064.provenance-confounder-graph.json
-          python scripts/validate_bioevidence_contract.py independent-replication \
-            examples/gse141064.independent-replication-search.json \
-            tests/fixtures/valid_independent_replication_candidate.json
-          python scripts/validate_bioevidence_contract.py causal-hypothesis \
-            examples/gse141064.nfkbia-causal-hypotheses.json
-          python scripts/validate_bioevidence_contract.py temporal-replication \
-            examples/gse141064.temporal-replication-gate.json
-          python scripts/validate_bioevidence_contract.py partner-handoff \
-            examples/gse141064.nfkbia-partner-lab-handoff.json
-
       - name: Prove schema invalidity overrides semantic acceptance
         shell: bash
         run: |
@@ -93,7 +140,7 @@ jobs:
           python scripts/validate_experimental_unit_audit.py "$fixture" \
             > semantic-only-control.txt 2>&1
           grep -q '^ACCEPT ' semantic-only-control.txt || {
-            echo "negative fixture no longer demonstrates the former schema/semantic authority gap"
+            echo "negative fixture no longer demonstrates the former authority gap"
             cat semantic-only-control.txt
             exit 1
           }
@@ -107,10 +154,7 @@ jobs:
           test "$code" -ne 0
           grep -q '^BLOCK ' schema-first-negative.txt
           grep -q 'unexpected_authority' schema-first-negative.txt
-          if grep -q 'Traceback' schema-first-negative.txt; then
-            echo "schema rejection leaked a traceback"
-            exit 1
-          fi
+          ! grep -q 'Traceback' schema-first-negative.txt
 
       - name: Confirm all misuse fixtures remain blocked without traceback
         shell: bash
@@ -129,10 +173,7 @@ jobs:
             cat "$output"
             test "$code" -ne 0
             grep -q '^BLOCK ' "$output"
-            if grep -q 'Traceback' "$output"; then
-              echo "negative fixture leaked a traceback: $record"
-              exit 1
-            fi
+            ! grep -q 'Traceback' "$output"
           }
 
           check_block experimental-unit \
