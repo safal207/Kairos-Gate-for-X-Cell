@@ -100,7 +100,12 @@ def validate_schema(record: dict[str, Any], schema_path: Path) -> list[str]:
 
 
 def validate_semantics(record_path: Path, semantic_path: Path) -> list[str]:
-    """Run one semantic validator and normalize its failure output."""
+    """Run one semantic validator and require an exact fail-closed verdict.
+
+    Exit status alone is not authority. A successful semantic validator must
+    return zero, emit exactly one verdict line matching the absolute record
+    path, emit `ACCEPT` rather than `BLOCK`, and emit no traceback.
+    """
     result = subprocess.run(
         [sys.executable, str(semantic_path), str(record_path)],
         cwd=ROOT,
@@ -108,19 +113,31 @@ def validate_semantics(record_path: Path, semantic_path: Path) -> list[str]:
         text=True,
         check=False,
     )
-    if result.returncode == 0:
-        return []
-
     combined = "\n".join(part for part in (result.stdout, result.stderr) if part)
+    stripped_lines = [line.strip() for line in combined.splitlines() if line.strip()]
+    verdict_lines = [
+        line for line in stripped_lines if line.startswith(("ACCEPT ", "BLOCK "))
+    ]
+    expected_accept = f"ACCEPT {record_path}"
+
     if "Traceback" in combined:
         if os.environ.get("BIOEVIDENCE_DEBUG") == "1":
             return ["semantic validator raised an unexpected exception", combined.strip()]
         return ["semantic validator raised an unexpected exception"]
 
+    if result.returncode == 0:
+        errors: list[str] = []
+        if verdict_lines != [expected_accept]:
+            errors.append(
+                "semantic validator returned zero without exactly one matching ACCEPT verdict"
+            )
+        if any(line.startswith("BLOCK ") for line in stripped_lines):
+            errors.append("semantic validator emitted BLOCK with a zero exit status")
+        return errors
+
     lines = []
-    for raw_line in combined.splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("BLOCK "):
+    for line in stripped_lines:
+        if line.startswith(("BLOCK ", "ACCEPT ")):
             continue
         lines.append(line[2:] if line.startswith("- ") else line)
     return lines or [f"semantic validator exited with status {result.returncode}"]
@@ -152,6 +169,7 @@ def main(argv: list[str]) -> int:
     contract = argv[1]
     schema_relative, semantic_relative = CONTRACTS[contract]
     schema_digest = sha256_file(ROOT / schema_relative)
+    semantic_digest = sha256_file(ROOT / semantic_relative)
     failed = False
 
     for raw_path in argv[2:]:
@@ -177,6 +195,7 @@ def main(argv: list[str]) -> int:
             print(f"  schema={schema_relative}")
             print(f"  schema_sha256={schema_digest}")
             print(f"  semantic_validator={semantic_relative}")
+            print(f"  semantic_validator_sha256={semantic_digest}")
 
     return 1 if failed else 0
 
