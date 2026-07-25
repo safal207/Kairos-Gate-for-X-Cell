@@ -3,15 +3,31 @@ name: BioEvidence P0 Scientific Inference Boundary
 on:
   pull_request:
     paths:
+      - "examples/gse141064.independent-replication-search.json"
+      - "examples/gse141064.nfkbia-causal-hypotheses.json"
       - "scripts/analyze_gse94383_conceptual_replication.py"
       - "scripts/check_gse94383_inference_boundary.py"
+      - "scripts/check_gse94383_claim_drift.py"
       - "reports/gse94383-conceptual-replication-2026-07-23.*"
+      - "reports/gse141064-*.md"
+      - "README.md"
+      - "docs/architecture.md"
+      - "RELEASE_NOTES_v0.1.md"
+      - "reviews/**"
       - ".github/workflows/bioevidence-p0-scientific-inference.yml"
   push:
     paths:
+      - "examples/gse141064.independent-replication-search.json"
+      - "examples/gse141064.nfkbia-causal-hypotheses.json"
       - "scripts/analyze_gse94383_conceptual_replication.py"
       - "scripts/check_gse94383_inference_boundary.py"
+      - "scripts/check_gse94383_claim_drift.py"
       - "reports/gse94383-conceptual-replication-2026-07-23.*"
+      - "reports/gse141064-*.md"
+      - "README.md"
+      - "docs/architecture.md"
+      - "RELEASE_NOTES_v0.1.md"
+      - "reviews/**"
       - ".github/workflows/bioevidence-p0-scientific-inference.yml"
 
 permissions:
@@ -55,6 +71,12 @@ jobs:
         run: |
           set -euo pipefail
           python check_gse94383_inference_boundary.py | tee ../gse94383-boundary-regression.txt
+
+      - name: Enforce cross-artifact claim consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/check_gse94383_claim_drift.py | tee gse94383-claim-drift.txt
 
       - name: Download and verify public GSE94383 tables
         shell: bash
@@ -136,6 +158,11 @@ jobs:
             sha256sum \
               scripts/analyze_gse94383_conceptual_replication.py \
               scripts/check_gse94383_inference_boundary.py \
+              scripts/check_gse94383_claim_drift.py \
+              examples/gse141064.independent-replication-search.json \
+              examples/gse141064.nfkbia-causal-hypotheses.json \
+              reports/gse94383-conceptual-replication-2026-07-23.json \
+              reports/gse94383-conceptual-replication-2026-07-23.md \
               live-results/gse94383/descriptive-pathway-context.json \
               live-results/gse94383/descriptive-pathway-context.md
           } > gse94383-p0-science-receipt.txt
@@ -148,6 +175,7 @@ jobs:
           name: gse94383-p0-science-${{ env.BIOEVIDENCE_HEAD_SHA }}
           path: |
             gse94383-boundary-regression.txt
+            gse94383-claim-drift.txt
             gse94383-p0-science-receipt.txt
             live-data/gse94383/SHA256SUMS
             live-results/gse94383/descriptive-pathway-context.json
