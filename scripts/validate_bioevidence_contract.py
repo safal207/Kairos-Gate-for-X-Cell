@@ -156,6 +156,14 @@ def validate_one(contract: str, record_path: Path) -> list[str]:
     return validate_semantics(record_path, semantic_path)
 
 
+def contract_digests(contract: str) -> tuple[str, str, str, str]:
+    """Return contract paths and digests or raise before validating records."""
+    schema_relative, semantic_relative = CONTRACTS[contract]
+    schema_digest = sha256_file(ROOT / schema_relative)
+    semantic_digest = sha256_file(ROOT / semantic_relative)
+    return schema_relative, schema_digest, semantic_relative, semantic_digest
+
+
 def main(argv: list[str]) -> int:
     """Validate one or more records and emit canonical ACCEPT/BLOCK output."""
     if len(argv) < 3 or argv[1] not in CONTRACTS:
@@ -167,11 +175,21 @@ def main(argv: list[str]) -> int:
         return 2
 
     contract = argv[1]
-    schema_relative, semantic_relative = CONTRACTS[contract]
-    schema_digest = sha256_file(ROOT / schema_relative)
-    semantic_digest = sha256_file(ROOT / semantic_relative)
-    failed = False
+    try:
+        (
+            schema_relative,
+            schema_digest,
+            semantic_relative,
+            semantic_digest,
+        ) = contract_digests(contract)
+    except OSError as exc:
+        if os.environ.get("BIOEVIDENCE_DEBUG") == "1":
+            raise
+        print(f"BLOCK {contract}")
+        print(f"  - cannot read contract schema or semantic validator: {exc}")
+        return 1
 
+    failed = False
     for raw_path in argv[2:]:
         display_path = Path(raw_path)
         record_path = display_path.expanduser().resolve()
