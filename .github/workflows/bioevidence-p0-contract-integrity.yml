@@ -19,15 +19,26 @@ on:
 permissions:
   contents: read
 
+env:
+  BIOEVIDENCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
 jobs:
   schema-first-contracts:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout exact revision
+      - name: Checkout exact pull-request head
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
+          ref: ${{ env.BIOEVIDENCE_HEAD_SHA }}
           persist-credentials: false
+
+      - name: Verify checked-out head identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$BIOEVIDENCE_HEAD_SHA"
+          echo "exact_head=$BIOEVIDENCE_HEAD_SHA"
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
@@ -142,7 +153,9 @@ jobs:
         run: |
           set -euo pipefail
           {
-            echo "head_sha=${GITHUB_SHA}"
+            echo "head_sha=${BIOEVIDENCE_HEAD_SHA}"
+            echo "checked_out_sha=$(git rev-parse HEAD)"
+            echo "github_event_sha=${GITHUB_SHA}"
             echo "gateway=scripts/validate_bioevidence_contract.py"
             echo "jsonschema=4.23.0"
             echo "authority=schema_then_semantics"
@@ -161,7 +174,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: bioevidence-p0-contract-integrity-${{ github.sha }}
+          name: bioevidence-p0-contract-integrity-${{ env.BIOEVIDENCE_HEAD_SHA }}
           path: |
             p0-contract-integrity-receipt.txt
             semantic-only-control.txt
