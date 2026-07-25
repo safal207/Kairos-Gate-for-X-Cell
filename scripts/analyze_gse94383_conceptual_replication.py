@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Computational-only analysis of public GSE94383 tables.
+"""Computational-only descriptive analysis of public GSE94383 tables.
 
 Tests a bounded question: whether post-LPS Nfkbia expression is associated
-with the same cell's preceding NF-kB trajectory. This is not a direct test of
-the GSE141064 basal-expression-to-future-response claim.
+with the same cell's preceding NF-kB trajectory. Cell-level resampling is
+retained only as within-table sensitivity and cannot establish independent-unit
+inference or promote a scientific support verdict while biological grouping is
+unresolved. This is not a direct test of the GSE141064 basal-expression-to-
+future-response claim.
 """
 
 from __future__ import annotations
@@ -22,9 +25,12 @@ from scipy.stats import spearmanr
 SEED = 94383
 N_BOOT = 2000
 N_PERM = 5000
+INDEPENDENT_UNIT_STATUS = "unresolved"
+RESAMPLING_SCOPE = "within_table_cell_level_sensitivity_only"
 
 
 def digest(path: Path, name: str) -> str:
+    """Return one named digest for a file."""
     h = hashlib.new(name)
     with path.open("rb") as stream:
         for block in iter(lambda: stream.read(1 << 20), b""):
@@ -33,6 +39,7 @@ def digest(path: Path, name: str) -> str:
 
 
 def rho(x, y):
+    """Return descriptive Spearman rho, asymptotic p, and complete row count."""
     x, y = np.asarray(x, float), np.asarray(y, float)
     keep = np.isfinite(x) & np.isfinite(y)
     if keep.sum() < 3 or np.unique(x[keep]).size < 2 or np.unique(y[keep]).size < 2:
@@ -42,10 +49,17 @@ def rho(x, y):
 
 
 def rank_within_time(frame: pd.DataFrame, column: str) -> pd.Series:
+    """Rank one column within harvest-time strata."""
     return frame.groupby("time")[column].rank(method="average", pct=True)
 
 
 def endpoint(frame: pd.DataFrame, feature: str, expected: str | None) -> dict:
+    """Compute descriptive association and cell-level sensitivity summaries.
+
+    Bootstrap and permutation calculations resample cells within harvest-time
+    strata. They are explicitly non-inferential because the independent
+    biological unit and ID-prefix semantics are unresolved.
+    """
     x, y = "nfkbia_rank", f"{feature}_rank"
     observed, asymptotic_p, count = rho(frame[x], frame[y])
     rng = np.random.default_rng(SEED)
@@ -99,12 +113,24 @@ def endpoint(frame: pd.DataFrame, feature: str, expected: str | None) -> dict:
         "stratified_permutation_p": (exceed + 1) / (N_PERM + 1),
         "bootstrap_95_ci": ci,
         "n": count,
+        "resampling_unit": "cell_within_harvest_time",
+        "independent_unit_status": INDEPENDENT_UNIT_STATUS,
+        "inferential_use_authorized": False,
+        "resampling_scope": RESAMPLING_SCOPE,
         "per_time": per_time,
         "leave_one_prefix_out": leave_one_prefix_out,
     }
 
 
+def verdict_from_primary(primary: dict) -> str:
+    """Return a descriptive verdict that cannot be promoted by cell-level CI or p."""
+    if primary.get("direction_met") is True:
+        return "DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED"
+    return "DESCRIPTIVE_WITHIN_DATASET_SIGNAL_NOT_OBSERVED"
+
+
 def strict_json(value):
+    """Convert numpy values and non-finite floats into strict JSON values."""
     if isinstance(value, dict):
         return {str(k): strict_json(v) for k, v in value.items()}
     if isinstance(value, list):
@@ -120,6 +146,7 @@ def strict_json(value):
 
 
 def analyse(dynamics_path: Path, expression_path: Path) -> dict:
+    """Run the bounded within-dataset descriptive analysis."""
     dyn = pd.read_csv(dynamics_path)
     expr = pd.read_csv(expression_path)
     dyn_id = "id" if "id" in dyn.columns else dyn.columns[0]
@@ -152,7 +179,12 @@ def analyse(dynamics_path: Path, expression_path: Path) -> dict:
             continue
         recent = observed[-min(3, len(observed)):]
         feature_rows.append(
-            (len(observed), float(observed.mean()), float(recent.mean()), float(observed.max() - recent.mean()))
+            (
+                len(observed),
+                float(observed.mean()),
+                float(recent.mean()),
+                float(observed.max() - recent.mean()),
+            )
         )
     features = pd.DataFrame(
         feature_rows, columns=["points", "mean_activity", "recent_activity", "attenuation"]
@@ -175,19 +207,13 @@ def analyse(dynamics_path: Path, expression_path: Path) -> dict:
     primary = endpoint(frame, "recent_activity", "positive")
     secondary = endpoint(frame, "attenuation", None)
     mean_activity = endpoint(frame, "mean_activity", "positive")
-    low = primary["bootstrap_95_ci"][0]
-    if primary["direction_met"] and math.isfinite(low) and low > 0:
-        verdict = "CONCEPTUAL_SIGNAL_SUPPORTED"
-    elif primary["direction_met"]:
-        verdict = "DIRECTIONALLY_CONSISTENT_BUT_UNCERTAIN"
-    else:
-        verdict = "CONCEPTUAL_SIGNAL_NOT_REPRODUCED"
+    verdict = verdict_from_primary(primary)
 
     return strict_json({
-        "schema_version": "0.1.0",
-        "analysis_id": "GSE94383_NFKBIA_CONCEPTUAL_REPLICATION",
+        "schema_version": "0.2.0",
+        "analysis_id": "GSE94383_NFKBIA_DESCRIPTIVE_PATHWAY_CONTEXT",
         "commit": os.environ.get("GITHUB_SHA"),
-        "analysis_type": "conceptual_replication_only",
+        "analysis_type": "within_dataset_descriptive_sensitivity_only",
         "source_hashes": {
             "dynamics_md5": digest(dynamics_path, "md5"),
             "expression_md5": digest(expression_path, "md5"),
@@ -201,51 +227,84 @@ def analyse(dynamics_path: Path, expression_path: Path) -> dict:
             "duplicates": duplicates,
             "complete_cells": len(frame),
             "trajectory_columns": len(trajectory_columns),
-            "time_counts": {str(k): int(v) for k, v in frame["time"].value_counts().sort_index().items()},
-            "point_counts": {str(k): int(v) for k, v in frame["points"].value_counts().sort_index().items()},
+            "time_counts": {
+                str(k): int(v)
+                for k, v in frame["time"].value_counts().sort_index().items()
+            },
+            "point_counts": {
+                str(k): int(v)
+                for k, v in frame["points"].value_counts().sort_index().items()
+            },
             "prefix_count": int(frame["prefix"].nunique()),
         },
-        "endpoints": {"primary": primary, "attenuation": secondary, "mean_activity": mean_activity},
+        "inference_boundary": {
+            "independent_biological_unit_status": INDEPENDENT_UNIT_STATUS,
+            "effective_biological_n": None,
+            "cell_count_is_independent_n": False,
+            "cell_level_resampling_can_promote_verdict": False,
+            "resampling_scope": RESAMPLING_SCOPE,
+            "prefix_leave_one_out_scope": "technical_sensitivity_only",
+        },
+        "endpoints": {
+            "primary": primary,
+            "attenuation": secondary,
+            "mean_activity": mean_activity,
+        },
         "verdict": verdict,
         "claim_boundary": {
             "direct_replication": False,
-            "conceptual_triangulation": True,
+            "conceptual_triangulation": False,
+            "descriptive_conceptual_context": True,
+            "external_biological_generalization": False,
             "causal": False,
             "tissue": False,
             "clinical": False,
         },
-        "next_valid_action": "Document ID-prefix semantics and continue searching for pre-stimulation RNA linked to a later TNF-promoter phenotype.",
+        "next_valid_action": (
+            "Resolve source-backed biological grouping for GSE94383 before inferential use, "
+            "and continue searching for pre-stimulation RNA linked to a later "
+            "TNF-promoter phenotype."
+        ),
         "safety": {"mode": "computational_only", "physical_biology_authorized": False},
     })
 
 
 def markdown(result: dict) -> str:
+    """Render a human-readable report with explicit non-inferential labels."""
     p, s = result["endpoints"]["primary"], result["endpoints"]["attenuation"]
+
     def f(value, digits=3):
         return "NA" if value is None else f"{value:.{digits}f}"
+
     return "\n".join([
-        "# GSE94383 conceptual replication",
+        "# GSE94383 descriptive pathway-context analysis",
         "",
         "This tests post-LPS `Nfkbia` against preceding same-cell NF-kB dynamics; it is not direct replication of the basal predictor claim.",
         "",
         f"- Exact ID sets match: {result['integrity']['cell_id_sets_match']}",
-        f"- Complete cells: {result['integrity']['complete_cells']}",
+        f"- Complete cell observations: {result['integrity']['complete_cells']}",
+        "- Effective independent biological N: unresolved",
+        "- Cell count is not treated as independent N",
+        "- Cell bootstrap, permutation, and prefix exclusion are descriptive sensitivity only",
         f"- Harvest-time counts: {result['integrity']['time_counts']}",
         f"- Trajectory-point counts: {result['integrity']['point_counts']}",
         "",
-        "| Endpoint | rho | 95% bootstrap CI | stratified permutation p |",
+        "| Endpoint | rho | cell-level bootstrap interval (descriptive) | cell-level permutation score (non-inferential) |",
         "|---|---:|---:|---:|",
         f"| Recent activity (primary, positive) | {f(p['rho'])} | [{f(p['bootstrap_95_ci'][0])}, {f(p['bootstrap_95_ci'][1])}] | {f(p['stratified_permutation_p'], 4)} |",
         f"| Attenuation (exploratory) | {f(s['rho'])} | [{f(s['bootstrap_95_ci'][0])}, {f(s['bootstrap_95_ci'][1])}] | {f(s['stratified_permutation_p'], 4)} |",
         "",
         f"**Verdict: {result['verdict']}**",
         "",
-        "Cells remain nested observations. ID-prefix leave-one-out is technical sensitivity only. No causal, tissue, clinical, or therapeutic claim is supported.",
+        "The verdict is determined by the observed descriptive direction only. Cell-level confidence intervals or permutation scores cannot promote it to independent biological support.",
+        "",
+        "Cells remain nested observations. ID-prefix leave-one-out is technical sensitivity only. No direct replication, biological generalization, causal, tissue, clinical, or therapeutic claim is supported.",
         "",
     ])
 
 
 def main() -> None:
+    """Parse paths, run analysis, and write strict JSON and Markdown outputs."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--dynamics", type=Path, required=True)
     parser.add_argument("--expression", type=Path, required=True)
@@ -255,7 +314,9 @@ def main() -> None:
     result = analyse(args.dynamics, args.expression)
     args.json_output.parent.mkdir(parents=True, exist_ok=True)
     args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
-    args.json_output.write_text(json.dumps(result, indent=2, sort_keys=True, allow_nan=False), encoding="utf-8")
+    args.json_output.write_text(
+        json.dumps(result, indent=2, sort_keys=True, allow_nan=False), encoding="utf-8"
+    )
     args.markdown_output.write_text(markdown(result), encoding="utf-8")
     print(json.dumps(result, indent=2, sort_keys=True, allow_nan=False))
 
