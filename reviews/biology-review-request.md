@@ -6,6 +6,33 @@ This review packet supersedes the earlier packet tied to PR #23 head `936a58f91a
 
 The correction does not change the observed GSE94383 rho. It lowers the evidence interpretation because the independent biological unit and ID-prefix semantics for the analysed cells remain unresolved.
 
+## Exact review-target binding
+
+This committed packet deliberately does not name the commit that contains itself; embedding that value would create a self-referential stale-SHA loop after every packet edit.
+
+The authoritative review target is instead the exact `head_sha` recorded by the latest successful, same-head pair of generated receipts for draft PR #46:
+
+```text
+workflow: BioEvidence P0 Contract Integrity
+artifact: bioevidence-p0-contract-integrity-<head_sha>
+receipt field: head_sha == checked_out_sha
+
+workflow: BioEvidence P0 Scientific Inference Boundary
+artifact: gse94383-p0-science-<head_sha>
+receipt field: head_sha == checked_out_sha
+```
+
+Both receipts must name the same 40-character SHA. The correction email or review request must include that SHA plus both artifact IDs and SHA-256 digests. A verdict is not current unless the reviewer repeats the same exact SHA in the response.
+
+```text
+review_target_policy: GENERATED_EXACT_HEAD_RECEIPT_REQUIRED
+pull_request: 46
+branch: agent/p0-schema-science-hardening-v0-1
+merge_authorization: false
+```
+
+Any later commit supersedes the prior receipts and requires a new same-head receipt pair and reviewer notice.
+
 ## Review purpose
 
 Please review whether the biological interpretations and boundaries in the controlled P0-hardening successor PR are scientifically defensible for the GSE141064 / GSE94383 case.
@@ -39,6 +66,9 @@ This is a computational and documentary review. No physical biological work is r
 ## Requested response format
 
 ```text
+Exact head SHA reviewed:
+Contract-integrity artifact ID and SHA-256:
+Scientific-inference artifact ID and SHA-256:
 Reviewer expertise:
 Conflict of interest / independence statement:
 Overall verdict: ACCEPT / ACCEPT_WITH_CHANGES / HOLD / BLOCK
