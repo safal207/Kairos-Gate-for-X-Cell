@@ -153,14 +153,34 @@ jobs:
           python scripts/validate_causal_hypothesis_ranking.py \
             examples/gse141064.nfkbia-causal-hypotheses.json
 
-      - name: Confirm false causal winner fails closed
+      - name: Confirm false causal winner fails closed without traceback
+        shell: bash
         run: |
-          if python scripts/validate_causal_hypothesis_ranking.py \
-            tests/fixtures/invalid_causal_winner_without_discriminator.json; then
+          set -euo pipefail
+          set +e
+          python scripts/validate_causal_hypothesis_ranking.py \
+            tests/fixtures/invalid_causal_winner_without_discriminator.json \
+            > causal-negative.txt 2>&1
+          code=$?
+          set -e
+          cat causal-negative.txt
+          if [ "$code" -eq 0 ]; then
             echo "false causal winner was incorrectly accepted"
             exit 1
           fi
-          echo "false causal winner correctly blocked"
+          if grep -q "Traceback" causal-negative.txt; then
+            echo "malformed intervention score caused a traceback"
+            exit 1
+          fi
+          grep -q '^BLOCK ' causal-negative.txt || {
+            echo "negative causal fixture did not emit a deterministic BLOCK"
+            exit 1
+          }
+          grep -q 'score components must be integers from 0 to 4' causal-negative.txt || {
+            echo "malformed intervention score was not reported"
+            exit 1
+          }
+          echo "false causal winner and malformed score correctly blocked"
 
       - name: Validate direct temporal replication gap
         run: |
