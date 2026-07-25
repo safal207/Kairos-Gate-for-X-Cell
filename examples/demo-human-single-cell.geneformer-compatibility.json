@@ -1,0 +1,69 @@
+{
+  "schema_version": "0.2.0",
+  "assessment_id": "DEMO-HUMAN-SCRNA-GENEFORMER-V2-104M",
+  "scientific_question": {
+    "statement": "Can a human single-cell embedding be generated as an exploratory representation for a frozen non-clinical classification benchmark?",
+    "input_state": "human single-cell RNA counts",
+    "target_outcome": "held-out non-clinical benchmark label",
+    "temporal_relation": "cross_sectional"
+  },
+  "dataset": {
+    "dataset_id": "DEMO-HUMAN-SCRNA-001",
+    "organism": "Homo sapiens",
+    "species": "Homo sapiens",
+    "modality": "single_cell_rna",
+    "input_format": "AnnData manifest for deterministic contract testing; no patient or biological result",
+    "biological_unit_status": "established",
+    "temporal_design": "cross-sectional demonstration"
+  },
+  "model": {
+    "registry_id": "nvidia-geneformer-v2-104m",
+    "provider": "NVIDIA",
+    "model_family": "Geneformer",
+    "checkpoint_or_version": "Geneformer-V2-104M",
+    "documented_modalities": ["single_cell_rna"],
+    "documented_species": ["Homo sapiens"],
+    "source_urls": ["https://docs.nvidia.com/bionemo-framework/latest/main/recipes/models/geneformer/geneformer/index.html"],
+    "retrieved_at": "2026-07-23"
+  },
+  "compatibility": {
+    "transport": "compatible",
+    "modality": "compatible",
+    "species": "compatible",
+    "cell_context": "partially_compatible",
+    "temporal": "not_applicable",
+    "question": "compatible"
+  },
+  "transformations": [
+    {
+      "name": "AnnData to rank-ordered gene tokens",
+      "status": "planned",
+      "provenance_recorded": true,
+      "validation_status": "validated"
+    }
+  ],
+  "overlap_assessment": {
+    "training_overlap_status": "unknown",
+    "benchmark_overlap_status": "unknown",
+    "evidence": [
+      "The example is accepted only for structural contract testing.",
+      "Training and benchmark overlap must be resolved before scientific performance claims."
+    ]
+  },
+  "evidence_contribution": "exploratory_representation",
+  "claim_boundary": {
+    "descriptive": "allowed_with_limits",
+    "association": "not_established",
+    "prediction": "not_established",
+    "causal": "blocked",
+    "tissue": "blocked",
+    "clinical_therapeutic": "blocked"
+  },
+  "overall_verdict": "ACCEPT_WITH_LIMITS",
+  "next_valid_action": "Generate a reproducibility passport and resolve overlap, held-out biological units, domain shift and benchmark validity before any scientific claim.",
+  "safety_status": {
+    "mode": "computational_documentary_only",
+    "physical_biology_authorized": false,
+    "clinical_use_authorized": false
+  }
+}

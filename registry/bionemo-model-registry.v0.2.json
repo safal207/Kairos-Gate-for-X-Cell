@@ -1,0 +1,117 @@
+{
+  "schema_version": "0.2.0",
+  "retrieved_at": "2026-07-23",
+  "registry_status": "documentation_snapshot_not_runtime_discovery",
+  "entries": [
+    {
+      "registry_id": "nvidia-bionemo-agent-toolkit-2026-06-23",
+      "provider": "NVIDIA",
+      "kind": "agent_toolkit",
+      "modalities": ["biology", "chemistry", "genomics", "drug_discovery"],
+      "documented_species": ["tool_dependent"],
+      "evidence_role": "orchestration_only",
+      "source_urls": [
+        "https://developer.nvidia.com/blog/build-an-ai-scientist-for-life-science-discovery-with-nvidia-bionemo-agent-toolkit/",
+        "https://nvidianews.nvidia.com/news/nvidia-launches-bionemo-agent-toolkit-giving-ai-agents-the-tools-to-accelerate-scientific-discovery"
+      ],
+      "notes": "Skills describe purpose, inputs, expected artifacts and failure modes. The toolkit does not itself establish biological truth."
+    },
+    {
+      "registry_id": "nvidia-geneformer-v1-10m",
+      "provider": "NVIDIA",
+      "kind": "foundation_model",
+      "model_family": "Geneformer",
+      "checkpoint_or_version": "Geneformer-V1-10M",
+      "modalities": ["single_cell_rna"],
+      "input_formats": ["AnnData", "rank_ordered_gene_tokens"],
+      "documented_species": ["Homo sapiens"],
+      "training_domain": "approximately 30M human single cells",
+      "evidence_role": "exploratory_representation",
+      "source_urls": [
+        "https://docs.nvidia.com/bionemo-framework/latest/main/recipes/models/geneformer/geneformer/index.html"
+      ]
+    },
+    {
+      "registry_id": "nvidia-geneformer-v2-104m",
+      "provider": "NVIDIA",
+      "kind": "foundation_model",
+      "model_family": "Geneformer",
+      "checkpoint_or_version": "Geneformer-V2-104M",
+      "modalities": ["single_cell_rna"],
+      "input_formats": ["AnnData", "rank_ordered_gene_tokens"],
+      "documented_species": ["Homo sapiens"],
+      "training_domain": "approximately 104M human single cells",
+      "evidence_role": "exploratory_representation",
+      "source_urls": [
+        "https://docs.nvidia.com/bionemo-framework/latest/main/recipes/models/geneformer/geneformer/index.html"
+      ]
+    },
+    {
+      "registry_id": "nvidia-geneformer-v2-316m",
+      "provider": "NVIDIA",
+      "kind": "foundation_model",
+      "model_family": "Geneformer",
+      "checkpoint_or_version": "Geneformer-V2-316M",
+      "modalities": ["single_cell_rna"],
+      "input_formats": ["AnnData", "rank_ordered_gene_tokens"],
+      "documented_species": ["Homo sapiens"],
+      "training_domain": "approximately 104M human single cells",
+      "evidence_role": "exploratory_representation",
+      "source_urls": [
+        "https://docs.nvidia.com/bionemo-framework/latest/main/recipes/models/geneformer/geneformer/index.html"
+      ]
+    },
+    {
+      "registry_id": "nvidia-evo2-nim-2.1.0-7b-1m",
+      "provider": "NVIDIA / Arc Institute",
+      "kind": "foundation_model_nim",
+      "model_family": "Evo 2",
+      "checkpoint_or_version": "NIM 2.1.0 / Evo 2 7B 1M",
+      "modalities": ["dna"],
+      "input_formats": ["DNA sequence"],
+      "documented_species": ["multi-genome training domain"],
+      "evidence_role": "sequence_modeling",
+      "source_urls": [
+        "https://docs.nvidia.com/nim/bionemo/evo2/latest/index.html",
+        "https://docs.nvidia.com/nim/bionemo/evo2/latest/release-notes.html"
+      ]
+    },
+    {
+      "registry_id": "nvidia-evo2-nim-2.1.0-40b-1m",
+      "provider": "NVIDIA / Arc Institute",
+      "kind": "foundation_model_nim",
+      "model_family": "Evo 2",
+      "checkpoint_or_version": "NIM 2.1.0 / Evo 2 40B 1M",
+      "modalities": ["dna"],
+      "input_formats": ["DNA sequence"],
+      "documented_species": ["multi-genome training domain"],
+      "evidence_role": "sequence_modeling",
+      "source_urls": [
+        "https://docs.nvidia.com/nim/bionemo/evo2/latest/index.html",
+        "https://docs.nvidia.com/nim/bionemo/evo2/latest/release-notes.html"
+      ]
+    },
+    {
+      "registry_id": "nvidia-esm2-current-docs",
+      "provider": "NVIDIA",
+      "kind": "foundation_model",
+      "model_family": "ESM-2",
+      "checkpoint_or_version": "registry snapshot 2026-07-23",
+      "modalities": ["protein"],
+      "documented_species": ["sequence_dependent"],
+      "evidence_role": "protein_representation",
+      "source_urls": ["https://docs.nvidia.com/bionemo-framework/latest/models/"]
+    },
+    {
+      "registry_id": "nvidia-amplify-current-docs",
+      "provider": "NVIDIA",
+      "kind": "foundation_model",
+      "model_family": "AMPLIFY",
+      "checkpoint_or_version": "registry snapshot 2026-07-23",
+      "modalities": ["protein"],
+      "documented_species": ["sequence_dependent"],
+      "evidence_role": "protein_representation",
+      "source_urls": ["https://docs.nvidia.com/bionemo-framework/latest/models/"]
+    }
+  ]
+}

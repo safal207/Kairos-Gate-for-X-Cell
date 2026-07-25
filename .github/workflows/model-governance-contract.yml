@@ -1,0 +1,127 @@
+name: BioNeMo Model Governance Contracts
+
+on:
+  pull_request:
+    paths:
+      - ".agents/skills/nvidia-bionemo-model-compatibility-gate/**"
+      - "schemas/bionemo-model-compatibility.schema.json"
+      - "schemas/model-evidence-passport.schema.json"
+      - "registry/bionemo-model-registry.v0.2.json"
+      - "examples/*geneformer-compatibility.json"
+      - "demo/**"
+      - "scripts/validate_bionemo_model_compatibility.py"
+      - "scripts/validate_model_evidence_passport.py"
+      - "scripts/generate_model_evidence_passport_demo.py"
+      - "tests/fixtures/invalid_mouse_geneformer_accepted.json"
+      - "tests/fixtures/invalid_model_evidence_passport_missing_identity.json"
+      - "reports/gse141064-bionemo-compatibility-2026-07-23.md"
+      - ".github/workflows/model-governance-contract.yml"
+      - "README.md"
+  push:
+    paths:
+      - ".agents/skills/nvidia-bionemo-model-compatibility-gate/**"
+      - "schemas/bionemo-model-compatibility.schema.json"
+      - "schemas/model-evidence-passport.schema.json"
+      - "registry/bionemo-model-registry.v0.2.json"
+      - "examples/*geneformer-compatibility.json"
+      - "demo/**"
+      - "scripts/validate_bionemo_model_compatibility.py"
+      - "scripts/validate_model_evidence_passport.py"
+      - "scripts/generate_model_evidence_passport_demo.py"
+      - "tests/fixtures/invalid_mouse_geneformer_accepted.json"
+      - "tests/fixtures/invalid_model_evidence_passport_missing_identity.json"
+      - "reports/gse141064-bionemo-compatibility-2026-07-23.md"
+      - ".github/workflows/model-governance-contract.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+env:
+  SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+jobs:
+  compatibility-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact head revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+
+      - name: Validate frozen JSON documents
+        run: |
+          python -m json.tool schemas/bionemo-model-compatibility.schema.json >/dev/null
+          python -m json.tool schemas/model-evidence-passport.schema.json >/dev/null
+          python -m json.tool registry/bionemo-model-registry.v0.2.json >/dev/null
+
+      - name: Validate GSE141064 Geneformer species HOLD
+        run: |
+          python scripts/validate_bionemo_model_compatibility.py \
+            examples/gse141064.geneformer-compatibility.json
+
+      - name: Validate human single-cell accepted-with-limits path
+        run: |
+          python scripts/validate_bionemo_model_compatibility.py \
+            examples/demo-human-single-cell.geneformer-compatibility.json
+
+      - name: Confirm false mouse Geneformer acceptance fails closed
+        run: |
+          if python scripts/validate_bionemo_model_compatibility.py \
+            tests/fixtures/invalid_mouse_geneformer_accepted.json; then
+            echo "cross-species leakage was incorrectly accepted"
+            exit 1
+          fi
+          echo "cross-species leakage correctly blocked"
+
+  passport-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact head revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+
+      - name: Generate deterministic passport twice
+        run: |
+          mkdir -p demo-results/run-a demo-results/run-b
+          python scripts/generate_model_evidence_passport_demo.py \
+            --input demo/human-single-cell-input-manifest.json \
+            --output-artifact demo-results/run-a/output.json \
+            --passport demo-results/run-a/passport.json \
+            --created-at 2026-07-23T12:00:00Z \
+            --code-revision "${SOURCE_SHA}"
+          python scripts/generate_model_evidence_passport_demo.py \
+            --input demo/human-single-cell-input-manifest.json \
+            --output-artifact demo-results/run-b/output.json \
+            --passport demo-results/run-b/passport.json \
+            --created-at 2026-07-23T12:00:00Z \
+            --code-revision "${SOURCE_SHA}"
+          cmp demo-results/run-a/output.json demo-results/run-b/output.json
+          cmp demo-results/run-a/passport.json demo-results/run-b/passport.json
+
+      - name: Validate generated Model Evidence Passport
+        run: |
+          python scripts/validate_model_evidence_passport.py \
+            demo-results/run-a/passport.json
+
+      - name: Confirm missing model identity and hashes fail closed
+        run: |
+          if python scripts/validate_model_evidence_passport.py \
+            tests/fixtures/invalid_model_evidence_passport_missing_identity.json; then
+            echo "identity-free passport was incorrectly accepted"
+            exit 1
+          fi
+          echo "identity-free passport correctly blocked"
+
+      - name: Upload exact-head passport evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-evidence-passport-demo-${{ env.SOURCE_SHA }}
+          path: |
+            demo-results/run-a/output.json
+            demo-results/run-a/passport.json
+          if-no-files-found: error
+          retention-days: 30

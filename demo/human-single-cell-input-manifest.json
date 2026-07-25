@@ -1,0 +1,12 @@
+{
+  "dataset_id": "DEMO-HUMAN-SCRNA-001",
+  "organism": "Homo sapiens",
+  "modality": "single_cell_rna",
+  "input_format": "AnnData manifest only",
+  "cell_count": 4,
+  "gene_identifier_system": "Ensembl human",
+  "purpose": "deterministic governance contract demonstration",
+  "contains_patient_data": false,
+  "contains_expression_values": false,
+  "scientific_result": false
+}

@@ -1,0 +1,69 @@
+{
+  "schema_version": "0.2.0",
+  "assessment_id": "GSE141064-GENEFORMER-V2-104M-2026-07-23",
+  "scientific_question": {
+    "statement": "Does basal Nfkbia or a broader pre-LPS cell state predict the later Tnf-promoter response of the same cell?",
+    "input_state": "basal pre-LPS single-cell transcriptome",
+    "target_outcome": "later Tnf-mCherry response dynamics",
+    "temporal_relation": "pre_to_later"
+  },
+  "dataset": {
+    "dataset_id": "GSE141064 Batch 8_8",
+    "organism": "Mus musculus",
+    "species": "Mus musculus",
+    "modality": "single_cell_rna",
+    "input_format": "mouse gene-expression matrix requiring unsupported cross-species token mapping",
+    "biological_unit_status": "not_established",
+    "temporal_design": "basal transcriptome linked to later same-cell reporter phenotype"
+  },
+  "model": {
+    "registry_id": "nvidia-geneformer-v2-104m",
+    "provider": "NVIDIA",
+    "model_family": "Geneformer",
+    "checkpoint_or_version": "Geneformer-V2-104M",
+    "documented_modalities": ["single_cell_rna"],
+    "documented_species": ["Homo sapiens"],
+    "source_urls": ["https://docs.nvidia.com/bionemo-framework/latest/main/recipes/models/geneformer/geneformer/index.html"],
+    "retrieved_at": "2026-07-23"
+  },
+  "compatibility": {
+    "transport": "unknown",
+    "modality": "compatible",
+    "species": "transfer_unvalidated",
+    "cell_context": "partially_compatible",
+    "temporal": "compatible",
+    "question": "partial"
+  },
+  "transformations": [
+    {
+      "name": "mouse-to-human ortholog mapping",
+      "status": "blocked",
+      "provenance_recorded": true,
+      "validation_status": "unvalidated"
+    }
+  ],
+  "overlap_assessment": {
+    "training_overlap_status": "excluded",
+    "benchmark_overlap_status": "unknown",
+    "evidence": [
+      "The documented Geneformer training domain is human single-cell data; the target dataset is mouse.",
+      "No validated transfer contract for RAW264.7 mouse cells was identified."
+    ]
+  },
+  "evidence_contribution": "none",
+  "claim_boundary": {
+    "descriptive": "allowed_with_limits",
+    "association": "allowed_with_limits",
+    "prediction": "not_established",
+    "causal": "blocked",
+    "tissue": "blocked",
+    "clinical_therapeutic": "blocked"
+  },
+  "overall_verdict": "SPECIES_COMPATIBILITY_HOLD",
+  "next_valid_action": "Find a compatible human longitudinal single-cell dataset or establish and independently validate a cross-species transfer contract before using Geneformer embeddings as evidence.",
+  "safety_status": {
+    "mode": "computational_documentary_only",
+    "physical_biology_authorized": false,
+    "clinical_use_authorized": false
+  }
+}

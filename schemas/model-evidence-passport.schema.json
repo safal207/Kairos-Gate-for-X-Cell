@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kairos-gate.example/schemas/model-evidence-passport.schema.json",
+  "title": "Model Evidence Passport",
+  "type": "object",
+  "required": [
+    "schema_version", "passport_id", "run_identity", "model_identity",
+    "data_identity", "execution", "transformations", "compatibility_verdict",
+    "uncertainty", "claim_boundary", "safety_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.2.0"},
+    "passport_id": {"type": "string", "minLength": 1},
+    "run_identity": {
+      "type": "object",
+      "required": ["run_id", "created_at", "code_revision", "execution_mode"],
+      "properties": {
+        "run_id": {"type": "string"},
+        "created_at": {"type": "string"},
+        "code_revision": {"type": "string"},
+        "execution_mode": {"enum": ["metadata_only_no_model_inference", "hosted_api", "local_container", "framework_local"]}
+      }
+    },
+    "model_identity": {
+      "type": "object",
+      "required": ["provider", "registry_id", "model_family", "checkpoint_or_version", "runtime_or_container", "source_url"],
+      "properties": {
+        "provider": {"type": "string"},
+        "registry_id": {"type": "string"},
+        "model_family": {"type": "string"},
+        "checkpoint_or_version": {"type": "string", "minLength": 1},
+        "runtime_or_container": {"type": "string", "minLength": 1},
+        "source_url": {"type": "string", "format": "uri"}
+      }
+    },
+    "data_identity": {
+      "type": "object",
+      "required": ["dataset_id", "input_artifact", "input_sha256", "output_artifact", "output_sha256"],
+      "properties": {
+        "dataset_id": {"type": "string"},
+        "input_artifact": {"type": "string"},
+        "input_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "output_artifact": {"type": "string"},
+        "output_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "execution": {
+      "type": "object",
+      "required": ["parameters", "random_seeds", "hardware", "software", "status"],
+      "properties": {
+        "parameters": {"type": "object"},
+        "random_seeds": {"type": "array", "items": {"type": "integer"}},
+        "hardware": {"type": "object"},
+        "software": {"type": "object"},
+        "status": {"enum": ["completed", "failed", "not_executed"]}
+      }
+    },
+    "transformations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "version", "parameters", "status"],
+        "properties": {
+          "name": {"type": "string"},
+          "version": {"type": "string"},
+          "parameters": {"type": "object"},
+          "status": {"enum": ["not_applied", "applied", "blocked"]}
+        }
+      }
+    },
+    "compatibility_verdict": {"type": "string", "minLength": 1},
+    "uncertainty": {
+      "type": "object",
+      "required": ["domain_shift_risks", "training_overlap_status", "limitations"],
+      "properties": {
+        "domain_shift_risks": {"type": "array", "items": {"type": "string"}},
+        "training_overlap_status": {"enum": ["excluded", "possible", "present", "unknown", "not_applicable"]},
+        "limitations": {"type": "array", "items": {"type": "string"}, "minItems": 1}
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "required": ["evidence_contribution", "causal", "clinical_therapeutic"],
+      "properties": {
+        "evidence_contribution": {"type": "string"},
+        "causal": {"const": "blocked"},
+        "clinical_therapeutic": {"const": "blocked"}
+      }
+    },
+    "safety_status": {
+      "type": "object",
+      "required": ["physical_biology_authorized", "clinical_use_authorized"],
+      "properties": {
+        "physical_biology_authorized": {"const": false},
+        "clinical_use_authorized": {"const": false}
+      }
+    }
+  }
+}

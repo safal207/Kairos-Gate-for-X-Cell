@@ -1,0 +1,48 @@
+{
+  "schema_version": "0.2.0",
+  "passport_id": "INVALID-MEP",
+  "run_identity": {
+    "run_id": "invalid-run",
+    "created_at": "2026-07-23T12:00:00Z",
+    "code_revision": "unknown",
+    "execution_mode": "metadata_only_no_model_inference"
+  },
+  "model_identity": {
+    "provider": "NVIDIA",
+    "registry_id": "nvidia-geneformer-v2-104m",
+    "model_family": "Geneformer",
+    "checkpoint_or_version": "",
+    "runtime_or_container": "",
+    "source_url": "https://docs.nvidia.com/bionemo-framework/latest/main/recipes/models/geneformer/geneformer/index.html"
+  },
+  "data_identity": {
+    "dataset_id": "DEMO-HUMAN-SCRNA-001",
+    "input_artifact": "demo/input.json",
+    "input_sha256": "unknown",
+    "output_artifact": "demo/output.json",
+    "output_sha256": "unknown"
+  },
+  "execution": {
+    "parameters": {},
+    "random_seeds": [],
+    "hardware": {},
+    "software": {},
+    "status": "completed"
+  },
+  "transformations": [],
+  "compatibility_verdict": "ACCEPT_WITH_LIMITS",
+  "uncertainty": {
+    "domain_shift_risks": [],
+    "training_overlap_status": "unknown",
+    "limitations": []
+  },
+  "claim_boundary": {
+    "evidence_contribution": "predictive_validation",
+    "causal": "blocked",
+    "clinical_therapeutic": "blocked"
+  },
+  "safety_status": {
+    "physical_biology_authorized": false,
+    "clinical_use_authorized": false
+  }
+}
