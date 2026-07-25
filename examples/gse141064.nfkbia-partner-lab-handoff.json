@@ -31,13 +31,13 @@
     },
     {
       "evidence_id": "E4",
-      "statement": "GSE94383 provides independent conceptual pathway coupling between prior NF-kB activity and post-LPS Nfkbia expression, but the transcriptome is measured after stimulation.",
-      "evidence_level": "F3",
-      "role": "supporting"
+      "statement": "GSE94383 shows a weak positive direction within a matched cell table, but effective independent biological N and ID-prefix semantics are unresolved. Cell-level uncertainty is descriptive only and does not establish independent validation, replication, or conceptual triangulation.",
+      "evidence_level": "F2",
+      "role": "limiting"
     },
     {
       "evidence_id": "E5",
-      "statement": "No independent public dataset was found with the complete required pre-state, same-unit later phenotype, biological independence, compatible endpoint, and technical lineage.",
+      "statement": "No public dataset was found with the complete required pre-state, same-unit later phenotype, biological independence, compatible endpoint, and technical lineage.",
       "evidence_level": "F3",
       "role": "negative_result"
     },
@@ -57,12 +57,12 @@
     {
       "hypothesis_id": "H_DIRECT_EFFECT",
       "statement": "Basal Nfkbia has candidate-specific influence on the later response beyond broader state.",
-      "distinguishing_observation": "Candidate-specific information persists beyond the broader-state and technical models, and an institutionally approved identifying design supports the same direction."
+      "distinguishing_observation": "Candidate-specific information persists beyond broader-state and technical models, and an institutionally approved identifying design supports the same direction."
     },
     {
       "hypothesis_id": "H_MARKER_ONLY",
       "statement": "Nfkbia tracks inflammatory readiness but is not load-bearing for the later response.",
-      "distinguishing_observation": "Nfkbia becomes redundant after state adjustment and does not show candidate-specific evidence under an identifying design."
+      "distinguishing_observation": "Nfkbia becomes redundant after state adjustment and lacks candidate-specific identifying evidence."
     },
     {
       "hypothesis_id": "H_TECHNICAL",
@@ -81,7 +81,7 @@
     }
   ],
   "experimental_unit_contract": {
-    "required_unit": "an independently sampled or assigned biological source unit defined and justified by the partner institution before outcome analysis",
+    "required_unit": "an independently sampled or assigned biological source unit defined and justified before outcome analysis",
     "assignment_level": "biological_unit",
     "lineage_required": true,
     "technical_units_not_replicates": [
@@ -91,7 +91,8 @@
       "library",
       "sequencing_run",
       "read",
-      "image_frame"
+      "image_frame",
+      "unresolved_id_prefix"
     ],
     "precision_justification_required": true
   },
@@ -137,13 +138,13 @@
   "decision_matrix": [
     {
       "outcome_class": "shared_state",
-      "observation": "The broader baseline-state model outperforms the Nfkbia-only model and substantially reduces candidate-specific contribution on independent biological units.",
-      "interpretation_limit": "Supports a shared-state explanation; does not prove that every state component is causal."
+      "observation": "The broader baseline-state model outperforms the Nfkbia-only model and reduces candidate-specific contribution on independent biological units.",
+      "interpretation_limit": "Supports a shared-state explanation; does not prove every state component causal."
     },
     {
       "outcome_class": "direct_effect",
       "observation": "Nfkbia-specific evidence remains after state and technical adjustment and is supported by an independently approved identifying design.",
-      "interpretation_limit": "May support a bounded causal statement only within the validated model and design; tissue and clinical claims remain separate."
+      "interpretation_limit": "May support a bounded causal statement only within the validated design; tissue and clinical claims remain separate."
     },
     {
       "outcome_class": "marker_only",
@@ -163,17 +164,17 @@
     {
       "outcome_class": "null_or_instability",
       "observation": "Frozen estimates are null, unstable, or directionally inconsistent across independent collections.",
-      "interpretation_limit": "Weakens the discovery claim and should be retained as a negative result rather than hidden."
+      "interpretation_limit": "Weakens the discovery claim and should be retained as a negative result."
     }
   ],
   "stop_hold_rules": [
     "HOLD if biological-source and independent-unit lineage cannot be reconstructed.",
     "HOLD if the molecular pre-state is measured after the transition or timing is ambiguous.",
     "HOLD if the later phenotype cannot be linked to the same cell or defensible longitudinal unit.",
-    "HOLD if condition, operator, collection phase, imaging phase, plate, library, or run is aliased with the biological comparison.",
+    "HOLD if condition, operator, collection phase, imaging phase, plate, library, run, or unresolved prefix is aliased with the biological comparison.",
     "HOLD if exclusions, missingness, or transformations are outcome-dependent or undocumented.",
     "HOLD if the frozen model plan changes after outcome inspection without a versioned superseding record.",
-    "HOLD if the partner has not documented the approvals, competence, oversight, containment, consent, or data-governance requirements it determines are applicable.",
+    "HOLD if the partner has not documented approvals, competence, oversight, containment, consent, or data governance it determines applicable.",
     "STOP under the partner institution's independently defined safety and quality criteria for unexpected or adverse conditions."
   ],
   "governance_gates": {
@@ -200,7 +201,7 @@
     "biological_modification_instructions_included": false,
     "human_experimentation_instructions_included": false
   },
-  "next_action": "Send this evidence contract to a qualified partner institution for scientific and governance review; the partner must independently determine whether and how any study could be designed, approved, and executed.",
+  "next_action": "Send this evidence contract to a qualified institution for scientific and governance review; the institution must independently determine whether and how any study could be designed, approved, and executed.",
   "safety_status": {
     "mode": "computational_documentary_only",
     "physical_biology_authorized": false,
