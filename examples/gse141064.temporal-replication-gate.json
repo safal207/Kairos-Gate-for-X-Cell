@@ -6,7 +6,7 @@
     "transition": "LPS exposure",
     "later_phenotype": "subsequent same-cell Tnf-promoter-driven mCherry response dynamics, especially log-slope",
     "identity_linkage": "one-to-one linkage from pre-state transcriptome to later phenotype in the same cell",
-    "biological_unit": "independently collected biological cell or higher biological source with a grouping key above plate, library, lane, and sequencing run",
+    "biological_unit": "independently collected biological cell or higher biological source with a grouping key above plate, library, lane, sequencing run, and unresolved ID prefix",
     "acceptable_endpoint_substitutions": [
       "a prespecified same-cell TNF-promoter dynamic metric with a documented mapping to Tnf-mCherry log-slope",
       "a later same-cell inflammatory-response phenotype demonstrated before analysis to measure the same target construct"
@@ -15,6 +15,7 @@
       "post-LPS transcriptome represented as the basal pre-state",
       "NF-kB activity represented as the exact later TNF-promoter endpoint without a frozen compatibility mapping",
       "measurements from different cells represented as longitudinal same-cell data",
+      "cell count or unresolved ID prefix represented as independent biological replication",
       "same-study internal validation represented as independent external replication"
     ],
     "competing_models": [
@@ -26,25 +27,25 @@
   "sources_searched": [
     {
       "source": "NCBI GEO, SRA, and BioProject",
-      "scope": "RAW264.7 and primary macrophage studies combining pre-stimulation molecular measurements, LPS or inflammatory transition, later same-cell phenotype, live imaging, secretion, or transcriptomics",
+      "scope": "Macrophage studies combining pre-stimulation molecular measurements, inflammatory transition, later same-cell phenotype, live imaging, secretion, or transcriptomics",
       "searched_at": "2026-07-23T14:20:00+03:00",
       "status": "searched"
     },
     {
       "source": "PubMed and PubMed Central",
-      "scope": "same-cell temporal transcriptomics, Live-seq citations, basal-state predictors of later macrophage response, and nondestructive transcriptome methods",
+      "scope": "Same-cell temporal transcriptomics, Live-seq citations, basal-state predictors, and nondestructive transcriptome methods",
       "searched_at": "2026-07-23T14:20:00+03:00",
       "status": "searched"
     },
     {
       "source": "EMBL-EBI and related public omics records",
-      "scope": "single-cell macrophage LPS, NF-kB dynamics, fluorescent phenotypes, and longitudinal molecular measurements",
+      "scope": "Single-cell macrophage LPS, NF-kB dynamics, fluorescent phenotypes, and longitudinal measurements",
       "searched_at": "2026-07-23T14:20:00+03:00",
       "status": "searched"
     },
     {
       "source": "publisher supplements and related-record links",
-      "scope": "Live-seq Supplementary Table 4 and candidate methods or datasets with pre-state-to-later-phenotype structure",
+      "scope": "Live-seq Supplementary Table 4 and candidate datasets with pre-state-to-later-phenotype structure",
       "searched_at": "2026-07-23T14:20:00+03:00",
       "status": "searched"
     }
@@ -62,7 +63,7 @@
       "technical_lineage": "partial",
       "evidence_level": "F4",
       "verdict": "EXCLUDE",
-      "rationale": "The target study directly instantiates the required temporal design, but it is not external replication and exact biological independence for Batch 8_8 remains unresolved. It is eligible only for diagnostic reanalysis and internal validation review."
+      "rationale": "The target study instantiates the temporal design, but it is not external replication and exact biological independence remains unresolved."
     },
     {
       "candidate_id": "GSE94383",
@@ -74,9 +75,9 @@
       "biological_unit_established": false,
       "endpoint_compatibility": "partial",
       "technical_lineage": "partial",
-      "evidence_level": "F3",
-      "verdict": "ACCEPT_CONCEPTUAL",
-      "rationale": "The same RAW264.7 cells link LPS-induced NF-kB dynamics to RNA measured after stimulation. This supports pathway coupling but reverses the frozen molecular timing and does not directly test a basal transcript predicting a later Tnf-promoter response."
+      "evidence_level": "F2",
+      "verdict": "HOLD",
+      "rationale": "The matched cells link LPS-induced NF-kB dynamics to RNA measured after stimulation, but the frozen pre-state timing is contradicted and the independent biological unit for the analysed cell table is unresolved. Cell-level statistics are descriptive only and cannot unlock conceptual or direct replication."
     },
     {
       "candidate_id": "GSE162992",
@@ -90,7 +91,7 @@
       "technical_lineage": "partial",
       "evidence_level": "F3",
       "verdict": "HOLD",
-      "rationale": "The study combines macrophage NF-kB signaling and stimulated single-cell transcriptomics, but the public record does not establish a pre-LPS transcriptome linked to a later same-cell TNF-promoter phenotype or a compatible biological grouping key."
+      "rationale": "The study is relevant to macrophage NF-kB signaling but does not establish the required temporal linkage or compatible biological unit."
     },
     {
       "candidate_id": "GSE65528",
@@ -104,7 +105,7 @@
       "technical_lineage": "partial",
       "evidence_level": "F3",
       "verdict": "EXCLUDE",
-      "rationale": "Single-cell expression is paired with fluorescent infection states after Salmonella exposure. It demonstrates phenotype-linked transcriptomics but not a pre-stimulation transcriptome predicting a later response."
+      "rationale": "Expression and fluorescent infection states are measured after exposure, not as a pre-state predictor."
     },
     {
       "candidate_id": "GSE65529",
@@ -118,7 +119,7 @@
       "technical_lineage": "partial",
       "evidence_level": "F3",
       "verdict": "EXCLUDE",
-      "rationale": "The dataset links post-exposure single-cell expression to LPS-bead internalization categories, not a basal molecular state to a later TNF-promoter trajectory."
+      "rationale": "The dataset links post-exposure expression to LPS-bead internalization, not a basal state to later TNF dynamics."
     },
     {
       "candidate_id": "GSE161125",
@@ -132,7 +133,7 @@
       "technical_lineage": "partial",
       "evidence_level": "F3",
       "verdict": "HOLD",
-      "rationale": "The study links macrophage transcriptional programs and secretion behavior across conditions and time, but does not provide the required one-to-one pre-state transcriptome to later same-cell phenotype mapping."
+      "rationale": "The study relates transcriptional and secretion programs but lacks one-to-one pre-state-to-later-response linkage."
     },
     {
       "candidate_id": "RAMAN2RNA",
@@ -146,7 +147,7 @@
       "technical_lineage": "partial",
       "evidence_level": "F2",
       "verdict": "EXCLUDE",
-      "rationale": "Nondestructive inference of expression from Raman imaging is relevant to future measurement strategy, but the published system and endpoint do not replicate the macrophage LPS-to-TNF temporal claim."
+      "rationale": "Nondestructive expression inference is method-relevant, but the system and endpoint do not replicate the target claim."
     }
   ],
   "direct_replication_gap": {
@@ -159,20 +160,20 @@
       "sample_size",
       "public_availability"
     ],
-    "search_conclusion": "No independent public dataset found in the searched sources simultaneously establishes a pre-LPS transcriptome, a later same-cell TNF-promoter or frozen compatible inflammatory phenotype, defensible independent biological units, and sufficient technical lineage for direct temporal replication."
+    "search_conclusion": "No public dataset simultaneously establishes a pre-LPS transcriptome, a later linked TNF-promoter or frozen compatible phenotype, defensible independent biological units, and sufficient technical lineage for direct temporal replication."
   },
   "model_discrimination_plan": {
     "status": "diagnostic_only",
     "candidate_only_model": "Use basal Nfkbia as the sole molecular predictor of later Tnf-mCherry log-slope.",
-    "broader_state_model": "Use a frozen low-dimensional baseline-state representation that excludes outcome-driven feature selection and compare incremental value of Nfkbia.",
-    "technical_confounder_model": "Use only documented technical structure; unresolved collection day and extraction round remain missing variables rather than inferred covariates.",
+    "broader_state_model": "Use a frozen baseline-state representation and compare incremental value of Nfkbia without outcome-driven selection.",
+    "technical_confounder_model": "Use only documented technical structure; unresolved grouping remains missing rather than inferred.",
     "outcome_inspected_before_freeze": false
   },
   "overall_verdict": "DIRECT_REPLICATION_GAP",
-  "next_valid_action": "Probe and preserve the original Supplementary Table 4 model-ranking artifact, perform only diagnostic sensitivity checks on the target study, continue surveillance for an independent temporally matched dataset, and prepare a non-operational evidence brief for a qualified partner laboratory if no public candidate emerges.",
+  "next_valid_action": "Continue surveillance for a temporally matched dataset with source-backed independent units and retain GSE94383 as descriptive context on HOLD.",
   "safety_status": {
     "mode": "computational_only",
     "physical_biology_authorized": false,
-    "notes": "The absence of a direct public replication candidate does not justify lowering evidence standards or attempting unsupervised physical biological work."
+    "notes": "The absence of a direct replication candidate does not justify lowering evidence standards or attempting physical biological work."
   }
 }

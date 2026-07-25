@@ -1,23 +1,23 @@
 {
-  "schema_version": "0.1.0",
-  "report_id": "GSE94383_NFKBIA_CONCEPTUAL_REPLICATION_2026-07-23",
-  "target_context": "Conceptual triangulation for the GSE141064 basal Nfkbia to later Tnf-mCherry slope association",
+  "schema_version": "0.2.0",
+  "report_id": "GSE94383_NFKBIA_DESCRIPTIVE_PATHWAY_CONTEXT_2026-07-25",
+  "supersedes_report_id": "GSE94383_NFKBIA_CONCEPTUAL_REPLICATION_2026-07-23",
+  "target_context": "Descriptive pathway context for the GSE141064 basal Nfkbia to later Tnf-mCherry slope association",
   "candidate": {
     "accession": "GSE94383",
     "doi": "10.1016/j.cels.2017.03.010",
-    "relationship": "independent biological experiment",
-    "replication_type": "conceptual_replication",
+    "relationship": "separate public experiment with unresolved analysed-cell biological grouping",
+    "analysis_role": "descriptive_conceptual_context_only",
     "temporal_difference": "GSE94383 measures RNA after LPS and preceding NF-kB dynamics; it does not measure basal RNA followed by later Tnf-mCherry slope"
   },
-  "execution": {
+  "evidence_binding": {
     "repository": "safal207/Kairos-Gate-for-X-Cell",
-    "pull_request": 23,
-    "head_sha": "112ea2eafd29efa56a20a40cba696c9f657dbd52",
-    "workflow_run_id": 29998853791,
-    "artifact_id": 8560131039,
-    "workflow": "Biological Evidence Contracts",
-    "job": "live-replication-probe",
-    "status": "success"
+    "pull_request": 46,
+    "workflow": "BioEvidence P0 Scientific Inference Boundary",
+    "analysis_script": "scripts/analyze_gse94383_conceptual_replication.py",
+    "analysis_script_sha256": "746241698bbeec960512c3301c9564547705b225eea18b8d667498ed3bdd9edc",
+    "exact_head_receipt_policy": "The workflow checks out pull_request.head.sha and emits a separate exact-head receipt. This committed report does not embed its own commit SHA because doing so would create self-referential provenance drift.",
+    "latest_receipt_location": "PR #46 workflow artifacts and conversation record"
   },
   "source_hashes": {
     "single_cell_dynamics_md5": "8be1e148d47762fd148584469a6179a6",
@@ -30,7 +30,7 @@
     "expression_rows": 823,
     "exact_cell_id_sets_match": true,
     "duplicate_ids": 0,
-    "complete_cells": 823,
+    "complete_cell_observations": 823,
     "trajectory_columns": 62,
     "harvest_time_counts": {
       "0": 186,
@@ -46,41 +46,52 @@
     },
     "id_prefix_count": 10
   },
-  "frozen_primary_endpoint": {
-    "question": "Is post-LPS Nfkbia expression positively associated with recent preceding same-cell NF-kB activity after stratification by harvest time?",
-    "method": "within-harvest-time ranks, Spearman correlation, 2000 stratified bootstrap resamples, 5000 stratified permutations",
+  "inference_boundary": {
+    "independent_biological_unit_status": "unresolved",
+    "effective_biological_n": null,
+    "cell_count_is_independent_n": false,
+    "cell_level_resampling_can_promote_verdict": false,
+    "cell_bootstrap_scope": "within_table_descriptive_sensitivity_only",
+    "cell_permutation_scope": "within_table_descriptive_sensitivity_only",
+    "leave_one_id_prefix_out_scope": "technical_sensitivity_only"
+  },
+  "descriptive_primary_endpoint": {
+    "question": "Within the matched table, is post-LPS Nfkbia expression directionally associated with recent preceding same-cell NF-kB activity after stratification by harvest time?",
+    "method": "within-harvest-time ranks and Spearman association; cell bootstrap, cell permutation, and prefix exclusion retained only as non-inferential sensitivity summaries",
     "rho": 0.17777938477674196,
-    "bootstrap_95_ci": [
+    "cell_level_bootstrap_95_interval_descriptive": [
       0.10961474388650705,
       0.24253181552493905
     ],
-    "stratified_permutation_p": 0.0001999600079984003,
-    "leave_one_id_prefix_out_rho_range": [
+    "cell_level_permutation_score_non_inferential": 0.0001999600079984003,
+    "leave_one_id_prefix_out_rho_range_technical": [
       0.1528573575096331,
       0.20032511340411283
     ],
-    "direction_met": true
+    "direction_met": true,
+    "inferential_use_authorized": false
   },
   "secondary_context": {
     "mean_activity_rho": 0.23523847471498005,
-    "mean_activity_bootstrap_95_ci": [
+    "mean_activity_cell_level_bootstrap_interval_descriptive": [
       0.16878990642769268,
       0.29811301772151727
     ],
     "attenuation_rho": -0.1778448134184311,
     "attenuation_warning": "The attenuation metric is effectively the complement of recent activity after per-cell trajectory normalization and is not independent confirmatory evidence."
   },
-  "verdict": "CONCEPTUAL_SIGNAL_SUPPORTED",
-  "interpretation": "The independent dataset supports a weak but stable same-cell coupling between recent NF-kB activity and post-LPS Nfkbia expression. It does not directly reproduce the GSE141064 temporal predictor claim.",
+  "verdict": "DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED",
+  "interpretation": "A weak positive association is visible within the matched GSE94383 table. Because the independent biological unit and ID-prefix semantics remain unresolved, the number of cells, cell-level intervals, and cell-level permutation score do not establish independent biological support, replication, or generalization.",
   "claim_boundary": {
     "direct_replication": false,
-    "conceptual_pathway_triangulation": true,
+    "conceptual_pathway_triangulation": false,
+    "descriptive_conceptual_context": true,
     "external_biological_generalization": false,
     "causal_inference": false,
     "tissue_effect": false,
     "clinical_or_therapeutic_effect": false
   },
-  "next_valid_action": "Document the biological meaning of GSE94383 ID prefixes and continue searching for an independent dataset with pre-stimulation RNA linked to a later TNF-promoter phenotype.",
+  "next_valid_action": "Resolve source-backed biological grouping for GSE94383 before inferential use and continue searching for an independent dataset with pre-stimulation RNA linked to a later TNF-promoter phenotype.",
   "safety": {
     "mode": "computational_only",
     "physical_biology_authorized": false

@@ -6,13 +6,13 @@ The target evidence structure is:
 
 ```text
 basal pre-LPS transcriptome
-        ↓ same cell
+        ↓ same cell or defensible longitudinal unit
 LPS transition
         ↓
 later Tnf-promoter response dynamics
 ```
 
-The candidate dataset must be biologically independent of GSE141064 and support a frozen comparison of:
+A candidate must be biologically independent of GSE141064 and support a frozen comparison of:
 
 1. an `Nfkbia`-only model;
 2. a broader baseline-state model;
@@ -20,7 +20,7 @@ The candidate dataset must be biologically independent of GSE141064 and support 
 
 ## Search result
 
-No independent public dataset identified in the searched GEO, SRA, BioProject, PubMed, PubMed Central, EMBL-EBI, publisher-supplement, and related-record surfaces simultaneously provides:
+No public dataset identified in the searched GEO, SRA, BioProject, PubMed, publisher-supplement, and related-record surfaces simultaneously provides:
 
 - a transcriptome measured before LPS or a frozen compatible inflammatory transition;
 - a later phenotype measured in the same cell;
@@ -40,23 +40,37 @@ This gap is a result, not permission to weaken eligibility criteria.
 | Candidate | Classification | Reason |
 |---|---|---|
 | GSE141064 | Same-study internal validation | Correct temporal design, but it is the target study and biological independence remains unresolved. |
-| GSE94383 | Conceptual replication | Same-cell NF-kB dynamics are linked to RNA measured after LPS; molecular timing differs from the frozen basal predictor claim. |
-| GSE162992 | Conceptual / hold | Macrophage NF-kB and stimulated transcriptomics are relevant, but the required pre-state-to-later-TNF same-cell linkage is not established. |
-| GSE65528 | Cross-sectional support | Expression and fluorescent infection phenotype are measured after exposure. |
-| GSE65529 | Cross-sectional support | Expression is linked to LPS-bead internalization after exposure, not to a basal predictor. |
-| GSE161125 | Cross-sectional support | Transcriptional and secretion programs are related, but one-to-one pre-state-to-later-response mapping is absent. |
+| GSE94383 | Descriptive pathway context — `HOLD` | Same-cell NF-kB dynamics are linked to RNA measured after LPS, but timing differs and the independent biological unit for the analysed cells is unresolved. Cell-level uncertainty cannot establish replication. |
+| GSE162992 | Relevant context — `HOLD` | Macrophage NF-kB and stimulated transcriptomics are relevant, but required temporal linkage and independent-unit semantics are not established. |
+| GSE65528 | Method/context transfer | Expression and fluorescent infection phenotype are measured after exposure. |
+| GSE65529 | Method/context transfer | Expression is linked to LPS-bead internalization after exposure, not to a basal predictor. |
+| GSE161125 | Related non-equivalent evidence | Transcriptional and secretion programs are related, but one-to-one pre-state-to-later-response mapping is absent. |
 | Raman2RNA | Method transfer only | Nondestructive transcriptome inference may be useful in future designs, but the published biology and endpoint do not replicate this claim. |
+
+## Why GSE94383 does not close the gap
+
+GSE94383 contains 823 matched cell records and shows a weak positive within-table association between preceding NF-kB activity and post-LPS `Nfkbia` expression.
+
+However:
+
+- RNA is collected after stimulation rather than as a basal predictor;
+- the endpoint is NF-kB dynamics rather than later `Tnf-mCherry` slope;
+- effective independent biological N is unresolved;
+- ID-prefix semantics are unresolved;
+- cell bootstrap, cell permutation, and prefix exclusion are descriptive sensitivity only.
+
+Therefore:
+
+```text
+DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED
+REPLICATION_STATUS_HOLD
+```
+
+The result does not establish independent replication, conceptual triangulation, or generalization.
 
 ## Original Supplementary Table 4 diagnostic
 
-The publisher workbook was downloaded and probed on exact head `47cb2907533d644a1771e1b3ff928efee884c3be` in workflow run `30002737163`.
-
-Source identity:
-
-- file: `41586_2022_5046_MOESM7_ESM.xlsx`;
-- SHA-256: `ffb1f233d7cd0c40d79086d92f3cf335fc6cbf0de14f64538bf063974784e925`;
-- sheet: `slope`;
-- tested genes: **362**.
+The publisher workbook contains 362 tested genes.
 
 ### `Nfkbia` result
 
@@ -69,8 +83,6 @@ Source identity:
 | Coefficient | **−0.1239** |
 | Bootstrap p-value | **0.01198** |
 | Bootstrap FDR | **0.6056** |
-
-The second-ranked gene was `Slc12a4` with R² `0.4511`; the R² gap from `Nfkbia` was approximately `0.1465`.
 
 Multiplicity summary:
 
@@ -86,35 +98,31 @@ Multiplicity summary:
 TOP_DISCOVERY_CANDIDATE_NOT_STABLE_UNIQUE_DRIVER
 ```
 
-Supported:
+Supported with limits:
 
 - `Nfkbia` is the top nominal linear-model feature in the original ranking;
-- its fitted relationship with later Tnf-mCherry slope is negative;
+- its fitted relationship with later `Tnf-mCherry` slope is negative;
 - it is the only feature with linear-model FDR at or below 0.10 in the workbook.
 
 Not supported:
 
 - no gene reaches bootstrap FDR at or below 0.20;
-- the workbook does not establish a uniquely stable predictor under resampling and multiplicity correction;
+- the workbook does not establish a uniquely stable predictor;
 - the workbook is not external replication;
-- the workbook does not establish a direct causal effect or generalization to independent biological units.
+- the workbook does not establish causality or generalization to independent units.
 
 Winner's-curse risk remains high because feature selection and effect estimation use the same small target sample, biological independence is unresolved, and no direct external temporal replication candidate is available.
 
-Persistent machine-readable record:
-
-- [`gse141064-supplementary-table4-probe-2026-07-23.json`](gse141064-supplementary-table4-probe-2026-07-23.json)
-
 ## Highest-information next action
 
-Continue public-data surveillance while preparing a non-operational partner-laboratory evidence brief that states:
+Continue public-data surveillance while retaining a non-operational partner-laboratory evidence brief that states:
 
 - the frozen target;
-- the three competing model families;
+- the competing model families;
 - the biological-unit requirement;
 - the required temporal and identity linkage;
-- the evidence needed to distinguish shared state from a direct `Nfkbia` effect;
-- the claims that remain prohibited.
+- evidence needed to distinguish shared state from direct action;
+- claims that remain prohibited.
 
 ## Safety boundary
 
