@@ -1,0 +1,140 @@
+name: BioEvidence P0 Scientific Inference Boundary
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analyze_gse94383_conceptual_replication.py"
+      - "scripts/check_gse94383_inference_boundary.py"
+      - "reports/gse94383-conceptual-replication-2026-07-23.*"
+      - ".github/workflows/bioevidence-p0-scientific-inference.yml"
+  push:
+    paths:
+      - "scripts/analyze_gse94383_conceptual_replication.py"
+      - "scripts/check_gse94383_inference_boundary.py"
+      - "reports/gse94383-conceptual-replication-2026-07-23.*"
+      - ".github/workflows/bioevidence-p0-scientific-inference.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  gse94383-descriptive-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned analysis runtime
+        run: |
+          python -m pip install --disable-pip-version-check \
+            numpy==2.1.3 \
+            pandas==2.2.3 \
+            scipy==1.14.1
+
+      - name: Prove many cells cannot promote the verdict
+        working-directory: scripts
+        run: |
+          set -euo pipefail
+          python check_gse94383_inference_boundary.py | tee ../gse94383-boundary-regression.txt
+
+      - name: Download and verify public GSE94383 tables
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p live-data/gse94383 live-results/gse94383
+          curl --fail --location --retry 3 --retry-all-errors \
+            "https://authors.library.caltech.edu/records/fyh1y-6zs57/files/1-s2.0-S2405471217301321-mmc2.csv?download=1" \
+            --output live-data/gse94383/mmc2-single-cell-dynamics.csv
+          curl --fail --location --retry 3 --retry-all-errors \
+            "https://authors.library.caltech.edu/records/fyh1y-6zs57/files/1-s2.0-S2405471217301321-mmc3.csv?download=1" \
+            --output live-data/gse94383/mmc3-single-cell-transcriptomes.csv
+          printf '%s  %s\n' \
+            c43d0b54ed4b245b1690e9675630682c0843cda63f14a3e51dbf13b8f87c070e \
+            live-data/gse94383/mmc2-single-cell-dynamics.csv \
+            e264565c72f06ed98ee10914c0350486dd2daa2460cd19ec8071d756bf982200 \
+            live-data/gse94383/mmc3-single-cell-transcriptomes.csv \
+            > live-data/gse94383/SHA256SUMS
+          sha256sum --check live-data/gse94383/SHA256SUMS
+
+      - name: Run exact-head descriptive analysis
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/analyze_gse94383_conceptual_replication.py \
+            --dynamics live-data/gse94383/mmc2-single-cell-dynamics.csv \
+            --expression live-data/gse94383/mmc3-single-cell-transcriptomes.csv \
+            --json-output live-results/gse94383/descriptive-pathway-context.json \
+            --markdown-output live-results/gse94383/descriptive-pathway-context.md \
+            | tee live-results/gse94383/descriptive-pathway-context.log
+
+      - name: Enforce non-inferential verdict and claim boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("live-results/gse94383/descriptive-pathway-context.json")
+          result = json.loads(path.read_text(encoding="utf-8"))
+          primary = result["endpoints"]["primary"]
+          boundary = result["inference_boundary"]
+          claims = result["claim_boundary"]
+
+          assert result["verdict"] == "DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED"
+          assert "SUPPORTED" not in result["verdict"]
+          assert boundary["independent_biological_unit_status"] == "unresolved"
+          assert boundary["effective_biological_n"] is None
+          assert boundary["cell_count_is_independent_n"] is False
+          assert boundary["cell_level_resampling_can_promote_verdict"] is False
+          assert primary["inferential_use_authorized"] is False
+          assert claims["conceptual_triangulation"] is False
+          assert claims["descriptive_conceptual_context"] is True
+          assert claims["external_biological_generalization"] is False
+          assert claims["causal"] is False
+          print("ACCEPT exact-head GSE94383 descriptive boundary")
+          print(f"rho={primary['rho']}")
+          print(f"cell_observations={primary['n']}")
+          print("effective_biological_n=unresolved")
+          PY
+
+      - name: Write exact-head science receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "head_sha=${GITHUB_SHA}"
+            echo "verdict=DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED"
+            echo "independent_biological_unit_status=unresolved"
+            echo "cell_level_resampling_can_promote_verdict=false"
+            echo "conceptual_triangulation=false"
+            sha256sum \
+              scripts/analyze_gse94383_conceptual_replication.py \
+              scripts/check_gse94383_inference_boundary.py \
+              live-results/gse94383/descriptive-pathway-context.json \
+              live-results/gse94383/descriptive-pathway-context.md
+          } > gse94383-p0-science-receipt.txt
+          cat gse94383-p0-science-receipt.txt
+
+      - name: Upload exact-head science evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: gse94383-p0-science-${{ github.sha }}
+          path: |
+            gse94383-boundary-regression.txt
+            gse94383-p0-science-receipt.txt
+            live-data/gse94383/SHA256SUMS
+            live-results/gse94383/descriptive-pathway-context.json
+            live-results/gse94383/descriptive-pathway-context.md
+            live-results/gse94383/descriptive-pathway-context.log
+          if-no-files-found: error
+          retention-days: 30
