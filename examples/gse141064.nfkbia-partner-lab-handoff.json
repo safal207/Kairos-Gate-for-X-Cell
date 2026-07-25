@@ -81,7 +81,7 @@
     }
   ],
   "experimental_unit_contract": {
-    "required_unit": "an independently sampled or assigned biological source unit defined and justified before outcome analysis",
+    "required_unit": "an independently sampled or assigned biological source unit defined and justified before outcome analysis; unresolved ID prefixes must remain technical or unknown rather than biological replicates",
     "assignment_level": "biological_unit",
     "lineage_required": true,
     "technical_units_not_replicates": [
@@ -91,8 +91,7 @@
       "library",
       "sequencing_run",
       "read",
-      "image_frame",
-      "unresolved_id_prefix"
+      "image_frame"
     ],
     "precision_justification_required": true
   },
