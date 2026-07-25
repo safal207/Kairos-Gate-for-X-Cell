@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - "examples/gse141064.independent-replication-search.json"
+      - "examples/gse141064.temporal-replication-gate.json"
       - "examples/gse141064.nfkbia-causal-hypotheses.json"
+      - "examples/gse141064.nfkbia-partner-lab-handoff.json"
       - "scripts/analyze_gse94383_conceptual_replication.py"
       - "scripts/check_gse94383_inference_boundary.py"
       - "scripts/check_gse94383_claim_drift.py"
@@ -18,7 +20,9 @@ on:
   push:
     paths:
       - "examples/gse141064.independent-replication-search.json"
+      - "examples/gse141064.temporal-replication-gate.json"
       - "examples/gse141064.nfkbia-causal-hypotheses.json"
+      - "examples/gse141064.nfkbia-partner-lab-handoff.json"
       - "scripts/analyze_gse94383_conceptual_replication.py"
       - "scripts/check_gse94383_inference_boundary.py"
       - "scripts/check_gse94383_claim_drift.py"
@@ -160,9 +164,14 @@ jobs:
               scripts/check_gse94383_inference_boundary.py \
               scripts/check_gse94383_claim_drift.py \
               examples/gse141064.independent-replication-search.json \
+              examples/gse141064.temporal-replication-gate.json \
               examples/gse141064.nfkbia-causal-hypotheses.json \
+              examples/gse141064.nfkbia-partner-lab-handoff.json \
               reports/gse94383-conceptual-replication-2026-07-23.json \
               reports/gse94383-conceptual-replication-2026-07-23.md \
+              reports/gse141064-nfkbia-causal-ranking-2026-07-23.md \
+              reports/gse141064-direct-temporal-replication-gap-2026-07-23.md \
+              reports/gse141064-nfkbia-partner-lab-handoff-2026-07-23.md \
               live-results/gse94383/descriptive-pathway-context.json \
               live-results/gse94383/descriptive-pathway-context.md
           } > gse94383-p0-science-receipt.txt
