@@ -77,16 +77,15 @@ jobs:
 
       - name: Run exact-head descriptive analysis
         shell: bash
-        env:
-          BIOEVIDENCE_HEAD_SHA: ${{ env.BIOEVIDENCE_HEAD_SHA }}
         run: |
           set -euo pipefail
-          python scripts/analyze_gse94383_conceptual_replication.py \
-            --dynamics live-data/gse94383/mmc2-single-cell-dynamics.csv \
-            --expression live-data/gse94383/mmc3-single-cell-transcriptomes.csv \
-            --json-output live-results/gse94383/descriptive-pathway-context.json \
-            --markdown-output live-results/gse94383/descriptive-pathway-context.md \
-            | tee live-results/gse94383/descriptive-pathway-context.log
+          GITHUB_SHA="$BIOEVIDENCE_HEAD_SHA" \
+            python scripts/analyze_gse94383_conceptual_replication.py \
+              --dynamics live-data/gse94383/mmc2-single-cell-dynamics.csv \
+              --expression live-data/gse94383/mmc3-single-cell-transcriptomes.csv \
+              --json-output live-results/gse94383/descriptive-pathway-context.json \
+              --markdown-output live-results/gse94383/descriptive-pathway-context.md \
+              | tee live-results/gse94383/descriptive-pathway-context.log
 
       - name: Enforce non-inferential verdict and claim boundary
         shell: bash
