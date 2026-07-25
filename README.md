@@ -1,104 +1,137 @@
 # Kairos Gate for X-Cell
 
-**Research-only protocol for phase-conditioned cellular transition assessment.**
+**Research-only protocol for phase-conditioned cellular transition assessment and bounded biological evidence governance.**
 
-X-Cell asks what a perturbation may cause. Kairos Gate asks **when** that
-perturbation becomes a justified candidate transition window while preserving
-identity, limiting risk, and exposing uncertainty.
+Kairos Gate asks two linked questions:
 
-> `CANDIDATE_WINDOW` is a research classification, not biological authorization.
+1. Is a measurable pre-intervention phase a useful predictive context for a proposed cellular transition?
+2. Is the evidence package strong enough to support the exact claim being made without pseudoreplication, broken provenance, temporal leakage, or unauthorized escalation?
 
-## Research question
+> Every output is a research classification. It is not permission to conduct biological work or make a clinical decision.
 
-Does adding a measurable pre-intervention phase variable improve held-out
-cellular perturbation-response prediction relative to a matched static-state
-baseline?
+## Project steward
 
-The first proposed comparison is:
+**Alexey (Alex Lim, [@safal207](https://github.com/safal207)) — founder and evidence-systems builder.**
+
+Alexey contributes QA, product thinking, causal and evidence architecture, reproducibility, traceability, and governance. He does not present himself as a biologist or clinician and does not authorize experiments or treatment.
+
+Project navigation:
+
+- [`MASTER_ROADMAP.md`](MASTER_ROADMAP.md) — direction, milestones, gates, and deferred work;
+- [`BACKLOG.md`](BACKLOG.md) — ordered execution queue and definitions of done;
+- [Epic #24](https://github.com/safal207/Kairos-Gate-for-X-Cell/issues/24) — canonical GitHub roadmap.
+
+## Kairos transition foundation
+
+The v0.1 foundation contains:
+
+- a strict Draft 2020-12 transition schema;
+- complete date-time and pre-intervention phase validation;
+- hard identity, toxicity, and reversibility exclusions;
+- deterministic research-only classifications;
+- a synthetic phase-ablation and phase-shuffle benchmark;
+- a versioned TIP-to-Kairos handoff;
+- exact-head CI evidence and installed-wheel validation;
+- FAIR-oriented model, data, reproducibility, causal, and safety documentation.
+
+Research-only classifications:
+
+- `CANDIDATE_WINDOW`;
+- `WAIT`;
+- `EXCLUDE`;
+- `INSUFFICIENT_EVIDENCE`.
+
+Hard exclusions take precedence over missing evidence. A known high-risk record cannot be softened into `INSUFFICIENT_EVIDENCE`.
+
+## Biological evidence stack v0.1
+
+### 1. `bio-experimental-unit-auditor`
+
+Separates biological units from cells, wells, plates, libraries, runs, and analysis rows. It reconstructs source lineage and blocks pseudoreplication when biological independence is not established.
+
+### 2. `bio-provenance-confounder-graph`
+
+Preserves source-to-claim paths, unresolved events, identity collisions, confounders, and broken lineage rather than hiding them behind a final score.
+
+### 3. `bio-independent-replication-finder`
+
+Rejects same-study material, technical reruns, shared biological material, and reprocessed target data as independent replication.
+
+### 4. `bio-causal-hypothesis-ranker`
+
+Compares direct effects, shared state, marker-only explanations, technical confounding, selection bias, small effects, chance, and overfitting without translating rank into causal identification.
+
+### 5. `bio-temporal-replication-gate`
+
+Requires the molecular pre-state to precede the transition and the later phenotype to remain linked to the same cell or defensible longitudinal unit.
+
+### 6. `bio-partner-lab-evidence-handoff`
+
+Converts a documented public-data gap into a bounded scientific-review package for a qualified institution. It contains no physical biological procedure and grants no execution authority.
+
+All six skills are computational and documentary only.
+
+## Reference case: GSE141064 Batch 8_8
+
+The public metadata and count matrix have exact 1,012-to-1,012 identifier linkage. A response-independent rule recovers 17 recorded Raw264.7_G9 cells with complete downstream response labels.
+
+Current result:
 
 ```text
-static baseline:
-cell state + perturbation -> response
-
-phase-conditioned:
-cell state + perturbation + measurable phase -> response
+BLOCKED_INSUFFICIENT_REPLICATES
+BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED
 ```
 
-A positive predictive result does not establish causality. Controlled or valid
-quasi-experimental evidence is required before making a causal timing claim.
+Publicly available evidence shows plate-like labels, one `exp8` experiment prefix, one sequencing run, and unique index pairs. It does **not** currently establish independent biological cultures, collection days, or imaging sessions for these 17 cells.
 
-## Why Kairos
+The author-clarification request remains open in `DeplanckeLab/Live-seq#9`. Until source-backed clarification arrives:
 
-The same perturbation may have different consequences in different measurable
-biological phases. Candidate examples include:
+- exploratory cell-level description is allowed with limits;
+- leave-one-plate-out remains a technical sensitivity analysis;
+- plate-based biological pseudobulk is blocked;
+- prediction on new biological units is not established;
+- causal, tissue, clinical, and therapeutic claims remain blocked.
 
-- cell-cycle phase;
-- calcium-signalling state;
-- membrane-potential state;
-- metabolic-state proxy;
-- experimentally controlled circadian phase.
+## Independent conceptual candidate: GSE94383
 
-The v0.1 record accepts only versioned supported phase keys. Philosophical
-metaphors are not admitted as biological variables. Qualifying phase evidence
-must be timestamped at or before the transition record time.
+The exact public dynamics and expression tables contain the same 823 unique cell IDs.
 
-## Research-only classifications
-
-- `CANDIDATE_WINDOW` — current model-level criteria support further research;
-- `WAIT` — timing or expected effectiveness is below the current threshold;
-- `EXCLUDE` — a hard identity, toxicity, or reversibility boundary is violated;
-- `INSUFFICIENT_EVIDENCE` — supported phase evidence or evidence quality is inadequate.
-
-Hard exclusions take precedence over missing evidence. A known high-risk record
-cannot be softened into `INSUFFICIENT_EVIDENCE`.
-
-## Current v0.1 components
-
-- strict Draft 2020-12 transition schema;
-- complete date-time format and pre-intervention timestamp validation;
-- strict JSON loading that rejects `NaN` and `Infinity`;
-- deterministic research-only validator;
-- canonical synthetic transition example;
-- FAIR-oriented reproducibility, Model Card, and Data Card templates;
-- preregistered synthetic phase-ablation and shuffle-control benchmark;
-- versioned TIP-to-Kairos handoff schema, example, negative fixtures, and validator;
-- regression tests for safety, schema, provenance, and authority boundaries;
-- exact-head CI evidence artifact;
-- installed-wheel smoke tests outside the repository checkout;
-- causal graph, safety, non-claims, citation, and contribution documentation.
-
-## Repository layout
+| Metric | Value |
+|---|---:|
+| Spearman rho | **0.178** |
+| Bootstrap 95% CI | **0.110 to 0.243** |
+| Stratified permutation p | **0.0002** |
+| Leave-one-ID-prefix-out rho range | **0.153 to 0.200** |
 
 ```text
-README.md
-CHANGELOG.md
-kairos_gate/                 deterministic validators
-kairos_gate/schemas/         packaged runtime JSON Schemas
-schemas/                     public schema mirrors
-examples/                    canonical research records
-protocols/                   preregistered research protocols
-testdata/                    synthetic and negative fixtures
-tests/                       regression tests
-scripts/                     benchmark, handoff, and exact-head evidence runners
-docs/
-  RESEARCH_QUESTION.md
-  MINIMAL_EXPERIMENT.md
-  HYPOTHESIS_MAP.md
-  CAUSAL_GRAPH.md
-  REPRODUCIBILITY.md
-  MODEL_CARD_TEMPLATE.md
-  DATA_CARD_TEMPLATE.md
-  TIP_HANDOFF.md
-  SAFETY_AND_NON_CLAIMS.md
-  PHILOSOPHICAL_ORIGIN.md
-  ECOSYSTEM_BRIDGE.md
-  XCELL_OUTREACH_DRAFT.md
-  ROADMAP.md
+CONCEPTUAL_SIGNAL_SUPPORTED
 ```
 
-## Quick start
+This supports weak but stable independent pathway coupling. It is not direct temporal replication because RNA is measured after stimulation rather than before a future `Tnf-mCherry` phenotype.
 
-Install the package and its runtime dependency first:
+## Current causal boundary
+
+```text
+RANKED_NOT_IDENTIFIED
+DIRECT_REPLICATION_GAP
+TOP_DISCOVERY_CANDIDATE_NOT_STABLE_UNIQUE_DRIVER
+```
+
+The leading current explanation is a broader shared upstream cellular state. `Nfkbia` remains a useful discovery candidate, not an identified unique causal driver.
+
+## Partner-laboratory evidence boundary
+
+```text
+READY_FOR_PARTNER_SCIENTIFIC_REVIEW
+PHYSICAL_EXECUTION_NOT_AUTHORIZED
+AI_DOES_NOT_AUTHORIZE_EXECUTION
+```
+
+Scientific-review readiness does not authorize physical work. Any future validation must be designed and governed by a competent institution under all applicable scientific, ethical, biosafety, legal, quality, consent, containment, and data-governance requirements.
+
+## Validation
+
+Foundation checks:
 
 ```bash
 python -m pip install -e .
@@ -108,70 +141,26 @@ python scripts/validate_handoff.py examples/tip-kairos-handoff.json
 python scripts/run_phase_benchmark.py testdata/phase-window-tiny.json
 ```
 
-Expected transition CLI shape:
-
-```text
-RESEARCH_ONLY ... classification=CANDIDATE_WINDOW; NOT EXPERIMENT AUTHORIZATION
-```
-
-The synthetic benchmark must label itself `SUPPORTED_SYNTHETIC_ONLY`; this is a
-pipeline-control result and not evidence of a biological phase effect.
-
-To reproduce the exact-head evidence flow inside a Git checkout:
+BioEvidence contract checks:
 
 ```bash
-export KAIROS_EXACT_HEAD="$(git rev-parse HEAD)"
-python scripts/run_ci_evidence.py
-python scripts/run_ci_evidence.py --enforce
+python scripts/validate_experimental_unit_audit.py examples/gse141064.experimental-unit-audit.json
+python scripts/validate_provenance_confounder_graph.py examples/gse141064.provenance-confounder-graph.json
+python scripts/validate_independent_replication_search.py examples/gse141064.independent-replication-search.json
+python scripts/validate_causal_hypothesis_ranking.py examples/gse141064.nfkbia-causal-hypotheses.json
+python scripts/validate_temporal_replication_gate.py examples/gse141064.temporal-replication-gate.json
+python scripts/validate_partner_lab_evidence_handoff.py examples/gse141064.nfkbia-partner-lab-handoff.json
 ```
 
-The project uses the third-party `jsonschema` package, declared in
-`pyproject.toml`, to enforce complete Draft 2020-12 contracts and date-time
-formats. Schemas are packaged with the installed validators and checked against
-the public repository mirrors in regression tests.
+## Safety boundary
 
-See [Reproducibility](docs/REPRODUCIBILITY.md) for version and provenance rules.
-
-## Relationship to the wider protocol family
-
-The primary internal bridge is [Transition Intelligence Protocol](https://github.com/safal207/transition-intelligence-protocol):
-
-```text
-IFP: Is the initial state sufficiently known?
-TIP: Which transition is justified next?
-Kairos Gate: Is this a candidate phase window for that transition?
-```
-
-The versioned bridge is documented in [TIP → Kairos Handoff](docs/TIP_HANDOFF.md).
-Additional roles are documented in [Ecosystem Bridge](docs/ECOSYSTEM_BRIDGE.md),
-including T-Trace, CML, LiminalDB, PythiaLabs, ProofPath, LRI, SOMA, and Lifetra.
-
-## Scope boundary
-
-Kairos Gate does **not** claim to:
+Kairos Gate does not claim to:
 
 - reverse aging;
-- provide medical advice or treatment;
+- provide medical advice, diagnosis, treatment, or patient-level decisions;
 - establish that meditation, sound, music, intention, or an undefined information field directly reprograms cells;
 - prove biological safety from transcriptomic prediction;
 - authorize wet-lab, animal, or human experimentation;
-- represent or speak for Xaira Therapeutics or the X-Cell authors.
+- represent or speak for Xaira Therapeutics, the X-Cell authors, or the Live-seq authors.
 
-See [Safety, Ethics, and Non-Claims](docs/SAFETY_AND_NON_CLAIMS.md).
-
-## Roadmap
-
-1. Stabilize and review the v0.1 protocol contract.
-2. Publish FAIR model/data-card and reproducibility templates.
-3. Preregister and execute the synthetic phase-ablation and phase-shuffle pipeline test.
-4. Stabilize the reciprocal TIP-to-Kairos interoperability profile.
-5. Evaluate one suitable open perturbation-response dataset.
-6. Test BioNeMo/Geneformer feasibility only after the open-data benchmark is specified.
-7. Approach X-Cell and NVIDIA with a narrow, reproducible technical question.
-
-See [Roadmap](docs/ROADMAP.md) and [GitHub roadmap issue](https://github.com/safal207/Kairos-Gate-for-X-Cell/issues/11).
-
-## License and citation
-
-The repository is licensed under MIT. Citation metadata is provided in
-`CITATION.cff`.
+The repository is licensed under MIT. Citation metadata is provided in `CITATION.cff`.

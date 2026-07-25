@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/bio-provenance-confounder-graph.schema.json",
+  "title": "Bio Provenance Confounder Graph",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "study_id",
+    "graph_id",
+    "source_freeze",
+    "nodes",
+    "provenance_edges",
+    "confounders",
+    "claim_reachability",
+    "provenance_completeness",
+    "overall_verdict",
+    "next_evidence_action",
+    "safety_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "study_id": {"type": "string", "minLength": 1},
+    "graph_id": {"type": "string", "minLength": 1},
+    "source_freeze": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accession", "retrieved_at", "evidence_refs"],
+      "properties": {
+        "accession": {"type": "string", "minLength": 1},
+        "retrieved_at": {"type": "string", "format": "date-time"},
+        "article_id": {"type": ["string", "null"]},
+        "code_commit": {"type": ["string", "null"]},
+        "workflow_id": {"type": ["string", "null"]},
+        "evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["node_id", "node_class", "label", "evidence_level", "status"],
+        "properties": {
+          "node_id": {"type": "string", "minLength": 1},
+          "node_class": {
+            "enum": [
+              "biological_source",
+              "collection_event",
+              "derived_biological_unit",
+              "technical_container",
+              "library_preparation",
+              "measurement_run",
+              "raw_data_artifact",
+              "processed_data_artifact",
+              "analysis_transformation",
+              "model_output",
+              "scientific_claim",
+              "unknown_event"
+            ]
+          },
+          "label": {"type": "string", "minLength": 1},
+          "evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4", "F5"]},
+          "status": {"enum": ["observed", "documented", "executable", "author_confirmed", "inferred", "unknown"]}
+        }
+      }
+    },
+    "provenance_edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "edge_id",
+          "from",
+          "to",
+          "edge_class",
+          "status",
+          "evidence_level",
+          "confidence",
+          "load_bearing",
+          "transformation_reversibility",
+          "missing_input_impact"
+        ],
+        "properties": {
+          "edge_id": {"type": "string", "minLength": 1},
+          "from": {"type": "string", "minLength": 1},
+          "to": {"type": "string", "minLength": 1},
+          "edge_class": {
+            "enum": [
+              "derived_from",
+              "contained_in",
+              "pooled_into",
+              "measured_by",
+              "generated",
+              "transformed_into",
+              "grouped_by",
+              "trained_on",
+              "validated_on",
+              "supports",
+              "contradicts",
+              "supersedes"
+            ]
+          },
+          "status": {"enum": ["observed", "documented", "executable", "author_confirmed", "inferred", "unknown"]},
+          "evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4", "F5"]},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "load_bearing": {"type": "boolean"},
+          "source_ref": {"type": ["string", "null"]},
+          "ordering": {"type": ["string", "null"]},
+          "transformation_reversibility": {"enum": ["reversible", "irreversible", "unknown"]},
+          "missing_input_impact": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "confounders": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["confounder_id", "label", "edge_class", "condition_path", "outcome_path", "separability", "risk", "status", "load_bearing"],
+        "properties": {
+          "confounder_id": {"type": "string", "minLength": 1},
+          "label": {"type": "string", "minLength": 1},
+          "edge_class": {"enum": ["may_influence", "coincides_with", "determines_assignment", "partially_determines_assignment", "unknown_relationship"]},
+          "condition_path": {"type": "string", "minLength": 1},
+          "outcome_path": {"type": "string", "minLength": 1},
+          "separability": {"enum": ["separable", "partially_separable", "aliased", "unknown"]},
+          "risk": {"enum": ["low", "medium", "high", "blocking", "unknown"]},
+          "status": {"enum": ["observed", "documented", "executable", "author_confirmed", "inferred", "unknown"]},
+          "load_bearing": {"type": "boolean"}
+        }
+      }
+    },
+    "claim_reachability": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim_node_id",
+          "complete_path",
+          "weakest_evidence_level",
+          "unknown_edge_count",
+          "inferred_edge_count",
+          "high_risk_confounders",
+          "independent_validation",
+          "reproducible_from_frozen_inputs",
+          "verdict",
+          "reason"
+        ],
+        "properties": {
+          "claim_node_id": {"type": "string", "minLength": 1},
+          "complete_path": {"type": "boolean"},
+          "weakest_evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4", "F5"]},
+          "unknown_edge_count": {"type": "integer", "minimum": 0},
+          "inferred_edge_count": {"type": "integer", "minimum": 0},
+          "high_risk_confounders": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1}
+          },
+          "independent_validation": {"enum": ["present", "absent", "not_established"]},
+          "reproducible_from_frozen_inputs": {"type": "boolean"},
+          "verdict": {"enum": ["ACCEPT", "ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"]},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "provenance_completeness": {"enum": ["complete", "partial", "insufficient"]},
+    "overall_verdict": {"enum": ["ACCEPT", "ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"]},
+    "next_evidence_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "expected_uncertainty_reduction", "priority"],
+      "properties": {
+        "action": {"type": "string", "minLength": 1},
+        "expected_uncertainty_reduction": {"enum": ["low", "medium", "high"]},
+        "priority": {"type": "integer", "minimum": 1}
+      }
+    },
+    "safety_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "physical_biology_authorized"],
+      "properties": {
+        "mode": {"const": "computational_only"},
+        "physical_biology_authorized": {"const": false},
+        "notes": {"type": "string"}
+      }
+    }
+  }
+}

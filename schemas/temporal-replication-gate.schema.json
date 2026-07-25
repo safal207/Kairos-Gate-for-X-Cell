@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/temporal-replication-gate.schema.json",
+  "title": "Temporal Replication Gate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "frozen_target",
+    "sources_searched",
+    "candidates",
+    "direct_replication_gap",
+    "model_discrimination_plan",
+    "overall_verdict",
+    "next_valid_action",
+    "safety_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "case_id": {"type": "string", "minLength": 1},
+    "frozen_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pre_state",
+        "transition",
+        "later_phenotype",
+        "identity_linkage",
+        "biological_unit",
+        "acceptable_endpoint_substitutions",
+        "forbidden_substitutions",
+        "competing_models"
+      ],
+      "properties": {
+        "pre_state": {"type": "string", "minLength": 1},
+        "transition": {"type": "string", "minLength": 1},
+        "later_phenotype": {"type": "string", "minLength": 1},
+        "identity_linkage": {"type": "string", "minLength": 1},
+        "biological_unit": {"type": "string", "minLength": 1},
+        "acceptable_endpoint_substitutions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "forbidden_substitutions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "competing_models": {
+          "type": "array",
+          "minItems": 3,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "sources_searched": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "scope", "searched_at", "status"],
+        "properties": {
+          "source": {"type": "string", "minLength": 1},
+          "scope": {"type": "string", "minLength": 1},
+          "searched_at": {"type": "string", "format": "date-time"},
+          "status": {"enum": ["searched", "partial", "unavailable"]}
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id",
+          "candidate_class",
+          "independent_of_target",
+          "pre_state_before_transition",
+          "later_phenotype_after_transition",
+          "same_cell_or_longitudinal_link",
+          "biological_unit_established",
+          "endpoint_compatibility",
+          "technical_lineage",
+          "evidence_level",
+          "verdict",
+          "rationale"
+        ],
+        "properties": {
+          "candidate_id": {"type": "string", "minLength": 1},
+          "candidate_class": {
+            "enum": [
+              "direct_temporal_replication_candidate",
+              "partial_temporal_candidate",
+              "conceptual_replication",
+              "cross_sectional_support",
+              "method_transfer_only",
+              "same_study_internal_validation",
+              "ineligible"
+            ]
+          },
+          "independent_of_target": {"type": "boolean"},
+          "pre_state_before_transition": {"enum": ["established", "not_established", "contradicted"]},
+          "later_phenotype_after_transition": {"enum": ["established", "not_established", "contradicted"]},
+          "same_cell_or_longitudinal_link": {"enum": ["established", "partial", "not_established", "contradicted"]},
+          "biological_unit_established": {"type": "boolean"},
+          "endpoint_compatibility": {"enum": ["compatible", "partial", "incompatible"]},
+          "technical_lineage": {"enum": ["complete", "partial", "unknown"]},
+          "evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4", "F5"]},
+          "verdict": {"enum": ["ACCEPT_DIRECT", "ACCEPT_PARTIAL", "ACCEPT_CONCEPTUAL", "HOLD", "EXCLUDE"]},
+          "rationale": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "direct_replication_gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "missing_fields", "search_conclusion"],
+      "properties": {
+        "present": {"type": "boolean"},
+        "missing_fields": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "pre_state_measurement",
+              "later_phenotype",
+              "same_cell_linkage",
+              "independent_biological_units",
+              "endpoint_compatibility",
+              "technical_lineage",
+              "sample_size",
+              "public_availability"
+            ]
+          }
+        },
+        "search_conclusion": {"type": "string", "minLength": 1}
+      }
+    },
+    "model_discrimination_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "candidate_only_model", "broader_state_model", "technical_confounder_model", "outcome_inspected_before_freeze"],
+      "properties": {
+        "status": {"enum": ["frozen_not_run", "diagnostic_only", "ready_for_external_candidate", "completed"]},
+        "candidate_only_model": {"type": "string", "minLength": 1},
+        "broader_state_model": {"type": "string", "minLength": 1},
+        "technical_confounder_model": {"type": "string", "minLength": 1},
+        "outcome_inspected_before_freeze": {"const": false}
+      }
+    },
+    "overall_verdict": {"enum": ["DIRECT_CANDIDATE_AVAILABLE", "PARTIAL_CANDIDATE_AVAILABLE", "DIRECT_REPLICATION_GAP", "BLOCK"]},
+    "next_valid_action": {"type": "string", "minLength": 1},
+    "safety_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "physical_biology_authorized"],
+      "properties": {
+        "mode": {"const": "computational_only"},
+        "physical_biology_authorized": {"const": false},
+        "notes": {"type": "string"}
+      }
+    }
+  }
+}

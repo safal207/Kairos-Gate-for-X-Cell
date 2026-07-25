@@ -65,6 +65,13 @@
     "dataset_redistribution_terms_verified": false,
     "rule": "Do not commit or redistribute source data until dataset reuse terms are explicitly documented. Local analysis with provenance is separate from redistribution."
   },
+  "history_integration_receipt": {
+    "tracked_by_issue": 42,
+    "canonical_main_parent": "db292435d155712e71a3f0ea9d238423e6baf890",
+    "bioevidence_merge_parent": "8dbcd03794a1e406ad1256094a72ac2228227880",
+    "purpose": "Trigger exact-head feasibility validation after canonical foundation and BioEvidence history reconciliation.",
+    "changes_source_identity_or_scientific_verdict": false
+  },
   "authority": {
     "classification": "RESEARCH_ONLY",
     "experiment_authorization": false,

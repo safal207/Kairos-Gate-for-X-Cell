@@ -1,0 +1,210 @@
+{
+  "schema_version": "0.1.0",
+  "handoff_id": "GSE141064-NFKBIA-PARTNER-HANDOFF-001",
+  "status": "READY_FOR_PARTNER_SCIENTIFIC_REVIEW",
+  "evidence_question": {
+    "candidate": "basal Nfkbia expression",
+    "phenotype": "later inflammatory-response dynamics compatible with the GSE141064 Tnf-mCherry endpoint",
+    "temporal_order": "molecular pre-state before the inflammatory transition, followed by a later phenotype in the same cell or defensible longitudinal unit",
+    "biological_system": "an institutionally selected macrophage model judged scientifically appropriate by the partner",
+    "decision_to_inform": "distinguish shared upstream state, direct Nfkbia effect, marker-only behavior, technical confounding, small context-specific effect, and instability",
+    "statement": "What evidence would distinguish whether basal Nfkbia carries candidate-specific information about a later inflammatory response beyond broader baseline state and technical structure?"
+  },
+  "current_evidence": [
+    {
+      "evidence_id": "E1",
+      "statement": "In the original 17-cell discovery set, Nfkbia ranks first among 362 genes by nominal linear-model evidence, with R2 approximately 0.598 and a negative coefficient.",
+      "evidence_level": "F3",
+      "role": "supporting"
+    },
+    {
+      "evidence_id": "E2",
+      "statement": "Nfkbia is the only gene with linear-model FDR at or below 0.10, but no gene reaches bootstrap FDR at or below 0.20.",
+      "evidence_level": "F3",
+      "role": "limiting"
+    },
+    {
+      "evidence_id": "E3",
+      "statement": "Exact biological independence for GSE141064 Batch 8_8 is not established; plate and exp8 run labels are technical structures.",
+      "evidence_level": "F4",
+      "role": "blocking"
+    },
+    {
+      "evidence_id": "E4",
+      "statement": "GSE94383 provides independent conceptual pathway coupling between prior NF-kB activity and post-LPS Nfkbia expression, but the transcriptome is measured after stimulation.",
+      "evidence_level": "F3",
+      "role": "supporting"
+    },
+    {
+      "evidence_id": "E5",
+      "statement": "No independent public dataset was found with the complete required pre-state, same-unit later phenotype, biological independence, compatible endpoint, and technical lineage.",
+      "evidence_level": "F3",
+      "role": "negative_result"
+    },
+    {
+      "evidence_id": "E6",
+      "statement": "No identifying design currently isolates a direct Nfkbia effect from broader cell state or technical confounding.",
+      "evidence_level": "F3",
+      "role": "blocking"
+    }
+  ],
+  "hypotheses_to_distinguish": [
+    {
+      "hypothesis_id": "H_SHARED_STATE",
+      "statement": "A broader baseline inflammatory or signaling state drives both basal Nfkbia and the later phenotype.",
+      "distinguishing_observation": "A frozen broader-state model absorbs most candidate-specific association while retaining external predictive value."
+    },
+    {
+      "hypothesis_id": "H_DIRECT_EFFECT",
+      "statement": "Basal Nfkbia has candidate-specific influence on the later response beyond broader state.",
+      "distinguishing_observation": "Candidate-specific information persists beyond the broader-state and technical models, and an institutionally approved identifying design supports the same direction."
+    },
+    {
+      "hypothesis_id": "H_MARKER_ONLY",
+      "statement": "Nfkbia tracks inflammatory readiness but is not load-bearing for the later response.",
+      "distinguishing_observation": "Nfkbia becomes redundant after state adjustment and does not show candidate-specific evidence under an identifying design."
+    },
+    {
+      "hypothesis_id": "H_TECHNICAL",
+      "statement": "Collection, imaging, processing, plate, library, operator, or run structure creates or amplifies the association.",
+      "distinguishing_observation": "The association materially weakens after explicit technical-lineage adjustment or fails across balanced independent biological units."
+    },
+    {
+      "hypothesis_id": "H_SMALL_CONTEXT_EFFECT",
+      "statement": "A real but modest and context-specific relationship exists without broad predictive or causal scope.",
+      "distinguishing_observation": "Multiple independent collections show a stable direction with modest magnitude and documented heterogeneity."
+    },
+    {
+      "hypothesis_id": "H_NULL_OR_INSTABILITY",
+      "statement": "The discovery result is dominated by small-sample instability, feature selection, or winner's curse.",
+      "distinguishing_observation": "Frozen independent analysis produces null, unstable, or directionally inconsistent estimates."
+    }
+  ],
+  "experimental_unit_contract": {
+    "required_unit": "an independently sampled or assigned biological source unit defined and justified by the partner institution before outcome analysis",
+    "assignment_level": "biological_unit",
+    "lineage_required": true,
+    "technical_units_not_replicates": [
+      "cell",
+      "well",
+      "plate",
+      "library",
+      "sequencing_run",
+      "read",
+      "image_frame"
+    ],
+    "precision_justification_required": true
+  },
+  "temporal_identity_contract": {
+    "pre_state_before_transition": true,
+    "later_phenotype_after_transition": true,
+    "same_longitudinal_unit_linkage": true,
+    "machine_auditable_lineage": true,
+    "required_chain": [
+      "biological_source_id",
+      "independent_experimental_unit_id",
+      "cell_or_longitudinal_unit_id",
+      "pre_transition_molecular_measurement_id",
+      "transition_record_id",
+      "later_phenotype_measurement_id",
+      "technical_processing_ids",
+      "analysis_record_id"
+    ]
+  },
+  "model_comparison_plan": {
+    "frozen_before_outcome_analysis": true,
+    "model_families": [
+      "candidate_only",
+      "broader_baseline_state",
+      "technical_confounder",
+      "combined",
+      "null_or_negative_control"
+    ],
+    "negative_controls_required": true,
+    "changes_require_superseding_record": true
+  },
+  "data_return_contract": {
+    "machine_readable": true,
+    "deidentified_or_lawful": true,
+    "lineage": true,
+    "timing": true,
+    "missingness": true,
+    "transform_provenance": true,
+    "model_diagnostics": true,
+    "checksums": true,
+    "deviations": true
+  },
+  "decision_matrix": [
+    {
+      "outcome_class": "shared_state",
+      "observation": "The broader baseline-state model outperforms the Nfkbia-only model and substantially reduces candidate-specific contribution on independent biological units.",
+      "interpretation_limit": "Supports a shared-state explanation; does not prove that every state component is causal."
+    },
+    {
+      "outcome_class": "direct_effect",
+      "observation": "Nfkbia-specific evidence remains after state and technical adjustment and is supported by an independently approved identifying design.",
+      "interpretation_limit": "May support a bounded causal statement only within the validated model and design; tissue and clinical claims remain separate."
+    },
+    {
+      "outcome_class": "marker_only",
+      "observation": "Nfkbia loses incremental information after broader-state adjustment and lacks candidate-specific identifying evidence.",
+      "interpretation_limit": "Supports marker utility at most; does not justify intervention targeting."
+    },
+    {
+      "outcome_class": "technical_confounding",
+      "observation": "The association follows technical lineage or collapses after balanced technical adjustment.",
+      "interpretation_limit": "Blocks biological interpretation of the affected estimate."
+    },
+    {
+      "outcome_class": "small_context_effect",
+      "observation": "Independent biological collections retain the direction with modest magnitude and substantial context heterogeneity.",
+      "interpretation_limit": "Supports a context-limited association, not broad prediction or causality."
+    },
+    {
+      "outcome_class": "null_or_instability",
+      "observation": "Frozen estimates are null, unstable, or directionally inconsistent across independent collections.",
+      "interpretation_limit": "Weakens the discovery claim and should be retained as a negative result rather than hidden."
+    }
+  ],
+  "stop_hold_rules": [
+    "HOLD if biological-source and independent-unit lineage cannot be reconstructed.",
+    "HOLD if the molecular pre-state is measured after the transition or timing is ambiguous.",
+    "HOLD if the later phenotype cannot be linked to the same cell or defensible longitudinal unit.",
+    "HOLD if condition, operator, collection phase, imaging phase, plate, library, or run is aliased with the biological comparison.",
+    "HOLD if exclusions, missingness, or transformations are outcome-dependent or undocumented.",
+    "HOLD if the frozen model plan changes after outcome inspection without a versioned superseding record.",
+    "HOLD if the partner has not documented the approvals, competence, oversight, containment, consent, or data-governance requirements it determines are applicable.",
+    "STOP under the partner institution's independently defined safety and quality criteria for unexpected or adverse conditions."
+  ],
+  "governance_gates": {
+    "institution_determines_required_approvals": true,
+    "qualified_principal_investigator": true,
+    "domain_review": true,
+    "quantitative_review": true,
+    "biosafety_review_if_applicable": true,
+    "ethics_review_if_applicable": true,
+    "data_governance_review": true,
+    "execution_authorized": false
+  },
+  "claim_boundary": {
+    "association": "supported_with_limits",
+    "prediction": "not_established",
+    "causal": "blocked",
+    "tissue": "blocked",
+    "clinical_therapeutic": "blocked"
+  },
+  "operational_content": {
+    "physical_protocol_included": false,
+    "recipes_or_concentrations_included": false,
+    "dosing_or_treatment_included": false,
+    "biological_modification_instructions_included": false,
+    "human_experimentation_instructions_included": false
+  },
+  "next_action": "Send this evidence contract to a qualified partner institution for scientific and governance review; the partner must independently determine whether and how any study could be designed, approved, and executed.",
+  "safety_status": {
+    "mode": "computational_documentary_only",
+    "physical_biology_authorized": false,
+    "ai_authorizes_execution": false,
+    "notes": "This package requests review of an evidence question and data contract. It is not a laboratory protocol or authorization."
+  }
+}

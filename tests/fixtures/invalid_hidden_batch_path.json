@@ -1,0 +1,126 @@
+{
+  "schema_version": "0.1.0",
+  "study_id": "NEGATIVE-HIDDEN-BATCH",
+  "graph_id": "negative-hidden-batch-v0.1",
+  "source_freeze": {
+    "accession": "TEST",
+    "retrieved_at": "2026-07-23T00:00:00+03:00",
+    "article_id": null,
+    "code_commit": null,
+    "workflow_id": null,
+    "evidence_refs": ["synthetic negative fixture"]
+  },
+  "nodes": [
+    {
+      "node_id": "source:a",
+      "node_class": "biological_source",
+      "label": "Source A",
+      "evidence_level": "F1",
+      "status": "documented"
+    },
+    {
+      "node_id": "batch:hidden",
+      "node_class": "unknown_event",
+      "label": "Hidden collection batch",
+      "evidence_level": "F0",
+      "status": "unknown"
+    },
+    {
+      "node_id": "analysis:model",
+      "node_class": "model_output",
+      "label": "Model score",
+      "evidence_level": "F2",
+      "status": "documented"
+    },
+    {
+      "node_id": "claim:causal",
+      "node_class": "scientific_claim",
+      "label": "Condition causes biological response",
+      "evidence_level": "F0",
+      "status": "inferred"
+    }
+  ],
+  "provenance_edges": [
+    {
+      "edge_id": "e1",
+      "from": "source:a",
+      "to": "batch:hidden",
+      "edge_class": "derived_from",
+      "status": "unknown",
+      "evidence_level": "F0",
+      "confidence": 0.1,
+      "load_bearing": true,
+      "source_ref": null,
+      "ordering": null,
+      "transformation_reversibility": "unknown",
+      "missing_input_impact": "The hidden batch prevents reconstruction of biological assignment."
+    },
+    {
+      "edge_id": "e2",
+      "from": "batch:hidden",
+      "to": "analysis:model",
+      "edge_class": "generated",
+      "status": "inferred",
+      "evidence_level": "F1",
+      "confidence": 0.2,
+      "load_bearing": true,
+      "source_ref": null,
+      "ordering": null,
+      "transformation_reversibility": "unknown",
+      "missing_input_impact": "The model output cannot be separated from hidden-batch structure."
+    },
+    {
+      "edge_id": "e3",
+      "from": "analysis:model",
+      "to": "claim:causal",
+      "edge_class": "supports",
+      "status": "inferred",
+      "evidence_level": "F0",
+      "confidence": 0.1,
+      "load_bearing": true,
+      "source_ref": null,
+      "ordering": null,
+      "transformation_reversibility": "reversible",
+      "missing_input_impact": "No identifying evidence supports the causal interpretation."
+    }
+  ],
+  "confounders": [
+    {
+      "confounder_id": "c-hidden",
+      "label": "Hidden collection batch",
+      "edge_class": "determines_assignment",
+      "condition_path": "Batch determines condition assignment",
+      "outcome_path": "Batch may determine measured outcome",
+      "separability": "aliased",
+      "risk": "blocking",
+      "status": "unknown",
+      "load_bearing": true
+    }
+  ],
+  "claim_reachability": [
+    {
+      "claim_node_id": "claim:causal",
+      "complete_path": false,
+      "weakest_evidence_level": "F0",
+      "unknown_edge_count": 1,
+      "inferred_edge_count": 2,
+      "high_risk_confounders": ["c-hidden"],
+      "independent_validation": "absent",
+      "reproducible_from_frozen_inputs": false,
+      "verdict": "ACCEPT",
+      "reason": "Incorrectly accepts a causal claim despite hidden batch confounding."
+    }
+  ],
+  "provenance_completeness": "insufficient",
+  "overall_verdict": "ACCEPT",
+  "next_evidence_action": {
+    "action": "Incorrectly publish the causal claim.",
+    "expected_uncertainty_reduction": "low",
+    "priority": 1
+  },
+  "safety_status": {
+    "mode": "computational_only",
+    "physical_biology_authorized": false,
+    "notes": "Synthetic negative fixture."
+  }
+}

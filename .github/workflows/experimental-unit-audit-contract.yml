@@ -1,0 +1,328 @@
+name: Biological Evidence Contracts
+
+on:
+  pull_request:
+    paths:
+      - ".agents/skills/bio-experimental-unit-auditor/**"
+      - ".agents/skills/bio-provenance-confounder-graph/**"
+      - ".agents/skills/bio-independent-replication-finder/**"
+      - ".agents/skills/bio-causal-hypothesis-ranker/**"
+      - ".agents/skills/bio-temporal-replication-gate/**"
+      - ".agents/skills/bio-partner-lab-evidence-handoff/**"
+      - "schemas/**"
+      - "examples/**"
+      - "reports/**"
+      - "tests/fixtures/**"
+      - "scripts/validate_experimental_unit_audit.py"
+      - "scripts/validate_provenance_confounder_graph.py"
+      - "scripts/validate_independent_replication_search.py"
+      - "scripts/validate_causal_hypothesis_ranking.py"
+      - "scripts/validate_temporal_replication_gate.py"
+      - "scripts/validate_partner_lab_evidence_handoff.py"
+      - "scripts/audit_bioevidence_release.py"
+      - "scripts/probe_gse94383_tables.py"
+      - "scripts/analyze_gse94383_conceptual_replication.py"
+      - "scripts/probe_live_seq_supplementary_table4.py"
+      - "README.md"
+      - "MASTER_ROADMAP.md"
+      - "BACKLOG.md"
+      - "RELEASE_NOTES_v0.1.md"
+      - "docs/**"
+      - "reviews/**"
+      - ".github/workflows/**"
+  push:
+    paths:
+      - ".agents/skills/bio-experimental-unit-auditor/**"
+      - ".agents/skills/bio-provenance-confounder-graph/**"
+      - ".agents/skills/bio-independent-replication-finder/**"
+      - ".agents/skills/bio-causal-hypothesis-ranker/**"
+      - ".agents/skills/bio-temporal-replication-gate/**"
+      - ".agents/skills/bio-partner-lab-evidence-handoff/**"
+      - "schemas/**"
+      - "examples/**"
+      - "reports/**"
+      - "tests/fixtures/**"
+      - "scripts/validate_experimental_unit_audit.py"
+      - "scripts/validate_provenance_confounder_graph.py"
+      - "scripts/validate_independent_replication_search.py"
+      - "scripts/validate_causal_hypothesis_ranking.py"
+      - "scripts/validate_temporal_replication_gate.py"
+      - "scripts/validate_partner_lab_evidence_handoff.py"
+      - "scripts/audit_bioevidence_release.py"
+      - "scripts/probe_gse94383_tables.py"
+      - "scripts/analyze_gse94383_conceptual_replication.py"
+      - "scripts/probe_live_seq_supplementary_table4.py"
+      - "README.md"
+      - "MASTER_ROADMAP.md"
+      - "BACKLOG.md"
+      - "RELEASE_NOTES_v0.1.md"
+      - "docs/**"
+      - "reviews/**"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+jobs:
+  release-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run v0.1 release consistency and safety audit
+        id: audit
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/audit_bioevidence_release.py | tee release-audit.txt
+
+      - name: Upload release-audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bioevidence-release-audit-${{ github.sha }}
+          path: release-audit.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce release-audit verdict
+        if: steps.audit.outcome == 'failure'
+        run: exit 1
+
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate accepted GSE141064 experimental-unit audit
+        run: |
+          python scripts/validate_experimental_unit_audit.py \
+            examples/gse141064.experimental-unit-audit.json
+
+      - name: Confirm pseudoreplication fixture fails closed
+        run: |
+          if python scripts/validate_experimental_unit_audit.py \
+            tests/fixtures/invalid_plate_as_biological_replicate.json; then
+            echo "negative pseudoreplication fixture was incorrectly accepted"
+            exit 1
+          fi
+          echo "negative pseudoreplication fixture correctly blocked"
+
+      - name: Validate accepted GSE141064 provenance graph
+        run: |
+          python scripts/validate_provenance_confounder_graph.py \
+            examples/gse141064.provenance-confounder-graph.json
+
+      - name: Confirm hidden batch fixture fails closed
+        run: |
+          if python scripts/validate_provenance_confounder_graph.py \
+            tests/fixtures/invalid_hidden_batch_path.json; then
+            echo "negative hidden-batch fixture was incorrectly accepted"
+            exit 1
+          fi
+          echo "negative hidden-batch fixture correctly blocked"
+
+      - name: Validate live GSE141064 replication-search contract
+        run: |
+          python scripts/validate_independent_replication_search.py \
+            examples/gse141064.independent-replication-search.json
+
+      - name: Validate independent candidate acceptance path
+        run: |
+          python scripts/validate_independent_replication_search.py \
+            tests/fixtures/valid_independent_replication_candidate.json
+
+      - name: Confirm same-study replication leakage fails closed
+        run: |
+          if python scripts/validate_independent_replication_search.py \
+            tests/fixtures/invalid_same_study_as_replication.json; then
+            echo "same-study replication leakage was incorrectly accepted"
+            exit 1
+          fi
+          echo "same-study replication leakage correctly blocked"
+
+      - name: Validate Nfkbia causal hypothesis ranking
+        run: |
+          python scripts/validate_causal_hypothesis_ranking.py \
+            examples/gse141064.nfkbia-causal-hypotheses.json
+
+      - name: Confirm false causal winner fails closed without traceback
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          python scripts/validate_causal_hypothesis_ranking.py \
+            tests/fixtures/invalid_causal_winner_without_discriminator.json \
+            > causal-negative.txt 2>&1
+          code=$?
+          set -e
+          cat causal-negative.txt
+          if [ "$code" -eq 0 ]; then
+            echo "false causal winner was incorrectly accepted"
+            exit 1
+          fi
+          if grep -q "Traceback" causal-negative.txt; then
+            echo "malformed intervention score caused a traceback"
+            exit 1
+          fi
+          grep -q '^BLOCK ' causal-negative.txt || {
+            echo "negative causal fixture did not emit a deterministic BLOCK"
+            exit 1
+          }
+          grep -q 'score components must be integers from 0 to 4' causal-negative.txt || {
+            echo "malformed intervention score was not reported"
+            exit 1
+          }
+          echo "false causal winner and malformed score correctly blocked"
+
+      - name: Validate direct temporal replication gap
+        run: |
+          python scripts/validate_temporal_replication_gate.py \
+            examples/gse141064.temporal-replication-gate.json
+
+      - name: Confirm post-stimulation timing leakage fails closed
+        run: |
+          if python scripts/validate_temporal_replication_gate.py \
+            tests/fixtures/invalid_poststim_as_direct_replication.json; then
+            echo "post-stimulation timing leakage was incorrectly accepted"
+            exit 1
+          fi
+          echo "post-stimulation timing leakage correctly blocked"
+
+      - name: Validate Nfkbia partner-laboratory handoff
+        run: |
+          python scripts/validate_partner_lab_evidence_handoff.py \
+            examples/gse141064.nfkbia-partner-lab-handoff.json
+
+      - name: Confirm false physical authorization fails closed
+        run: |
+          if python scripts/validate_partner_lab_evidence_handoff.py \
+            tests/fixtures/invalid_partner_handoff_authorizes_execution.json; then
+            echo "false physical authorization was incorrectly accepted"
+            exit 1
+          fi
+          echo "false physical authorization correctly blocked"
+
+  live-replication-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install analysis dependencies
+        run: python -m pip install --disable-pip-version-check pandas scipy
+
+      - name: Download public GSE94383 supplementary tables
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p live-data/gse94383 live-results/gse94383
+          curl --fail --location --retry 3 --retry-all-errors \
+            "https://authors.library.caltech.edu/records/fyh1y-6zs57/files/1-s2.0-S2405471217301321-mmc2.csv?download=1" \
+            --output live-data/gse94383/mmc2-single-cell-dynamics.csv
+          curl --fail --location --retry 3 --retry-all-errors \
+            "https://authors.library.caltech.edu/records/fyh1y-6zs57/files/1-s2.0-S2405471217301321-mmc3.csv?download=1" \
+            --output live-data/gse94383/mmc3-single-cell-transcriptomes.csv
+
+      - name: Verify publisher checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > live-data/gse94383/MD5SUMS <<'EOF'
+          8be1e148d47762fd148584469a6179a6  live-data/gse94383/mmc2-single-cell-dynamics.csv
+          60a8bc62e5c49692fce8c79fdf0bf530  live-data/gse94383/mmc3-single-cell-transcriptomes.csv
+          EOF
+          md5sum --check live-data/gse94383/MD5SUMS
+
+      - name: Probe table structure before analysis
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/probe_gse94383_tables.py \
+            live-data/gse94383/mmc2-single-cell-dynamics.csv \
+            live-data/gse94383/mmc3-single-cell-transcriptomes.csv \
+            | tee live-results/gse94383/table-probe.txt
+
+      - name: Run frozen conceptual-replication analysis
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/analyze_gse94383_conceptual_replication.py \
+            --dynamics live-data/gse94383/mmc2-single-cell-dynamics.csv \
+            --expression live-data/gse94383/mmc3-single-cell-transcriptomes.csv \
+            --json-output live-results/gse94383/conceptual-replication.json \
+            --markdown-output live-results/gse94383/conceptual-replication.md \
+            | tee live-results/gse94383/conceptual-replication.log
+
+      - name: Upload reproducibility evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gse94383-live-analysis-${{ github.sha }}
+          path: |
+            live-data/gse94383/MD5SUMS
+            live-results/gse94383/table-probe.txt
+            live-results/gse94383/conceptual-replication.json
+            live-results/gse94383/conceptual-replication.md
+            live-results/gse94383/conceptual-replication.log
+          if-no-files-found: error
+          retention-days: 30
+
+  target-study-supplement-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install workbook dependency
+        run: python -m pip install --disable-pip-version-check openpyxl
+
+      - name: Download Live-seq Supplementary Table 4
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p live-data/gse141064 live-results/gse141064
+          curl --fail --location --retry 3 --retry-all-errors \
+            "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-022-05046-9/MediaObjects/41586_2022_5046_MOESM7_ESM.xlsx" \
+            --output live-data/gse141064/supplementary-table-4.xlsx
+
+      - name: Probe original model-ranking workbook
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/probe_live_seq_supplementary_table4.py \
+            live-data/gse141064/supplementary-table-4.xlsx \
+            live-results/gse141064/supplementary-table-4-probe.json \
+            | tee live-results/gse141064/supplementary-table-4-probe.log
+
+      - name: Upload target-study diagnostic evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gse141064-supplementary-table4-probe-${{ github.sha }}
+          path: |
+            live-results/gse141064/supplementary-table-4-probe.json
+            live-results/gse141064/supplementary-table-4-probe.log
+          if-no-files-found: error
+          retention-days: 30

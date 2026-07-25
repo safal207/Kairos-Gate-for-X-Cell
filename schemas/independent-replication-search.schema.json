@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/independent-replication-search.schema.json",
+  "title": "Independent Replication Search",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "target_study",
+    "target_claim",
+    "search_fingerprint",
+    "sources_searched",
+    "candidates",
+    "independence_leakage_findings",
+    "prespecified_test",
+    "overall_verdict",
+    "next_valid_action",
+    "safety_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "target_study": {"type": "string", "minLength": 1},
+    "target_claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "claim_level", "status"],
+      "properties": {
+        "statement": {"type": "string", "minLength": 1},
+        "claim_level": {"enum": ["descriptive", "association", "prediction", "generalization", "causal", "tissue", "clinical_therapeutic"]},
+        "status": {"enum": ["supported_with_limits", "not_established", "blocked"]}
+      }
+    },
+    "search_fingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["species", "biological_system", "phenotype_outcome", "assay", "required_biological_unit", "excluded_relationships"],
+      "properties": {
+        "species": {"type": ["string", "null"]},
+        "biological_system": {"type": ["string", "null"]},
+        "cell_state": {"type": ["string", "null"]},
+        "perturbation_condition": {"type": ["string", "null"]},
+        "phenotype_outcome": {"type": ["string", "null"]},
+        "assay": {"type": ["string", "null"]},
+        "time_structure": {"type": ["string", "null"]},
+        "required_biological_unit": {"type": ["string", "null"]},
+        "acceptable_substitutions": {"type": "array", "items": {"type": "string"}},
+        "unacceptable_substitutions": {"type": "array", "items": {"type": "string"}},
+        "excluded_relationships": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "sources_searched": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "status", "searched_at"],
+        "properties": {
+          "source": {"type": "string", "minLength": 1},
+          "query_or_scope": {"type": "string"},
+          "status": {"enum": ["planned", "searched", "unavailable"]},
+          "searched_at": {"type": ["string", "null"], "format": "date-time"}
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id",
+          "evidence_level",
+          "independence_class",
+          "replication_type",
+          "compatibility",
+          "candidate_verdict",
+          "rationale"
+        ],
+        "properties": {
+          "candidate_id": {"type": "string", "minLength": 1},
+          "title": {"type": ["string", "null"]},
+          "evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4", "F5"]},
+          "independence_class": {
+            "enum": [
+              "independent_biological_experiment",
+              "independent_biological_source_uncertain_protocol",
+              "same_study_new_accession",
+              "shared_biological_source",
+              "technical_remeasurement",
+              "derived_or_reprocessed_data",
+              "related_non_equivalent_system",
+              "insufficient_metadata",
+              "excluded"
+            ]
+          },
+          "replication_type": {"enum": ["direct_replication", "conceptual_replication", "external_validation", "method_transfer_only", "not_a_replication", "undetermined"]},
+          "shared_target_identifiers": {"type": "array", "items": {"type": "string"}},
+          "compatibility": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["biological_source_independence", "experimental_unit", "species", "biological_system", "phenotype_outcome", "assay", "provenance", "sample_size"],
+            "properties": {
+              "biological_source_independence": {"enum": ["compatible", "incompatible", "unknown"]},
+              "experimental_unit": {"enum": ["compatible", "incompatible", "unknown"]},
+              "species": {"enum": ["compatible", "incompatible", "unknown"]},
+              "biological_system": {"enum": ["compatible", "partially_compatible", "incompatible", "unknown"]},
+              "phenotype_outcome": {"enum": ["compatible", "partially_compatible", "incompatible", "unknown"]},
+              "assay": {"enum": ["compatible", "partially_compatible", "incompatible", "unknown"]},
+              "provenance": {"enum": ["complete", "partial", "insufficient"]},
+              "sample_size": {"enum": ["adequate", "limited", "unknown"]}
+            }
+          },
+          "candidate_verdict": {"enum": ["ACCEPT_WITH_LIMITS", "HOLD", "BLOCK", "EXCLUDE"]},
+          "rationale": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "independence_leakage_findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "candidate_id", "finding"],
+        "properties": {
+          "severity": {"enum": ["info", "warning", "blocking"]},
+          "candidate_id": {"type": "string", "minLength": 1},
+          "finding": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "prespecified_test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "primary_endpoint",
+        "biological_grouping_key",
+        "success_criteria",
+        "criteria_frozen_at_commit",
+        "freeze_verification",
+        "observed_result"
+      ],
+      "properties": {
+        "status": {"enum": ["not_defined", "defined_not_run", "run_incomplete", "completed"]},
+        "primary_endpoint": {"type": ["string", "null"]},
+        "expected_direction": {"type": ["string", "null"]},
+        "biological_grouping_key": {"type": ["string", "null"]},
+        "exclusion_criteria": {"type": "array", "items": {"type": "string"}},
+        "success_criteria": {"type": ["string", "null"]},
+        "criteria_frozen_at_commit": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "freeze_verification": {"enum": ["commit_bound", "not_commit_bound", "not_applicable"]},
+        "observed_result": {"type": ["string", "null"]}
+      }
+    },
+    "overall_verdict": {"enum": ["ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"]},
+    "next_valid_action": {"type": "string", "minLength": 1},
+    "safety_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "physical_biology_authorized"],
+      "properties": {
+        "mode": {"const": "computational_only"},
+        "physical_biology_authorized": {"const": false},
+        "notes": {"type": "string"}
+      }
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "schema_version": "0.1.0",
+  "case_id": "INVALID-POSTSTIM-AS-DIRECT",
+  "frozen_target": {
+    "pre_state": "basal RNA before LPS",
+    "transition": "LPS exposure",
+    "later_phenotype": "future TNF response",
+    "identity_linkage": "same cell",
+    "biological_unit": "independent biological cell collection",
+    "acceptable_endpoint_substitutions": [
+      "a prespecified compatible later TNF-response endpoint"
+    ],
+    "forbidden_substitutions": [
+      "post-stimulation RNA represented as the basal pre-state"
+    ],
+    "competing_models": ["candidate-only", "broader state", "technical confounders"]
+  },
+  "sources_searched": [
+    {
+      "source": "synthetic fixture",
+      "scope": "negative timing test",
+      "searched_at": "2026-07-23T00:00:00+03:00",
+      "status": "searched"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "POSTSTIM-DATASET",
+      "candidate_class": "direct_temporal_replication_candidate",
+      "independent_of_target": true,
+      "pre_state_before_transition": "contradicted",
+      "later_phenotype_after_transition": "established",
+      "same_cell_or_longitudinal_link": "established",
+      "biological_unit_established": true,
+      "endpoint_compatibility": "compatible",
+      "technical_lineage": "complete",
+      "evidence_level": "F3",
+      "verdict": "ACCEPT_DIRECT",
+      "rationale": "Incorrectly promotes RNA measured after stimulation to a basal predictor."
+    }
+  ],
+  "direct_replication_gap": {
+    "present": false,
+    "missing_fields": [],
+    "search_conclusion": "A direct candidate was incorrectly declared."
+  },
+  "model_discrimination_plan": {
+    "status": "ready_for_external_candidate",
+    "candidate_only_model": "Nfkbia only",
+    "broader_state_model": "state model",
+    "technical_confounder_model": "batch model",
+    "outcome_inspected_before_freeze": false
+  },
+  "overall_verdict": "DIRECT_CANDIDATE_AVAILABLE",
+  "next_valid_action": "Publish direct replication claim.",
+  "safety_status": {
+    "mode": "computational_only",
+    "physical_biology_authorized": false,
+    "notes": "Synthetic negative fixture."
+  }
+}

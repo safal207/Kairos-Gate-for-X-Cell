@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "target_study": "TARGET-STUDY",
+  "target_claim": {
+    "statement": "A target association exists.",
+    "claim_level": "association",
+    "status": "supported_with_limits"
+  },
+  "search_fingerprint": {
+    "species": "test species",
+    "biological_system": "test cells",
+    "cell_state": null,
+    "perturbation_condition": null,
+    "phenotype_outcome": "test outcome",
+    "assay": "test assay",
+    "time_structure": null,
+    "required_biological_unit": "independent biological source",
+    "acceptable_substitutions": [],
+    "unacceptable_substitutions": ["same biological material"],
+    "excluded_relationships": ["same study under another accession"]
+  },
+  "sources_searched": [
+    {
+      "source": "synthetic registry",
+      "query_or_scope": "negative fixture",
+      "status": "searched",
+      "searched_at": "2026-07-23T00:00:00+03:00"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "NEW-ACCESSION-SAME-MATERIAL",
+      "title": "Split accession from target study",
+      "evidence_level": "F3",
+      "independence_class": "same_study_new_accession",
+      "replication_type": "direct_replication",
+      "shared_target_identifiers": ["sample-001", "library-A"],
+      "compatibility": {
+        "biological_source_independence": "incompatible",
+        "experimental_unit": "incompatible",
+        "species": "compatible",
+        "biological_system": "compatible",
+        "phenotype_outcome": "compatible",
+        "assay": "compatible",
+        "provenance": "complete",
+        "sample_size": "limited"
+      },
+      "candidate_verdict": "ACCEPT_WITH_LIMITS",
+      "rationale": "Incorrectly treats a new accession and sequencing run as independent biological replication."
+    }
+  ],
+  "independence_leakage_findings": [],
+  "prespecified_test": {
+    "status": "defined_not_run",
+    "primary_endpoint": "repeat the target association",
+    "expected_direction": "same",
+    "biological_grouping_key": "sequencing run",
+    "exclusion_criteria": [],
+    "success_criteria": "same direction"
+  },
+  "overall_verdict": "ACCEPT_WITH_LIMITS",
+  "next_valid_action": "Incorrectly claim replication.",
+  "safety_status": {
+    "mode": "computational_only",
+    "physical_biology_authorized": false,
+    "notes": "Synthetic invalid fixture."
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "case_id": "GSE141064-SUPPLEMENTARY-TABLE-4",
+  "source": {
+    "file": "41586_2022_5046_MOESM7_ESM.xlsx",
+    "publisher_role": "Supplementary Table 4: linear regression model predicting the rate in Tnf-mCherry fluorescence intensity increase using Live-seq data",
+    "sha256": "ffb1f233d7cd0c40d79086d92f3cf335fc6cbf0de14f64538bf063974784e925",
+    "size_bytes": 42013,
+    "sheet": "slope",
+    "workflow_run": 30002737163,
+    "artifact_id": 8561667371,
+    "exact_head": "47cb2907533d644a1771e1b3ff928efee884c3be"
+  },
+  "ranking": {
+    "tested_gene_count": 362,
+    "nfkbia_rank_by_lm_pvalue": 1,
+    "nfkbia": {
+      "ensembl_gene": "ENSMUSG00000021025",
+      "lm_pvalue": 0.000273498997742467,
+      "lm_fdr": 0.099553635178258,
+      "r2": 0.597663082993512,
+      "coefficient": -0.123877037505935,
+      "bootstrap_pvalue": 0.01198,
+      "bootstrap_fdr": 0.605649032258065
+    },
+    "second_ranked_gene": {
+      "symbol": "Slc12a4",
+      "lm_pvalue": 0.00314915140059554,
+      "lm_fdr": 0.434051798915366,
+      "r2": 0.451147885074387,
+      "coefficient": -0.186835653445566,
+      "bootstrap_pvalue": 0.01198,
+      "bootstrap_fdr": 0.605649032258065
+    },
+    "r2_gap_to_second": 0.14651519791912498,
+    "lm_fdr_counts": {
+      "at_or_below_0_05": 0,
+      "at_or_below_0_10": 1,
+      "at_or_below_0_20": 1
+    },
+    "bootstrap_fdr_counts": {
+      "at_or_below_0_05": 0,
+      "at_or_below_0_10": 0,
+      "at_or_below_0_20": 0
+    }
+  },
+  "verdict": {
+    "label": "TOP_DISCOVERY_CANDIDATE_NOT_STABLE_UNIQUE_DRIVER",
+    "supported": [
+      "Nfkbia is the top nominal linear-model feature in the original Supplementary Table 4 ranking.",
+      "The fitted direction is negative and the reported R2 is approximately 0.598.",
+      "Nfkbia is the only feature with linear-model FDR at or below 0.10 in the workbook."
+    ],
+    "not_supported": [
+      "No gene, including Nfkbia, reaches bootstrap FDR at or below 0.20.",
+      "The workbook does not establish an externally replicated unique predictor.",
+      "The workbook does not establish a direct causal effect or biological-unit generalization."
+    ],
+    "winner_curse_risk": "high",
+    "reason": "Feature selection and effect estimation are performed in the same small target sample, biological independence is unresolved, and no direct external temporal replication candidate is currently available."
+  },
+  "safety_status": {
+    "mode": "computational_only",
+    "physical_biology_authorized": false
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "schema_version": "0.1.0",
+  "handoff_id": "INVALID-PARTNER-AUTHORIZATION",
+  "status": "READY_FOR_PARTNER_SCIENTIFIC_REVIEW",
+  "evidence_question": {
+    "candidate": "Nfkbia",
+    "phenotype": "later inflammatory response",
+    "temporal_order": "pre-state before response",
+    "biological_system": "synthetic fixture",
+    "decision_to_inform": "whether the candidate directly controls the response",
+    "statement": "Review the evidence question."
+  },
+  "current_evidence": [
+    {
+      "evidence_id": "E1",
+      "statement": "The association is exploratory and biological independence is unresolved.",
+      "evidence_level": "F2",
+      "role": "blocking"
+    }
+  ],
+  "hypotheses_to_distinguish": [
+    {
+      "hypothesis_id": "H_DIRECT",
+      "statement": "The candidate directly affects the response.",
+      "distinguishing_observation": "Candidate-specific evidence persists beyond state and technical models."
+    },
+    {
+      "hypothesis_id": "H_STATE",
+      "statement": "A broader state explains both measurements.",
+      "distinguishing_observation": "A broader-state model absorbs the candidate association."
+    }
+  ],
+  "experimental_unit_contract": {
+    "required_unit": "independent biological source unit",
+    "assignment_level": "biological_unit",
+    "lineage_required": true,
+    "technical_units_not_replicates": ["cell", "well", "plate", "library", "sequencing_run"],
+    "precision_justification_required": true
+  },
+  "temporal_identity_contract": {
+    "pre_state_before_transition": true,
+    "later_phenotype_after_transition": true,
+    "same_longitudinal_unit_linkage": true,
+    "machine_auditable_lineage": true,
+    "required_chain": ["source", "unit", "cell", "pre_state", "transition", "phenotype"]
+  },
+  "model_comparison_plan": {
+    "frozen_before_outcome_analysis": true,
+    "model_families": ["candidate_only", "broader_baseline_state", "technical_confounder", "combined", "null_or_negative_control"],
+    "negative_controls_required": true,
+    "changes_require_superseding_record": true
+  },
+  "data_return_contract": {
+    "machine_readable": true,
+    "deidentified_or_lawful": true,
+    "lineage": true,
+    "timing": true,
+    "missingness": true,
+    "transform_provenance": true,
+    "model_diagnostics": true,
+    "checksums": true,
+    "deviations": true
+  },
+  "decision_matrix": [
+    {"outcome_class": "shared_state", "observation": "State model absorbs the signal.", "interpretation_limit": "No direct effect established."},
+    {"outcome_class": "direct_effect", "observation": "Candidate-specific evidence persists.", "interpretation_limit": "Bounded design only."},
+    {"outcome_class": "marker_only", "observation": "Candidate is redundant after state adjustment.", "interpretation_limit": "Marker utility only."},
+    {"outcome_class": "technical_confounding", "observation": "Signal follows batch.", "interpretation_limit": "Biological interpretation blocked."},
+    {"outcome_class": "small_context_effect", "observation": "Direction is stable but small.", "interpretation_limit": "Context-limited association only."},
+    {"outcome_class": "null_or_instability", "observation": "Estimates are unstable.", "interpretation_limit": "Discovery claim weakened."}
+  ],
+  "stop_hold_rules": [
+    "HOLD if units are unresolved.",
+    "HOLD if timing is reversed.",
+    "HOLD if identity linkage breaks.",
+    "HOLD if technical structure is aliased.",
+    "HOLD if exclusions are undocumented."
+  ],
+  "governance_gates": {
+    "institution_determines_required_approvals": true,
+    "qualified_principal_investigator": true,
+    "domain_review": true,
+    "quantitative_review": true,
+    "biosafety_review_if_applicable": true,
+    "ethics_review_if_applicable": true,
+    "data_governance_review": true,
+    "execution_authorized": true
+  },
+  "claim_boundary": {
+    "association": "supported_with_limits",
+    "prediction": "not_established",
+    "causal": "blocked",
+    "tissue": "blocked",
+    "clinical_therapeutic": "blocked"
+  },
+  "operational_content": {
+    "physical_protocol_included": true,
+    "recipes_or_concentrations_included": false,
+    "dosing_or_treatment_included": false,
+    "biological_modification_instructions_included": false,
+    "human_experimentation_instructions_included": false
+  },
+  "next_action": "Proceed because the AI package has approved the study.",
+  "safety_status": {
+    "mode": "computational_documentary_only",
+    "physical_biology_authorized": true,
+    "ai_authorizes_execution": true,
+    "notes": "Synthetic negative fixture that incorrectly treats review as authorization."
+  }
+}

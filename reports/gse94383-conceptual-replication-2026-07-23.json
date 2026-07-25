@@ -1,0 +1,88 @@
+{
+  "schema_version": "0.1.0",
+  "report_id": "GSE94383_NFKBIA_CONCEPTUAL_REPLICATION_2026-07-23",
+  "target_context": "Conceptual triangulation for the GSE141064 basal Nfkbia to later Tnf-mCherry slope association",
+  "candidate": {
+    "accession": "GSE94383",
+    "doi": "10.1016/j.cels.2017.03.010",
+    "relationship": "independent biological experiment",
+    "replication_type": "conceptual_replication",
+    "temporal_difference": "GSE94383 measures RNA after LPS and preceding NF-kB dynamics; it does not measure basal RNA followed by later Tnf-mCherry slope"
+  },
+  "execution": {
+    "repository": "safal207/Kairos-Gate-for-X-Cell",
+    "pull_request": 23,
+    "head_sha": "112ea2eafd29efa56a20a40cba696c9f657dbd52",
+    "workflow_run_id": 29998853791,
+    "artifact_id": 8560131039,
+    "workflow": "Biological Evidence Contracts",
+    "job": "live-replication-probe",
+    "status": "success"
+  },
+  "source_hashes": {
+    "single_cell_dynamics_md5": "8be1e148d47762fd148584469a6179a6",
+    "single_cell_dynamics_sha256": "c43d0b54ed4b245b1690e9675630682c0843cda63f14a3e51dbf13b8f87c070e",
+    "single_cell_transcriptomes_md5": "60a8bc62e5c49692fce8c79fdf0bf530",
+    "single_cell_transcriptomes_sha256": "e264565c72f06ed98ee10914c0350486dd2daa2460cd19ec8071d756bf982200"
+  },
+  "data_integrity": {
+    "dynamics_rows": 823,
+    "expression_rows": 823,
+    "exact_cell_id_sets_match": true,
+    "duplicate_ids": 0,
+    "complete_cells": 823,
+    "trajectory_columns": 62,
+    "harvest_time_counts": {
+      "0": 186,
+      "75": 145,
+      "150": 368,
+      "300": 124
+    },
+    "trajectory_point_counts": {
+      "1": 186,
+      "17": 145,
+      "32": 368,
+      "62": 124
+    },
+    "id_prefix_count": 10
+  },
+  "frozen_primary_endpoint": {
+    "question": "Is post-LPS Nfkbia expression positively associated with recent preceding same-cell NF-kB activity after stratification by harvest time?",
+    "method": "within-harvest-time ranks, Spearman correlation, 2000 stratified bootstrap resamples, 5000 stratified permutations",
+    "rho": 0.17777938477674196,
+    "bootstrap_95_ci": [
+      0.10961474388650705,
+      0.24253181552493905
+    ],
+    "stratified_permutation_p": 0.0001999600079984003,
+    "leave_one_id_prefix_out_rho_range": [
+      0.1528573575096331,
+      0.20032511340411283
+    ],
+    "direction_met": true
+  },
+  "secondary_context": {
+    "mean_activity_rho": 0.23523847471498005,
+    "mean_activity_bootstrap_95_ci": [
+      0.16878990642769268,
+      0.29811301772151727
+    ],
+    "attenuation_rho": -0.1778448134184311,
+    "attenuation_warning": "The attenuation metric is effectively the complement of recent activity after per-cell trajectory normalization and is not independent confirmatory evidence."
+  },
+  "verdict": "CONCEPTUAL_SIGNAL_SUPPORTED",
+  "interpretation": "The independent dataset supports a weak but stable same-cell coupling between recent NF-kB activity and post-LPS Nfkbia expression. It does not directly reproduce the GSE141064 temporal predictor claim.",
+  "claim_boundary": {
+    "direct_replication": false,
+    "conceptual_pathway_triangulation": true,
+    "external_biological_generalization": false,
+    "causal_inference": false,
+    "tissue_effect": false,
+    "clinical_or_therapeutic_effect": false
+  },
+  "next_valid_action": "Document the biological meaning of GSE94383 ID prefixes and continue searching for an independent dataset with pre-stimulation RNA linked to a later TNF-promoter phenotype.",
+  "safety": {
+    "mode": "computational_only",
+    "physical_biology_authorized": false
+  }
+}
