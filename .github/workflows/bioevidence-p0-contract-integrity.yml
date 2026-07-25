@@ -7,6 +7,7 @@ on:
       - "examples/**"
       - "tests/fixtures/**"
       - "scripts/validate_*.py"
+      - "scripts/check_schema_gateway_subprocess_boundary.py"
       - ".github/workflows/bioevidence-p0-contract-integrity.yml"
   push:
     paths:
@@ -14,6 +15,7 @@ on:
       - "examples/**"
       - "tests/fixtures/**"
       - "scripts/validate_*.py"
+      - "scripts/check_schema_gateway_subprocess_boundary.py"
       - ".github/workflows/bioevidence-p0-contract-integrity.yml"
 
 permissions:
@@ -124,12 +126,21 @@ jobs:
         run: |
           python -m compileall -q \
             scripts/validate_bioevidence_contract.py \
+            scripts/check_schema_gateway_subprocess_boundary.py \
             scripts/validate_experimental_unit_audit.py \
             scripts/validate_provenance_confounder_graph.py \
             scripts/validate_independent_replication_search.py \
             scripts/validate_causal_hypothesis_ranking.py \
             scripts/validate_temporal_replication_gate.py \
             scripts/validate_partner_lab_evidence_handoff.py
+
+      - name: Prove semantic exit code cannot unlock acceptance
+        working-directory: scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python check_schema_gateway_subprocess_boundary.py \
+            | tee ../schema-gateway-subprocess-boundary.txt
 
       - name: Prove schema invalidity overrides semantic acceptance
         shell: bash
@@ -199,9 +210,10 @@ jobs:
             echo "github_event_sha=${GITHUB_SHA}"
             echo "gateway=scripts/validate_bioevidence_contract.py"
             echo "jsonschema=4.23.0"
-            echo "authority=schema_then_semantics"
+            echo "authority=schema_then_semantics_exact_verdict"
             sha256sum \
               scripts/validate_bioevidence_contract.py \
+              scripts/check_schema_gateway_subprocess_boundary.py \
               schemas/experimental-unit-audit.schema.json \
               schemas/bio-provenance-confounder-graph.schema.json \
               schemas/independent-replication-search.schema.json \
@@ -218,6 +230,7 @@ jobs:
           name: bioevidence-p0-contract-integrity-${{ env.BIOEVIDENCE_HEAD_SHA }}
           path: |
             p0-contract-integrity-receipt.txt
+            schema-gateway-subprocess-boundary.txt
             semantic-only-control.txt
             schema-first-negative.txt
           if-no-files-found: error
