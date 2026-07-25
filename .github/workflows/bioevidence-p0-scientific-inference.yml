@@ -17,15 +17,26 @@ on:
 permissions:
   contents: read
 
+env:
+  BIOEVIDENCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
 jobs:
   gse94383-descriptive-boundary:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout exact revision
+      - name: Checkout exact pull-request head
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
+          ref: ${{ env.BIOEVIDENCE_HEAD_SHA }}
           persist-credentials: false
+
+      - name: Verify checked-out head identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$BIOEVIDENCE_HEAD_SHA"
+          echo "exact_head=$BIOEVIDENCE_HEAD_SHA"
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
@@ -66,6 +77,8 @@ jobs:
 
       - name: Run exact-head descriptive analysis
         shell: bash
+        env:
+          BIOEVIDENCE_HEAD_SHA: ${{ env.BIOEVIDENCE_HEAD_SHA }}
         run: |
           set -euo pipefail
           python scripts/analyze_gse94383_conceptual_replication.py \
@@ -81,6 +94,7 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           import json
+          import os
           from pathlib import Path
 
           path = Path("live-results/gse94383/descriptive-pathway-context.json")
@@ -89,6 +103,7 @@ jobs:
           boundary = result["inference_boundary"]
           claims = result["claim_boundary"]
 
+          assert result["commit"] == os.environ["BIOEVIDENCE_HEAD_SHA"]
           assert result["verdict"] == "DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED"
           assert "SUPPORTED" not in result["verdict"]
           assert boundary["independent_biological_unit_status"] == "unresolved"
@@ -101,6 +116,7 @@ jobs:
           assert claims["external_biological_generalization"] is False
           assert claims["causal"] is False
           print("ACCEPT exact-head GSE94383 descriptive boundary")
+          print(f"head_sha={result['commit']}")
           print(f"rho={primary['rho']}")
           print(f"cell_observations={primary['n']}")
           print("effective_biological_n=unresolved")
@@ -111,7 +127,9 @@ jobs:
         run: |
           set -euo pipefail
           {
-            echo "head_sha=${GITHUB_SHA}"
+            echo "head_sha=${BIOEVIDENCE_HEAD_SHA}"
+            echo "checked_out_sha=$(git rev-parse HEAD)"
+            echo "github_event_sha=${GITHUB_SHA}"
             echo "verdict=DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED"
             echo "independent_biological_unit_status=unresolved"
             echo "cell_level_resampling_can_promote_verdict=false"
@@ -128,7 +146,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: gse94383-p0-science-${{ github.sha }}
+          name: gse94383-p0-science-${{ env.BIOEVIDENCE_HEAD_SHA }}
           path: |
             gse94383-boundary-regression.txt
             gse94383-p0-science-receipt.txt
