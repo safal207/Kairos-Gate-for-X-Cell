@@ -23,26 +23,26 @@ biological source
   -> later response phenotype
 ```
 
-The partner institution must independently determine the scientifically appropriate macrophage model and all physical methods.
+The partner institution must independently determine the scientifically appropriate model and all physical methods.
 
 ## Why a partner review is justified
 
 - `Nfkbia` is the first-ranked discovery candidate among 362 genes in the original small dataset.
-- Its nominal linear-model evidence is stronger than the other candidates, but bootstrap multiple-testing stability is poor.
+- Nominal linear-model evidence is stronger than other candidates, but bootstrap multiple-testing stability is poor.
 - Exact biological independence for the original 17-cell set is unresolved.
 - Plate and sequencing-run labels are technical structures, not biological replicates.
-- GSE94383 supplies independent conceptual pathway coupling, but measures RNA after stimulation and therefore does not directly replicate the target temporal claim.
-- No independent public dataset was found with the complete required pre-state, same-unit later phenotype, biological independence, endpoint compatibility, and technical lineage.
-- No identifying design currently separates direct `Nfkbia` action from broader cell state or technical confounding.
+- GSE94383 shows a weak positive direction within a matched cell table, but effective biological N and ID-prefix semantics are unresolved; it is descriptive context only.
+- No public dataset was found with the complete required pre-state, linked later phenotype, biological independence, endpoint compatibility, and technical lineage.
+- No identifying design currently separates direct `Nfkbia` action from broader state or technical confounding.
 
 ## Hypotheses to distinguish
 
 | Hypothesis | Distinguishing evidence |
 |---|---|
 | Shared upstream state | A frozen broader-state model absorbs most `Nfkbia`-specific information while retaining external predictive value. |
-| Direct candidate effect | `Nfkbia` retains candidate-specific information beyond state and technical models, with supporting evidence from an independently approved identifying design. |
+| Direct candidate effect | `Nfkbia` retains candidate-specific information beyond state and technical models, with evidence from an independently approved identifying design. |
 | Marker only | `Nfkbia` becomes redundant after state adjustment and lacks candidate-specific identifying evidence. |
-| Technical confounding | The signal follows technical lineage or materially weakens after balanced technical adjustment. |
+| Technical confounding | The signal follows technical lineage or weakens after balanced technical adjustment. |
 | Small context-specific effect | Multiple independent collections preserve a modest direction with documented heterogeneity. |
 | Null or instability | Frozen independent estimates are null, unstable, or directionally inconsistent. |
 
@@ -58,10 +58,10 @@ The returned evidence must preserve:
 - independent-unit identifier;
 - unit-to-cell or longitudinal-unit lineage;
 - condition assignment at the biological-unit level;
-- collection, operator, imaging, plate, library, and run lineage;
+- collection, operator, imaging, plate, library, run, and prefix lineage;
 - biological-unit-level uncertainty.
 
-Cells, wells, plates, libraries, sequencing runs, reads, and image frames cannot substitute for biological replication.
+Cells, wells, plates, libraries, sequencing runs, reads, image frames, and unresolved ID prefixes cannot substitute for biological replication.
 
 The partner's quantitative reviewer must provide a prospective precision or power justification. This handoff does not prescribe a numeric sample size.
 
@@ -112,9 +112,9 @@ A null or unstable result must be retained as a negative result rather than hidd
 Return `HOLD` when:
 
 - biological-source or independent-unit lineage cannot be reconstructed;
-- the proposed molecular pre-state occurs after the transition or timing is ambiguous;
+- the molecular pre-state occurs after the transition or timing is ambiguous;
 - later phenotype cannot be linked to the same longitudinal unit;
-- condition is aliased with operator, collection phase, imaging phase, plate, library, or run;
+- condition is aliased with operator, collection phase, imaging phase, plate, library, run, or unresolved prefix;
 - exclusions, missingness, or transformations are outcome-dependent or undocumented;
 - the frozen model plan changes after outcome inspection without a superseding record;
 - applicable competence, oversight, containment, ethics, consent, or data-governance requirements remain unresolved.
@@ -141,11 +141,12 @@ Currently supported with limits:
 
 - exploratory association in the original observed cells;
 - `Nfkbia` as a strong but unstable discovery candidate;
-- independent conceptual NF-kB/`Nfkbia` pathway coupling;
+- descriptive pathway context in the GSE94383 table;
 - a documented direct temporal replication gap.
 
 Not established or blocked:
 
+- independent replication or conceptual triangulation from GSE94383;
 - prediction on independent biological units;
 - direct causal action of basal `Nfkbia`;
 - tissue-level generalization;
