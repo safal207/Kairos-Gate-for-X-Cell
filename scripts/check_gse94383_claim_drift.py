@@ -10,7 +10,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 
 REPLICATION = ROOT / "examples/gse141064.independent-replication-search.json"
+TEMPORAL = ROOT / "examples/gse141064.temporal-replication-gate.json"
 CAUSAL = ROOT / "examples/gse141064.nfkbia-causal-hypotheses.json"
+HANDOFF = ROOT / "examples/gse141064.nfkbia-partner-lab-handoff.json"
 REPORT = ROOT / "reports/gse94383-conceptual-replication-2026-07-23.json"
 
 TEXT_SURFACES = [
@@ -19,6 +21,7 @@ TEXT_SURFACES = [
     ROOT / "RELEASE_NOTES_v0.1.md",
     ROOT / "reports/gse141064-nfkbia-causal-ranking-2026-07-23.md",
     ROOT / "reports/gse141064-direct-temporal-replication-gap-2026-07-23.md",
+    ROOT / "reports/gse141064-nfkbia-partner-lab-handoff-2026-07-23.md",
     ROOT / "reviews/biology-review-request.md",
     ROOT / "reviews/statistics-review-request.md",
 ]
@@ -28,6 +31,9 @@ FORBIDDEN_TEXT = (
     "independent GSE94383 data show",
     "independent dataset supports a weak",
     "independent conceptual signal",
+    "independent conceptual pathway coupling",
+    "independent conceptual NF-kB",
+    "supplies independent conceptual pathway coupling",
     "conceptual pathway coupling: supported",
     "conceptual pathway signal: supported",
     "CONCEPTUAL_SIGNAL_SUPPORTED",
@@ -64,11 +70,21 @@ def hypothesis(record: dict[str, Any], hypothesis_id: str) -> dict[str, Any]:
     return {}
 
 
+def evidence_item(record: dict[str, Any], evidence_id: str) -> dict[str, Any]:
+    """Return one handoff evidence item by stable identifier."""
+    for item in record.get("current_evidence", []):
+        if isinstance(item, dict) and item.get("evidence_id") == evidence_id:
+            return item
+    return {}
+
+
 def main() -> int:
     """Check machine-readable and human-readable claim boundaries."""
     errors: list[str] = []
     replication = load(REPLICATION)
+    temporal = load(TEMPORAL)
     causal = load(CAUSAL)
+    handoff = load(HANDOFF)
     report = load(REPORT)
 
     gse94383 = candidate(replication, "GSE94383")
@@ -93,6 +109,12 @@ def main() -> int:
         "replication success criterion must deny cell-level inference",
         errors,
     )
+
+    temporal_candidate = candidate(temporal, "GSE94383")
+    require(temporal.get("overall_verdict") == "DIRECT_REPLICATION_GAP", "temporal overall verdict drift", errors)
+    require(temporal_candidate.get("verdict") == "HOLD", "temporal GSE94383 verdict must remain HOLD", errors)
+    require(temporal_candidate.get("biological_unit_established") is False, "temporal gate must keep biological unit unresolved", errors)
+    require(temporal_candidate.get("evidence_level") == "F2", "temporal GSE94383 evidence level must remain F2", errors)
 
     require(
         report.get("verdict") == "DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED",
@@ -143,6 +165,15 @@ def main() -> int:
     )
     require(causal.get("overall_verdict") == "RANKED_NOT_IDENTIFIED", "causal verdict drift", errors)
 
+    handoff_e4 = evidence_item(handoff, "E4")
+    require(handoff_e4.get("evidence_level") == "F2", "handoff GSE94383 evidence must remain F2", errors)
+    require(handoff_e4.get("role") == "limiting", "handoff GSE94383 role must remain limiting", errors)
+    require(
+        "does not establish independent validation" in str(handoff_e4.get("statement", "")),
+        "handoff must deny GSE94383 independent validation",
+        errors,
+    )
+
     for path in TEXT_SURFACES:
         if not path.is_file():
             errors.append(f"missing text surface: {path.relative_to(ROOT)}")
@@ -160,9 +191,11 @@ def main() -> int:
 
     print("ACCEPT GSE94383 claim-drift gate")
     print("  replication=HOLD")
+    print("  temporal=HOLD")
     print("  effective_biological_n=unresolved")
     print("  report=DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED")
     print("  causal=RANKED_NOT_IDENTIFIED")
+    print("  partner_handoff_role=limiting")
     return 0
 
 
