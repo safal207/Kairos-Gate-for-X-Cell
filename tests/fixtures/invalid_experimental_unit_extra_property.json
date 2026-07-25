@@ -1,0 +1,51 @@
+{
+  "schema_version": "0.1.0",
+  "study_id": "SCHEMA-DRIFT-FIXTURE",
+  "audit_scope": "Prove that semantic acceptance cannot override public schema invalidity",
+  "source_identity": {
+    "accession": "SCHEMA-DRIFT-FIXTURE",
+    "retrieved_at": "2026-07-25T00:00:00Z",
+    "evidence_refs": ["synthetic negative fixture"]
+  },
+  "resolved_experimental_unit": {
+    "unit_type": "biological source",
+    "status": "established",
+    "evidence_level": "F5",
+    "rationale": "Synthetic fixture only."
+  },
+  "technical_hierarchy": [],
+  "independence_status": {
+    "biological_independence": "established",
+    "plate_independence": "established",
+    "run_independence": "established",
+    "independent_counts_by_condition": {
+      "control": 2,
+      "treated": 2
+    }
+  },
+  "unresolved_metadata": [],
+  "pseudoreplication_findings": [],
+  "admissible_analyses": [
+    {
+      "analysis": "synthetic schema drift check",
+      "status": "allowed",
+      "reason": "The semantic validator accepts this shape before the extra-property check."
+    }
+  ],
+  "claim_firewall": {
+    "descriptive": {"status": "supported", "reason": "Synthetic fixture."},
+    "association": {"status": "supported", "reason": "Synthetic fixture."},
+    "prediction": {"status": "not_established", "reason": "Synthetic fixture."},
+    "generalization": {"status": "not_established", "reason": "Synthetic fixture."},
+    "causal": {"status": "blocked", "reason": "Synthetic fixture."},
+    "tissue": {"status": "blocked", "reason": "Synthetic fixture."},
+    "clinical_therapeutic": {"status": "blocked", "reason": "Synthetic fixture."}
+  },
+  "overall_verdict": "ACCEPT",
+  "next_valid_action": "Reject this record because its extra property is forbidden by the public schema.",
+  "safety_status": {
+    "mode": "computational_only",
+    "physical_biology_authorized": false
+  },
+  "unexpected_authority": true
+}
