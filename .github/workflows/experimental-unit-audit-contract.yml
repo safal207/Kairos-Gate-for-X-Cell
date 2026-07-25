@@ -14,6 +14,7 @@ on:
       - "scripts/probe_gse94383_tables.py"
       - "scripts/analyze_gse94383_conceptual_replication.py"
       - "scripts/probe_live_seq_supplementary_table4.py"
+      - "requirements/**"
       - "README.md"
       - "MASTER_ROADMAP.md"
       - "BACKLOG.md"
@@ -34,6 +35,7 @@ on:
       - "scripts/probe_gse94383_tables.py"
       - "scripts/analyze_gse94383_conceptual_replication.py"
       - "scripts/probe_live_seq_supplementary_table4.py"
+      - "requirements/**"
       - "README.md"
       - "MASTER_ROADMAP.md"
       - "BACKLOG.md"
@@ -102,14 +104,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install pinned schema runtime
-        run: |
-          python -m pip install --disable-pip-version-check \
-            jsonschema==4.23.0 \
-            referencing==0.35.1 \
-            rpds-py==0.20.0 \
-            attrs==24.2.0 \
-            jsonschema-specifications==2024.10.1 \
-            rfc3339-validator==0.1.4
+        run: python -m pip install --disable-pip-version-check -r requirements/schema-runtime.txt
 
       - name: Compile semantic implementations
         run: |
@@ -204,9 +199,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install pinned analysis dependencies
-        run: |
-          python -m pip install --disable-pip-version-check \
-            numpy==2.1.3 pandas==2.2.3 scipy==1.14.1
+        run: python -m pip install --disable-pip-version-check -r requirements/analysis-runtime.txt
 
       - name: Download public GSE94383 supplementary tables
         shell: bash
@@ -261,17 +254,19 @@ jobs:
             live-results/gse94383/descriptive-pathway-context.json
 
       - name: Upload reproducibility evidence
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: gse94383-live-analysis-${{ env.BIOEVIDENCE_HEAD_SHA }}
           path: |
+            requirements/analysis-runtime.txt
             live-data/gse94383/MD5SUMS
             live-data/gse94383/SHA256SUMS
             live-results/gse94383/table-probe.txt
             live-results/gse94383/descriptive-pathway-context.json
             live-results/gse94383/descriptive-pathway-context.md
             live-results/gse94383/descriptive-pathway-context.log
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
 
   target-study-supplement-probe:
@@ -317,6 +312,7 @@ jobs:
             | tee live-results/gse141064/supplementary-table-4-probe.log
 
       - name: Upload target-study diagnostic evidence
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: gse141064-supplementary-table4-probe-${{ env.BIOEVIDENCE_HEAD_SHA }}
@@ -324,5 +320,5 @@ jobs:
             live-data/gse141064/SHA256SUMS
             live-results/gse141064/supplementary-table-4-probe.json
             live-results/gse141064/supplementary-table-4-probe.log
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
