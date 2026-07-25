@@ -14,6 +14,9 @@ TEMPORAL = ROOT / "examples/gse141064.temporal-replication-gate.json"
 CAUSAL = ROOT / "examples/gse141064.nfkbia-causal-hypotheses.json"
 HANDOFF = ROOT / "examples/gse141064.nfkbia-partner-lab-handoff.json"
 REPORT = ROOT / "reports/gse94383-conceptual-replication-2026-07-23.json"
+GSE94383_REPORT_MD = ROOT / "reports/gse94383-conceptual-replication-2026-07-23.md"
+SUPERSESSION_HEADING = "## Supersession notice"
+ALLOWED_SUPERSEDED_VERDICT = "`CONCEPTUAL_SIGNAL_SUPPORTED`"
 
 TEXT_SURFACES = [
     ROOT / "README.md",
@@ -76,6 +79,56 @@ def evidence_item(record: dict[str, Any], evidence_id: str) -> dict[str, Any]:
         if isinstance(item, dict) and item.get("evidence_id") == evidence_id:
             return item
     return {}
+
+
+def scan_forbidden(path: Path, text: str, errors: list[str]) -> None:
+    """Scan one named text surface for stale overclaim phrases."""
+    for phrase in FORBIDDEN_TEXT:
+        if phrase in text:
+            errors.append(f"{path.relative_to(ROOT)} contains forbidden stale claim: {phrase}")
+
+
+def scan_gse94383_markdown(errors: list[str]) -> None:
+    """Scan the central report while allowing one explicit historical quote.
+
+    The old verdict may appear exactly once inside the supersession notice as a
+    historical value. The notice and every other report section remain scanned
+    after replacing only that exact quoted token with a harmless sentinel.
+    """
+    path = GSE94383_REPORT_MD
+    if not path.is_file():
+        errors.append(f"missing text surface: {path.relative_to(ROOT)}")
+        return
+
+    text = path.read_text(encoding="utf-8")
+    start = text.find(SUPERSESSION_HEADING)
+    if start < 0:
+        errors.append(f"{path.relative_to(ROOT)} lacks {SUPERSESSION_HEADING}")
+        return
+    next_heading = text.find("\n## ", start + len(SUPERSESSION_HEADING))
+    if next_heading < 0:
+        errors.append(f"{path.relative_to(ROOT)} supersession notice has no following section")
+        return
+
+    notice = text[start:next_heading]
+    require(
+        notice.count(ALLOWED_SUPERSEDED_VERDICT) == 1,
+        f"{path.relative_to(ROOT)} must quote the superseded verdict exactly once in the notice",
+        errors,
+    )
+    require(
+        "supersedes" in notice.lower(),
+        f"{path.relative_to(ROOT)} notice must explicitly state supersession",
+        errors,
+    )
+
+    sanitized_notice = notice.replace(
+        ALLOWED_SUPERSEDED_VERDICT,
+        "`<ALLOWED_HISTORICAL_VERDICT>`",
+        1,
+    )
+    text_for_scan = text[:start] + sanitized_notice + text[next_heading:]
+    scan_forbidden(path, text_for_scan, errors)
 
 
 def main() -> int:
@@ -178,10 +231,8 @@ def main() -> int:
         if not path.is_file():
             errors.append(f"missing text surface: {path.relative_to(ROOT)}")
             continue
-        text = path.read_text(encoding="utf-8")
-        for phrase in FORBIDDEN_TEXT:
-            if phrase in text:
-                errors.append(f"{path.relative_to(ROOT)} contains forbidden stale claim: {phrase}")
+        scan_forbidden(path, path.read_text(encoding="utf-8"), errors)
+    scan_gse94383_markdown(errors)
 
     if errors:
         print("BLOCK GSE94383 claim-drift gate")
@@ -194,6 +245,7 @@ def main() -> int:
     print("  temporal=HOLD")
     print("  effective_biological_n=unresolved")
     print("  report=DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED")
+    print("  report_markdown_scanned=true")
     print("  causal=RANKED_NOT_IDENTIFIED")
     print("  partner_handoff_role=limiting")
     return 0
