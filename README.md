@@ -55,7 +55,7 @@ Preserves source-to-claim paths, unresolved events, identity collisions, confoun
 
 ### 3. `bio-independent-replication-finder`
 
-Rejects same-study material, technical reruns, shared biological material, and reprocessed target data as independent replication.
+Rejects same-study material, technical reruns, shared biological material, unresolved independent units, and reprocessed target data as accepted replication.
 
 ### 4. `bio-causal-hypothesis-ranker`
 
@@ -92,22 +92,24 @@ The author-clarification request remains open in `DeplanckeLab/Live-seq#9`. Unti
 - prediction on new biological units is not established;
 - causal, tissue, clinical, and therapeutic claims remain blocked.
 
-## Independent conceptual candidate: GSE94383
+## Descriptive pathway context: GSE94383
 
-The exact public dynamics and expression tables contain the same 823 unique cell IDs.
+The exact public dynamics and expression tables contain the same 823 unique cell IDs. A weak positive direction is visible within the matched table:
 
-| Metric | Value |
-|---|---:|
-| Spearman rho | **0.178** |
-| Bootstrap 95% CI | **0.110 to 0.243** |
-| Stratified permutation p | **0.0002** |
-| Leave-one-ID-prefix-out rho range | **0.153 to 0.200** |
+| Metric | Value | Evidence use |
+|---|---:|---|
+| Spearman rho | **0.178** | observed within-table association |
+| Cell-level bootstrap interval | **0.110 to 0.243** | descriptive sensitivity only |
+| Cell-level permutation score | **0.0002** | non-inferential while biological N is unresolved |
+| Leave-one-ID-prefix-out rho range | **0.153 to 0.200** | technical sensitivity only |
 
 ```text
-CONCEPTUAL_SIGNAL_SUPPORTED
+DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED
+INDEPENDENT_BIOLOGICAL_UNIT_UNRESOLVED
+REPLICATION_STATUS_HOLD
 ```
 
-This supports weak but stable independent pathway coupling. It is not direct temporal replication because RNA is measured after stimulation rather than before a future `Tnf-mCherry` phenotype.
+The 823 cells are observations, not 823 independent biological replicates. ID-prefix semantics and effective biological N remain unresolved. Cell-level intervals, permutation scores, and prefix exclusion cannot promote the result to independent biological support, conceptual triangulation, replication, or generalization. RNA is also measured after stimulation rather than before a future `Tnf-mCherry` phenotype.
 
 ## Current causal boundary
 
@@ -117,7 +119,7 @@ DIRECT_REPLICATION_GAP
 TOP_DISCOVERY_CANDIDATE_NOT_STABLE_UNIQUE_DRIVER
 ```
 
-The leading current explanation is a broader shared upstream cellular state. `Nfkbia` remains a useful discovery candidate, not an identified unique causal driver.
+The leading current explanation is a broader shared upstream cellular state. `Nfkbia` remains a useful discovery candidate, not an identified unique causal driver. GSE94383 contributes descriptive pathway context only and does not satisfy the independent-validation gate.
 
 ## Partner-laboratory evidence boundary
 
@@ -141,16 +143,18 @@ python scripts/validate_handoff.py examples/tip-kairos-handoff.json
 python scripts/run_phase_benchmark.py testdata/phase-window-tiny.json
 ```
 
-BioEvidence contract checks:
+BioEvidence records must use the canonical schema-first gateway:
 
 ```bash
-python scripts/validate_experimental_unit_audit.py examples/gse141064.experimental-unit-audit.json
-python scripts/validate_provenance_confounder_graph.py examples/gse141064.provenance-confounder-graph.json
-python scripts/validate_independent_replication_search.py examples/gse141064.independent-replication-search.json
-python scripts/validate_causal_hypothesis_ranking.py examples/gse141064.nfkbia-causal-hypotheses.json
-python scripts/validate_temporal_replication_gate.py examples/gse141064.temporal-replication-gate.json
-python scripts/validate_partner_lab_evidence_handoff.py examples/gse141064.nfkbia-partner-lab-handoff.json
+python scripts/validate_bioevidence_contract.py experimental-unit examples/gse141064.experimental-unit-audit.json
+python scripts/validate_bioevidence_contract.py provenance-confounder examples/gse141064.provenance-confounder-graph.json
+python scripts/validate_bioevidence_contract.py independent-replication examples/gse141064.independent-replication-search.json
+python scripts/validate_bioevidence_contract.py causal-hypothesis examples/gse141064.nfkbia-causal-hypotheses.json
+python scripts/validate_bioevidence_contract.py temporal-replication examples/gse141064.temporal-replication-gate.json
+python scripts/validate_bioevidence_contract.py partner-handoff examples/gse141064.nfkbia-partner-lab-handoff.json
 ```
+
+The gateway applies the public Draft 2020-12 schema and format checks before semantic validation. Direct semantic scripts are implementation details and cannot override schema invalidity.
 
 ## Safety boundary
 
