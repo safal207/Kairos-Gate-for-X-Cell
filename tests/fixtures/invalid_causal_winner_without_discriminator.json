@@ -47,7 +47,7 @@
         "cross_dataset_support": 1,
         "confounder_resilience": 0,
         "mechanistic_coherence": 4,
-        "intervention_support": 0,
+        "intervention_support": "3",
         "falsifiability": 4,
         "effect_relevance": 4,
         "uncertainty_penalty": 4
