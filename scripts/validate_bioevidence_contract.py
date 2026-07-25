@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
-from jsonschema.exceptions import SchemaError
+from jsonschema.exceptions import SchemaError, ValidationError
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -70,6 +70,14 @@ def json_path(parts: Any) -> str:
     return rendered
 
 
+def schema_error_sort_key(error: ValidationError) -> tuple[tuple[str, ...], str, str]:
+    """Return a total ordering even when JSON paths mix strings and integers."""
+    normalized_path = tuple(
+        f"{type(part).__name__}:{part}" for part in error.absolute_path
+    )
+    return normalized_path, str(error.validator or ""), error.message
+
+
 def load_object(path: Path) -> dict[str, Any]:
     """Load a JSON object without permitting non-object contract roots."""
     with path.open("r", encoding="utf-8") as handle:
@@ -84,10 +92,7 @@ def validate_schema(record: dict[str, Any], schema_path: Path) -> list[str]:
     schema = load_object(schema_path)
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
-    errors = sorted(
-        validator.iter_errors(record),
-        key=lambda error: (list(error.absolute_path), error.message),
-    )
+    errors = sorted(validator.iter_errors(record), key=schema_error_sort_key)
     return [
         f"schema {json_path(error.absolute_path)}: {error.message}"
         for error in errors
@@ -150,7 +155,8 @@ def main(argv: list[str]) -> int:
     failed = False
 
     for raw_path in argv[2:]:
-        record_path = Path(raw_path)
+        display_path = Path(raw_path)
+        record_path = display_path.expanduser().resolve()
         try:
             errors = validate_one(contract, record_path)
         except (OSError, json.JSONDecodeError, ValueError, SchemaError) as exc:
@@ -162,11 +168,11 @@ def main(argv: list[str]) -> int:
 
         if errors:
             failed = True
-            print(f"BLOCK {record_path}")
+            print(f"BLOCK {display_path}")
             for error in errors:
                 print(f"  - {error}")
         else:
-            print(f"ACCEPT {record_path}")
+            print(f"ACCEPT {display_path}")
             print(f"  contract={contract}")
             print(f"  schema={schema_relative}")
             print(f"  schema_sha256={schema_digest}")
