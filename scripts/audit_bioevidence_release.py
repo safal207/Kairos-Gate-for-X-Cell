@@ -4,8 +4,7 @@
 from __future__ import annotations
 
 import json
-import sys
-import traceback
+import os
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -77,6 +76,10 @@ REQUIRED_RELEASE_FILES = [
     "RELEASE_NOTES_v0.1.md",
     "reviews/biology-review-request.md",
     "reviews/statistics-review-request.md",
+    "scripts/validate_bioevidence_contract.py",
+    "scripts/check_gse94383_inference_boundary.py",
+    "scripts/check_gse94383_claim_drift.py",
+    "tests/fixtures/invalid_experimental_unit_extra_property.json",
 ]
 
 PROHIBITED_TRUE_KEYS = {
@@ -169,9 +172,24 @@ def main() -> int:
                 )
 
     required_workflow_fragments = [
+        "BIOEVIDENCE_HEAD_SHA",
+        "ref: ${{ env.BIOEVIDENCE_HEAD_SHA }}",
+        "scripts/validate_bioevidence_contract.py",
+        "scripts/check_gse94383_claim_drift.py",
+        "actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955",
+        "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+        "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+        "jsonschema==4.23.0",
+        "numpy==2.1.3",
+        "pandas==2.2.3",
+        "scipy==1.14.1",
+        "openpyxl==3.1.5",
         "curl --fail --location --retry 3 --retry-all-errors",
         "8be1e148d47762fd148584469a6179a6",
         "60a8bc62e5c49692fce8c79fdf0bf530",
+        "c43d0b54ed4b245b1690e9675630682c0843cda63f14a3e51dbf13b8f87c070e",
+        "e264565c72f06ed98ee10914c0350486dd2daa2460cd19ec8071d756bf982200",
+        "ffb1f233d7cd0c40d79086d92f3cf335fc6cbf0de14f64538bf063974784e925",
         "authors.library.caltech.edu",
         "static-content.springer.com",
         "retention-days: 30",
@@ -184,23 +202,34 @@ def main() -> int:
     handoff_negative = load_json(handoff_negative_path, errors)
     if isinstance(handoff_negative, dict):
         unsafe_signals = [
-            handoff_negative.get("governance_gates", {}).get("execution_authorized")
-            is True,
-            handoff_negative.get("operational_content", {}).get(
-                "physical_protocol_included"
-            )
-            is True,
-            handoff_negative.get("safety_status", {}).get("ai_authorizes_execution")
-            is True,
+            handoff_negative.get("governance_gates", {}).get("execution_authorized") is True,
+            handoff_negative.get("operational_content", {}).get("physical_protocol_included") is True,
+            handoff_negative.get("safety_status", {}).get("ai_authorizes_execution") is True,
         ]
         if not all(unsafe_signals):
             errors.append(
                 "false-authorization fixture no longer exercises all required unsafe signals"
             )
 
+    replication = load_json("examples/gse141064.independent-replication-search.json", errors)
+    temporal = load_json("examples/gse141064.temporal-replication-gate.json", errors)
+    descriptive = load_json("reports/gse94383-conceptual-replication-2026-07-23.json", errors)
+    if isinstance(replication, dict) and replication.get("overall_verdict") != "HOLD":
+        errors.append("GSE94383 replication search must remain HOLD")
+    if isinstance(temporal, dict) and temporal.get("overall_verdict") != "DIRECT_REPLICATION_GAP":
+        errors.append("temporal replication gap must remain active")
+    if isinstance(descriptive, dict):
+        if descriptive.get("verdict") != "DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED":
+            errors.append("GSE94383 report must remain descriptive")
+        boundary = descriptive.get("inference_boundary", {})
+        if not isinstance(boundary, dict) or boundary.get("effective_biological_n") is not None:
+            errors.append("GSE94383 effective biological N must remain unresolved")
+
     release_notes = (ROOT / "RELEASE_NOTES_v0.1.md").read_text(encoding="utf-8")
     combined = readme_text + "\n" + release_notes
     for required_statement in (
+        "DESCRIPTIVE_WITHIN_DATASET_SIGNAL_OBSERVED",
+        "REPLICATION_STATUS_HOLD",
         "RANKED_NOT_IDENTIFIED",
         "DIRECT_REPLICATION_GAP",
         "PHYSICAL_EXECUTION_NOT_AUTHORIZED",
@@ -220,7 +249,9 @@ def main() -> int:
     print("ACCEPT BioEvidence OS v0.1 release audit")
     print(f"  modules={len(MODULES)}")
     print("  positive_records=6")
-    print("  negative_fixtures=6")
+    print("  negative_fixtures=7")
+    print("  acceptance_authority=schema_then_semantics")
+    print("  gse94383=descriptive_hold")
     print("  safety_boundary=fail_closed")
     return 0
 
@@ -230,6 +261,9 @@ if __name__ == "__main__":
         raise SystemExit(main())
     except SystemExit:
         raise
-    except Exception:
-        traceback.print_exc(file=sys.stdout)
+    except Exception as exc:
+        if os.environ.get("BIOEVIDENCE_DEBUG") == "1":
+            raise
+        print("BLOCK BioEvidence OS v0.1 release audit")
+        print(f"  - unexpected audit failure: {type(exc).__name__}")
         raise SystemExit(1)
