@@ -87,7 +87,7 @@ An author clarification request remains open. Until an authoritative source reso
 
 ## 4. GSE94383: conceptual triangulation, not direct replication
 
-GSE94383 was evaluated as an independent source of pathway-related evidence. The bounded analysis linked 823 cells with both recent NF-kB activity information and post-LPS Nfkbia expression.
+GSE94383 was evaluated as a separate data source for conceptual pathway evidence. The bounded analysis linked 823 cells with both recent NF-kB activity information and post-LPS Nfkbia expression.
 
 Observed result:
 
@@ -242,7 +242,7 @@ It should also be able to say:
 
 ## 13. Independent review gate
 
-Five independent reviewers have been contacted across single-cell biology, NF-kB signaling, experimental design, pseudoreplication, biostatistics, and reproducibility.
+Five reviewers have been contacted across single-cell biology, NF-kB signaling, experimental design, pseudoreplication, biostatistics, and reproducibility.
 
 Requested verdicts:
 
