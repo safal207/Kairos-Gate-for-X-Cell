@@ -9,9 +9,16 @@ from pathlib import Path
 from typing import Any, Iterator
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / ".github/workflows/experimental-unit-audit-contract.yml"
+MAIN_WORKFLOW = ROOT / ".github/workflows/experimental-unit-audit-contract.yml"
+P0_CONTRACT_WORKFLOW = ROOT / ".github/workflows/bioevidence-p0-contract-integrity.yml"
+P0_SCIENCE_WORKFLOW = ROOT / ".github/workflows/bioevidence-p0-scientific-inference.yml"
+SCHEMA_REQUIREMENTS = ROOT / "requirements/schema-runtime.txt"
+ANALYSIS_REQUIREMENTS = ROOT / "requirements/analysis-runtime.txt"
+PYPROJECT = ROOT / "pyproject.toml"
 README = ROOT / "README.md"
 RELEASE_NOTES = ROOT / "RELEASE_NOTES_v0.1.md"
+BIOLOGY_PACKET = ROOT / "reviews/biology-review-request.md"
+STATISTICS_PACKET = ROOT / "reviews/statistics-review-request.md"
 
 MODULES = [
     {
@@ -77,6 +84,11 @@ REQUIRED_RELEASE_FILES = [
     "RELEASE_NOTES_v0.1.md",
     "reviews/biology-review-request.md",
     "reviews/statistics-review-request.md",
+    "requirements/schema-runtime.txt",
+    "requirements/analysis-runtime.txt",
+    ".github/workflows/experimental-unit-audit-contract.yml",
+    ".github/workflows/bioevidence-p0-contract-integrity.yml",
+    ".github/workflows/bioevidence-p0-scientific-inference.yml",
     "scripts/validate_bioevidence_contract.py",
     "scripts/check_schema_gateway_subprocess_boundary.py",
     "scripts/check_gse94383_inference_boundary.py",
@@ -96,6 +108,20 @@ PROHIBITED_TRUE_KEYS = {
 }
 PROHIBITED_CLAIM_KEYS = {"causal", "tissue", "clinical_therapeutic"}
 PROHIBITED_CLAIM_STATUSES = {"supported", "supported_with_limits"}
+
+EXPECTED_SCHEMA_REQUIREMENTS = {
+    "attrs==24.2.0",
+    "jsonschema==4.23.0",
+    "jsonschema-specifications==2024.10.1",
+    "referencing==0.35.1",
+    "rfc3339-validator==0.1.4",
+    "rpds-py==0.20.0",
+}
+EXPECTED_ANALYSIS_REQUIREMENTS = {
+    "numpy==2.1.3",
+    "pandas==2.2.3",
+    "scipy==1.14.1",
+}
 
 
 def walk(value: Any, path: str = "$") -> Iterator[tuple[str, Any, str]]:
@@ -120,6 +146,25 @@ def load_json(relative: str, errors: list[str]) -> Any:
         return None
 
 
+def read_text(path: Path, errors: list[str]) -> str:
+    """Read one required text file without replacing accumulated errors."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as exc:
+        errors.append(f"cannot read {path.relative_to(ROOT)}: {exc}")
+        return ""
+
+
+def requirement_lines(path: Path, errors: list[str]) -> set[str]:
+    """Return normalized, non-comment requirement lines."""
+    text = read_text(path, errors)
+    return {
+        line.strip()
+        for line in text.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+
+
 def claim_status(value: Any) -> str | None:
     """Normalize flat and nested claim-boundary representations."""
     if isinstance(value, str):
@@ -139,6 +184,18 @@ def section(record: dict[str, Any], key: str, errors: list[str], context: str) -
     return {}
 
 
+def require_fragments(
+    label: str,
+    text: str,
+    fragments: tuple[str, ...],
+    errors: list[str],
+) -> None:
+    """Require every integrity fragment in one named workflow or packet."""
+    for fragment in fragments:
+        if fragment not in text:
+            errors.append(f"{label} missing integrity fragment: {fragment}")
+
+
 def main() -> int:
     """Run the release audit and return a fail-closed process exit code."""
     errors: list[str] = []
@@ -153,19 +210,28 @@ def main() -> int:
         if not (ROOT / relative).is_file():
             errors.append(f"missing release file {relative}")
 
-    workflow_text = WORKFLOW.read_text(encoding="utf-8") if WORKFLOW.is_file() else ""
-    readme_text = README.read_text(encoding="utf-8") if README.is_file() else ""
-    release_notes_text = (
-        RELEASE_NOTES.read_text(encoding="utf-8") if RELEASE_NOTES.is_file() else ""
-    )
+    main_workflow_text = read_text(MAIN_WORKFLOW, errors)
+    p0_contract_text = read_text(P0_CONTRACT_WORKFLOW, errors)
+    p0_science_text = read_text(P0_SCIENCE_WORKFLOW, errors)
+    readme_text = read_text(README, errors)
+    release_notes_text = read_text(RELEASE_NOTES, errors)
+    biology_packet_text = read_text(BIOLOGY_PACKET, errors)
+    statistics_packet_text = read_text(STATISTICS_PACKET, errors)
+    pyproject_text = read_text(PYPROJECT, errors)
 
-    if "permissions:\n  contents: read" not in workflow_text:
-        errors.append("workflow permissions must remain contents: read")
+    workflow_texts = {
+        "main workflow": main_workflow_text,
+        "P0 contract workflow": p0_contract_text,
+        "P0 science workflow": p0_science_text,
+    }
+    for label, text in workflow_texts.items():
+        if "permissions:\n  contents: read" not in text:
+            errors.append(f"{label} permissions must remain contents: read")
 
     for module in MODULES:
         for role in ("validator", "example", "negative"):
-            if module[role] not in workflow_text:
-                errors.append(f"workflow does not reference {module[role]}")
+            if module[role] not in main_workflow_text:
+                errors.append(f"main workflow does not reference {module[role]}")
         if module["name"] not in readme_text:
             errors.append(f"README does not name module {module['name']}")
 
@@ -185,33 +251,98 @@ def main() -> int:
                     f"overclaimed boundary in {module['example']} at {json_path}: {normalized}"
                 )
 
-    required_workflow_fragments = [
+    shared_action_fragments = (
         "BIOEVIDENCE_HEAD_SHA",
         "ref: ${{ env.BIOEVIDENCE_HEAD_SHA }}",
-        "scripts/validate_bioevidence_contract.py",
-        "scripts/check_gse94383_claim_drift.py",
         "actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955",
         "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
         "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
-        "jsonschema==4.23.0",
-        "rfc3339-validator==0.1.4",
-        "numpy==2.1.3",
-        "pandas==2.2.3",
-        "scipy==1.14.1",
-        "openpyxl==3.1.5",
-        "curl --fail --location --retry 3 --retry-all-errors",
-        "8be1e148d47762fd148584469a6179a6",
-        "60a8bc62e5c49692fce8c79fdf0bf530",
-        "c43d0b54ed4b245b1690e9675630682c0843cda63f14a3e51dbf13b8f87c070e",
-        "e264565c72f06ed98ee10914c0350486dd2daa2460cd19ec8071d756bf982200",
-        "ffb1f233d7cd0c40d79086d92f3cf335fc6cbf0de14f64538bf063974784e925",
-        "authors.library.caltech.edu",
-        "static-content.springer.com",
         "retention-days: 30",
-    ]
-    for fragment in required_workflow_fragments:
-        if fragment not in workflow_text:
-            errors.append(f"workflow evidence-integrity fragment missing: {fragment}")
+    )
+    require_fragments(
+        "main workflow",
+        main_workflow_text,
+        shared_action_fragments
+        + (
+            "scripts/validate_bioevidence_contract.py",
+            "scripts/check_gse94383_claim_drift.py",
+            "-r requirements/schema-runtime.txt",
+            "-r requirements/analysis-runtime.txt",
+            "openpyxl==3.1.5",
+            "if: always()",
+            "curl --fail --location --retry 3 --retry-all-errors",
+            "8be1e148d47762fd148584469a6179a6",
+            "60a8bc62e5c49692fce8c79fdf0bf530",
+            "c43d0b54ed4b245b1690e9675630682c0843cda63f14a3e51dbf13b8f87c070e",
+            "e264565c72f06ed98ee10914c0350486dd2daa2460cd19ec8071d756bf982200",
+            "ffb1f233d7cd0c40d79086d92f3cf335fc6cbf0de14f64538bf063974784e925",
+            "authors.library.caltech.edu",
+            "static-content.springer.com",
+        ),
+        errors,
+    )
+    require_fragments(
+        "P0 contract workflow",
+        p0_contract_text,
+        shared_action_fragments
+        + (
+            "-r requirements/schema-runtime.txt",
+            "scripts/check_schema_gateway_subprocess_boundary.py",
+            "schema_then_semantics_exact_verdict",
+            "if: always()",
+        ),
+        errors,
+    )
+    require_fragments(
+        "P0 science workflow",
+        p0_science_text,
+        shared_action_fragments
+        + (
+            "-r requirements/analysis-runtime.txt",
+            "scripts/check_gse94383_claim_drift.py",
+            "if: always()",
+            "c43d0b54ed4b245b1690e9675630682c0843cda63f14a3e51dbf13b8f87c070e",
+            "e264565c72f06ed98ee10914c0350486dd2daa2460cd19ec8071d756bf982200",
+        ),
+        errors,
+    )
+
+    schema_requirements = requirement_lines(SCHEMA_REQUIREMENTS, errors)
+    analysis_requirements = requirement_lines(ANALYSIS_REQUIREMENTS, errors)
+    if schema_requirements != EXPECTED_SCHEMA_REQUIREMENTS:
+        errors.append(
+            "schema runtime requirements drift: "
+            f"expected={sorted(EXPECTED_SCHEMA_REQUIREMENTS)} actual={sorted(schema_requirements)}"
+        )
+    if analysis_requirements != EXPECTED_ANALYSIS_REQUIREMENTS:
+        errors.append(
+            "analysis runtime requirements drift: "
+            f"expected={sorted(EXPECTED_ANALYSIS_REQUIREMENTS)} actual={sorted(analysis_requirements)}"
+        )
+    require_fragments(
+        "pyproject.toml",
+        pyproject_text,
+        ("jsonschema==4.23.0", "rfc3339-validator==0.1.4"),
+        errors,
+    )
+
+    for label, packet in (
+        ("biology review packet", biology_packet_text),
+        ("statistics review packet", statistics_packet_text),
+    ):
+        require_fragments(
+            label,
+            packet,
+            (
+                "GENERATED_EXACT_HEAD_RECEIPT_REQUIRED",
+                "bioevidence-p0-contract-integrity-<head_sha>",
+                "gse94383-p0-science-<head_sha>",
+                "Exact head SHA reviewed:",
+                "head_sha == checked_out_sha",
+                "merge_authorization: false",
+            ),
+            errors,
+        )
 
     handoff_negative_path = "tests/fixtures/invalid_partner_handoff_authorizes_execution.json"
     handoff_negative = load_json(handoff_negative_path, errors)
@@ -268,9 +399,12 @@ def main() -> int:
 
     print("ACCEPT BioEvidence OS v0.1 release audit")
     print(f"  modules={len(MODULES)}")
+    print("  workflows_audited=3")
     print("  positive_records=6")
     print("  negative_fixtures=7")
     print("  acceptance_authority=schema_then_semantics_exact_verdict")
+    print("  runtime_pins=centralized_and_exact")
+    print("  review_target=generated_exact_head_receipts")
     print("  gse94383=descriptive_hold")
     print("  safety_boundary=fail_closed")
     return 0
