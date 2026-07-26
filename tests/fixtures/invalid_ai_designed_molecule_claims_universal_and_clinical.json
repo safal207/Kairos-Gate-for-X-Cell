@@ -1,0 +1,90 @@
+{
+  "schema_version": "0.2.0-preview.1",
+  "case_id": "invalid-syntnpb-overclaim",
+  "source_publication": {
+    "title": "Structure and evolution-guided design of minimal RNA-guided nucleases",
+    "venue": "Science",
+    "doi": "10.1126/science.aed6123",
+    "publication_status": "peer_reviewed",
+    "published_on": "2026-07-16",
+    "source_urls": ["https://www.science.org/doi/10.1126/science.aed6123"]
+  },
+  "designed_system": {
+    "designed_name": "SynTnpB",
+    "entity_class": "rna_guided_nuclease",
+    "family": "TnpB",
+    "model_role": "hybrid",
+    "generated_entity": "protein_amino_acid_sequence",
+    "physical_entity_created_by_laboratory": true,
+    "design_method": ["inverse protein folding", "laboratory screening"],
+    "sequence_identity_to_reference_percent": 77.0,
+    "reference_comparator": {
+      "name": "wild-type TnpB",
+      "comparator_class": "wild_type_same_family",
+      "scope": "test_context_bounded"
+    }
+  },
+  "screening_context": {
+    "generation_scale": "reported_as_thousands",
+    "generated_count": null,
+    "screened_count": null,
+    "selected_count": null,
+    "denominator_completeness": "partial",
+    "winner_selection_prespecified": null,
+    "failed_candidate_reporting": "partial",
+    "selection_bias_status": "HOLD"
+  },
+  "assays": [
+    {
+      "assay_id": "human-cell-assay",
+      "system": "human_cells",
+      "assay_scope": "Selected cellular activity assay.",
+      "comparator": "wild-type TnpB",
+      "biological_unit_status": "unresolved",
+      "independent_biological_n": null,
+      "result_direction": "exceeded_reference_activity",
+      "evidence_level": "F3",
+      "limitations": ["Cellular activity is not universal or clinical superiority."]
+    }
+  ],
+  "claim_audit": [
+    {
+      "claim_id": "BAD1",
+      "statement": "SynTnpB is universally superior to Cas9, Cas12, and all natural editors.",
+      "claim_type": "universal_superiority",
+      "comparator_scope": "all_natural_editors",
+      "status": "supported_with_limits",
+      "evidence_refs": ["publication", "human-cell-assay"],
+      "limitations": ["This should be blocked."]
+    },
+    {
+      "claim_id": "BAD2",
+      "statement": "SynTnpB is clinically safe for humans.",
+      "claim_type": "clinical_safety",
+      "comparator_scope": "not_applicable",
+      "status": "supported_with_limits",
+      "evidence_refs": ["publication", "human-cell-assay"],
+      "limitations": ["This should be not established or blocked."]
+    }
+  ],
+  "mechanism_evidence": {
+    "cryo_em_characterized": true,
+    "scope": "Selected variant only.",
+    "status": "structural_contacts_observed",
+    "functional_causality_identified": false
+  },
+  "replication_status": {
+    "same_collaboration_only": true,
+    "independent_replication": "not_assessed"
+  },
+  "overall_verdict": "ACCEPT_WITH_LIMITS",
+  "next_valid_action": "Block universal and clinical overclaims.",
+  "safety_status": {
+    "mode": "computational_documentary_only",
+    "physical_biology_authorized": false,
+    "physical_protocol_included": false,
+    "sequence_instructions_included": false,
+    "clinical_or_field_use_authorized": false,
+    "notes": "Negative semantic fixture."
+  }
+}
