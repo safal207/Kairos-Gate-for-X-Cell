@@ -28,6 +28,7 @@ REQUIRED_TOP_LEVEL = {
 }
 EVIDENCE_ORDER = {"F0": 0, "F1": 1, "F2": 2, "F3": 3, "F4": 4, "F5": 5}
 FUNCTIONAL_SYSTEMS = {"bacterial_cells", "plant_cells", "human_cells", "other"}
+FUNCTIONAL_ENDPOINTS = {"molecular_activity", "bounded_comparator_superiority"}
 POSITIVE_SELECTION_STATES = {"positive_exact", "positive_nonexact"}
 SUPPORTED_TYPES = {
     "molecular_activity",
@@ -120,6 +121,10 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def evidence_level(value: Any) -> int:
     return EVIDENCE_ORDER.get(str(value), -1)
+
+
+def is_int(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 def complete_independence(value: Any) -> bool:
@@ -265,7 +270,6 @@ def validate(record: dict[str, Any]) -> list[str]:
     screening = record.get("screening_context", {})
     require(isinstance(screening, dict), "screening_context must be an object", errors)
     selection_status = None
-    selected_count = None
     if isinstance(screening, dict):
         generation_scale = screening.get("generation_scale")
         generated = screening.get("generated_count")
@@ -281,20 +285,12 @@ def validate(record: dict[str, Any]) -> list[str]:
 
         exact_fields = [generated, excluded, screened, failed, selected_count]
         if generation_scale == "exact_count_reported":
-            require(
-                isinstance(generated, int) and not isinstance(generated, bool),
-                "exact_count_reported requires generated_count",
-                errors,
-            )
+            require(is_int(generated), "exact_count_reported requires generated_count", errors)
         else:
             require(generated is None, "non-exact generation scale must not invent generated_count", errors)
 
         if selection_status == "positive_exact":
-            require(
-                isinstance(selected_count, int) and not isinstance(selected_count, bool) and selected_count > 0,
-                "positive_exact requires selected_count > 0",
-                errors,
-            )
+            require(is_int(selected_count) and selected_count > 0, "positive_exact requires selected_count > 0", errors)
         elif selection_status == "zero_exact":
             require(selected_count == 0, "zero_exact requires selected_count=0", errors)
         elif selection_status in {"positive_nonexact", "unknown"}:
@@ -302,13 +298,37 @@ def validate(record: dict[str, Any]) -> list[str]:
         else:
             errors.append("invalid selected_count_status")
 
+        # Known counts must remain physically possible even when the denominator is partial.
+        if is_int(generated) and is_int(screened):
+            require(screened <= generated, "screened_count cannot exceed generated_count", errors)
+        if is_int(screened) and is_int(selected_count):
+            require(selected_count <= screened, "selected_count cannot exceed screened_count", errors)
+        if is_int(generated) and is_int(selected_count):
+            require(selected_count <= generated, "selected_count cannot exceed generated_count", errors)
+        if is_int(excluded) and is_int(generated):
+            require(excluded <= generated, "excluded_before_screen_count cannot exceed generated_count", errors)
+        if is_int(failed) and is_int(screened):
+            require(failed <= screened, "failed_screen_count cannot exceed screened_count", errors)
+        if is_int(generated) and is_int(excluded) and is_int(screened):
+            require(
+                generated == excluded + screened,
+                "known counts must reconcile generated = excluded_before_screen + screened",
+                errors,
+            )
+        if is_int(screened) and is_int(failed) and is_int(selected_count):
+            require(
+                screened == failed + selected_count,
+                "known counts must reconcile screened = failed_screen + selected",
+                errors,
+            )
+
         if denominator == "complete":
             require(
-                all(isinstance(value, int) and not isinstance(value, bool) for value in exact_fields),
+                all(is_int(value) for value in exact_fields),
                 "complete denominator requires exact generated, excluded, screened, failed, and selected counts",
                 errors,
             )
-            if all(isinstance(value, int) and not isinstance(value, bool) for value in exact_fields):
+            if all(is_int(value) for value in exact_fields):
                 require(
                     generated == excluded + screened,
                     "complete denominator must reconcile generated = excluded_before_screen + screened",
@@ -359,19 +379,36 @@ def validate(record: dict[str, Any]) -> list[str]:
             unit_status = assay.get("biological_unit_status")
             independent_n = assay.get("independent_biological_n")
             if unit_status == "established":
-                require(
-                    isinstance(independent_n, int) and not isinstance(independent_n, bool) and independent_n > 0,
-                    f"assay {assay_id}: established unit requires positive independent N",
-                    errors,
-                )
+                require(is_int(independent_n) and independent_n > 0, f"assay {assay_id}: established unit requires positive independent N", errors)
             if unit_status in {"unresolved", "not_applicable"}:
-                require(
-                    independent_n is None,
-                    f"assay {assay_id}: unresolved/non-applicable unit must not invent N",
-                    errors,
-                )
+                require(independent_n is None, f"assay {assay_id}: unresolved/non-applicable unit must not invent N", errors)
+
             endpoints = assay.get("endpoint_types", [])
             require(isinstance(endpoints, list) and bool(endpoints), f"assay {assay_id}: endpoint_types required", errors)
+            endpoint_set = {str(endpoint) for endpoint in endpoints} if isinstance(endpoints, list) else set()
+            system = assay.get("system")
+            direction = assay.get("result_direction")
+            if system == "cryo_em_structure" or direction == "structural_observation":
+                require(
+                    system == "cryo_em_structure"
+                    and direction == "structural_observation"
+                    and endpoint_set == {"structural_characterization"},
+                    f"assay {assay_id}: structural assay endpoints must be exactly structural_characterization",
+                    errors,
+                )
+            else:
+                require(system in FUNCTIONAL_SYSTEMS, f"assay {assay_id}: unsupported functional assay system", errors)
+                require(
+                    endpoint_set.issubset(FUNCTIONAL_ENDPOINTS),
+                    f"assay {assay_id}: cellular activity assays cannot assert risk or structural endpoints",
+                    errors,
+                )
+                require(
+                    direction in {"retained_reference_activity", "exceeded_reference_activity", "mixed"},
+                    f"assay {assay_id}: functional assay requires an activity result direction",
+                    errors,
+                )
+
             provenance_valid_for_level(
                 level=level,
                 provenance=assay.get("provenance"),
@@ -406,21 +443,56 @@ def validate(record: dict[str, Any]) -> list[str]:
             )
             endpoints = item.get("endpoint_types", [])
             require(isinstance(endpoints, list) and bool(endpoints), f"external evidence {evidence_id}: endpoint_types required", errors)
+            endpoint_set = {str(endpoint) for endpoint in endpoints} if isinstance(endpoints, list) else set()
             kind = item.get("evidence_kind")
-            if kind in {"independent_replication", "platform_generalization"}:
+            provenance = item.get("provenance", {})
+            artifact_kind = provenance.get("artifact_kind") if isinstance(provenance, dict) else None
+
+            if kind == "independent_replication":
                 require(
-                    level == "F5" and complete_independence(item.get("independence")),
-                    f"external evidence {evidence_id}: {kind} requires F5 independent-laboratory evidence",
+                    level == "F5"
+                    and complete_independence(item.get("independence"))
+                    and endpoint_set == {"independent_replication"}
+                    and artifact_kind == "independent_replication_record",
+                    f"external evidence {evidence_id}: independent_replication requires matching F5 replication artifact",
                     errors,
                 )
-            if kind == "platform_generalization":
+                require(item.get("coverage") is None, f"external evidence {evidence_id}: replication evidence must not claim platform coverage", errors)
+            elif kind == "platform_generalization":
+                require(
+                    level == "F5"
+                    and complete_independence(item.get("independence"))
+                    and endpoint_set == {"platform_generalization"}
+                    and artifact_kind == "independent_replication_record",
+                    f"external evidence {evidence_id}: platform_generalization requires matching F5 replication artifact",
+                    errors,
+                )
                 require(isinstance(item.get("coverage"), dict), f"external evidence {evidence_id}: platform coverage required", errors)
-            else:
+            elif kind == "risk_assessment":
                 require(
-                    item.get("coverage") is None or isinstance(item.get("coverage"), dict),
-                    f"external evidence {evidence_id}: invalid coverage",
+                    bool(endpoint_set) and endpoint_set.issubset(RISK_DIMENSIONS),
+                    f"external evidence {evidence_id}: risk_assessment endpoints must be risk dimensions",
                     errors,
                 )
+                require(
+                    artifact_kind == "risk_assessment_record",
+                    f"external evidence {evidence_id}: risk_assessment requires risk_assessment_record",
+                    errors,
+                )
+                require(item.get("coverage") is None, f"external evidence {evidence_id}: risk evidence must not claim platform coverage", errors)
+            elif kind == "reproducibility_artifact":
+                require(
+                    level in {"F3", "F4"},
+                    f"external evidence {evidence_id}: reproducibility_artifact cannot mint F5",
+                    errors,
+                )
+                require(
+                    artifact_kind in {"executable_analysis", "reproducibility_bundle", "author_confirmation", "deposited_structure"},
+                    f"external evidence {evidence_id}: reproducibility artifact kind mismatch",
+                    errors,
+                )
+            else:
+                errors.append(f"external evidence {evidence_id}: unknown evidence_kind")
 
     replication = record.get("replication_status", {})
     require(isinstance(replication, dict), "replication_status must be an object", errors)
@@ -472,11 +544,7 @@ def validate(record: dict[str, Any]) -> list[str]:
                         errors,
                     )
         else:
-            require(
-                replication_evidence is None,
-                "non-established replication requires replication_evidence=null",
-                errors,
-            )
+            require(replication_evidence is None, "non-established replication requires replication_evidence=null", errors)
 
     allowed_refs = {"publication", *assay_by_id, *external_by_id}
     claims = record.get("claim_audit", [])
@@ -519,18 +587,10 @@ def validate(record: dict[str, Any]) -> list[str]:
 
             if status == "supported_with_limits":
                 supported_claims += 1
-                require(
-                    claim_type in SUPPORTED_TYPES,
-                    f"claim {claim_id}: {claim_type} cannot be supported in this preview",
-                    errors,
-                )
+                require(claim_type in SUPPORTED_TYPES, f"claim {claim_id}: {claim_type} cannot be supported in this preview", errors)
 
             if claim_type in PROTECTED_TYPES:
-                require(
-                    status in {"not_established", "blocked"},
-                    f"claim {claim_id}: {claim_type} must be blocked or not established",
-                    errors,
-                )
+                require(status in {"not_established", "blocked"}, f"claim {claim_id}: {claim_type} must be blocked or not established", errors)
             if claim_type in {"universal_superiority", "ai_autonomy", "physical_authorization"}:
                 require(status == "blocked", f"claim {claim_id}: {claim_type} must be blocked", errors)
 
@@ -541,15 +601,10 @@ def validate(record: dict[str, Any]) -> list[str]:
                     for assay in claim_assays
                     if assay.get("system") in FUNCTIONAL_SYSTEMS
                     and "molecular_activity" in assay.get("endpoint_types", [])
-                    and assay.get("result_direction")
-                    in {"retained_reference_activity", "exceeded_reference_activity", "mixed"}
+                    and assay.get("result_direction") in {"retained_reference_activity", "exceeded_reference_activity", "mixed"}
                     and evidence_level(assay.get("evidence_level")) >= EVIDENCE_ORDER["F2"]
                 ]
-                require(
-                    publication_peer_reviewed and bool(active),
-                    f"claim {claim_id}: peer-reviewed referenced F2+ molecular-activity evidence required",
-                    errors,
-                )
+                require(publication_peer_reviewed and bool(active), f"claim {claim_id}: peer-reviewed referenced F2+ molecular-activity evidence required", errors)
 
             if claim_type == "bounded_comparator_superiority" and status == "supported_with_limits":
                 selected_candidate_support = True
@@ -566,11 +621,7 @@ def validate(record: dict[str, Any]) -> list[str]:
                 )
                 named = comparator.get("name")
                 require(bool(claim_assays), f"claim {claim_id}: referenced assay required", errors)
-                require(
-                    all(assay.get("comparator") == named for assay in claim_assays),
-                    f"claim {claim_id}: every referenced assay must use named comparator",
-                    errors,
-                )
+                require(all(assay.get("comparator") == named for assay in claim_assays), f"claim {claim_id}: every referenced assay must use named comparator", errors)
                 exceeded = [
                     assay
                     for assay in claim_assays
@@ -579,11 +630,7 @@ def validate(record: dict[str, Any]) -> list[str]:
                     and assay.get("result_direction") == "exceeded_reference_activity"
                     and evidence_level(assay.get("evidence_level")) >= EVIDENCE_ORDER["F2"]
                 ]
-                require(
-                    publication_peer_reviewed and bool(exceeded),
-                    f"claim {claim_id}: peer-reviewed referenced F2+ superiority evidence required",
-                    errors,
-                )
+                require(publication_peer_reviewed and bool(exceeded), f"claim {claim_id}: peer-reviewed referenced F2+ superiority evidence required", errors)
 
             if claim_type == "structural_characterization" and status == "supported_with_limits":
                 selected_candidate_support = True
@@ -591,7 +638,7 @@ def validate(record: dict[str, Any]) -> list[str]:
                     assay
                     for assay in claim_assays
                     if assay.get("system") == "cryo_em_structure"
-                    and "structural_characterization" in assay.get("endpoint_types", [])
+                    and assay.get("endpoint_types") == ["structural_characterization"]
                     and assay.get("result_direction") == "structural_observation"
                     and assay.get("evidence_level") == "F4"
                 ]
@@ -606,11 +653,7 @@ def validate(record: dict[str, Any]) -> list[str]:
                         f"claim {claim_id}: supported independent_replication requires F5 external evidence",
                         errors,
                     )
-                    require(
-                        replication_refs.issubset(ref_set),
-                        f"claim {claim_id}: independent_replication must cite all replication evidence",
-                        errors,
-                    )
+                    require(replication_refs.issubset(ref_set), f"claim {claim_id}: independent_replication must cite all replication evidence", errors)
                 else:
                     require(
                         independent_replication != "established"
@@ -638,28 +681,16 @@ def validate(record: dict[str, Any]) -> list[str]:
                                 if isinstance(values, list):
                                     coverage_union[dimension].update(str(value) for value in values)
                     for dimension, values in coverage_union.items():
-                        require(
-                            len(values) >= 2,
-                            f"claim {claim_id}: platform generalization requires at least two {dimension}",
-                            errors,
-                        )
+                        require(len(values) >= 2, f"claim {claim_id}: platform generalization requires at least two {dimension}", errors)
                 else:
-                    require(
-                        status in {"not_established", "blocked"},
-                        f"claim {claim_id}: platform generalization is not established",
-                        errors,
-                    )
+                    require(status in {"not_established", "blocked"}, f"claim {claim_id}: platform generalization is not established", errors)
 
         missing_types = sorted(REQUIRED_CLAIM_TYPES - claim_by_type.keys())
         require(not missing_types, f"claim firewall missing types: {missing_types}", errors)
 
     replication_claim = claim_by_type.get("independent_replication", {})
     if independent_replication == "established":
-        require(
-            replication_claim.get("status") == "supported_with_limits",
-            "established replication requires supported independent_replication claim",
-            errors,
-        )
+        require(replication_claim.get("status") == "supported_with_limits", "established replication requires supported independent_replication claim", errors)
         refs = replication_claim.get("evidence_refs", [])
         require(
             isinstance(refs, list) and replication_refs.issubset({str(ref) for ref in refs}),
@@ -667,18 +698,10 @@ def validate(record: dict[str, Any]) -> list[str]:
             errors,
         )
     else:
-        require(
-            replication_claim.get("status") in {"not_established", "blocked"},
-            "non-established replication requires non-supported replication claim",
-            errors,
-        )
+        require(replication_claim.get("status") in {"not_established", "blocked"}, "non-established replication requires non-supported replication claim", errors)
 
     if selected_candidate_support:
-        require(
-            selection_status in POSITIVE_SELECTION_STATES,
-            "supported selected-candidate claims require positive selected candidates",
-            errors,
-        )
+        require(selection_status in POSITIVE_SELECTION_STATES, "supported selected-candidate claims require positive selected candidates", errors)
 
     risk = record.get("risk_assessment", {})
     require(isinstance(risk, dict), "risk_assessment must be an object", errors)
@@ -698,17 +721,13 @@ def validate(record: dict[str, Any]) -> list[str]:
             unknown = sorted(ref_set - allowed_refs)
             require(not unknown, f"risk {name}: unknown evidence refs {unknown}", errors)
             if item.get("status") == "established":
-                matching: list[dict[str, Any]] = []
-                matching.extend(
-                    assay
-                    for ref, assay in assay_by_id.items()
-                    if ref in ref_set and name in assay.get("endpoint_types", [])
-                )
-                matching.extend(
+                matching = [
                     evidence
                     for ref, evidence in external_by_id.items()
-                    if ref in ref_set and name in evidence.get("endpoint_types", [])
-                )
+                    if ref in ref_set
+                    and evidence.get("evidence_kind") == "risk_assessment"
+                    and name in evidence.get("endpoint_types", [])
+                ]
                 threshold = EVIDENCE_ORDER[RISK_MIN_LEVEL[name]]
                 require(
                     bool(matching)
