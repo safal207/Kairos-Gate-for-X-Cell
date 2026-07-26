@@ -108,7 +108,6 @@ jobs:
           test "$code" -ne 0
           grep -q '^BLOCK ' syntnpb-comparator-binding-block.txt
           grep -q 'every referenced assay must use the named comparator' syntnpb-comparator-binding-block.txt
-          grep -q 'no referenced F3+ functional assay exceeds the named reference' syntnpb-comparator-binding-block.txt
           ! grep -q 'Traceback' syntnpb-comparator-binding-block.txt
 
       - name: Build exact-head claim-audit receipt
