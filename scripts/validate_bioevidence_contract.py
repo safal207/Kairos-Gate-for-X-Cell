@@ -47,6 +47,10 @@ CONTRACTS: dict[str, tuple[str, str]] = {
         "schemas/partner-lab-evidence-handoff.schema.json",
         "scripts/validate_partner_lab_evidence_handoff.py",
     ),
+    "ai-designed-molecule": (
+        "schemas/ai-designed-molecule-claim-audit.schema.json",
+        "scripts/validate_ai_designed_molecule_claim_audit.py",
+    ),
 }
 
 
