@@ -30,6 +30,19 @@ SUPPORTED_TYPES = {
     "bounded_comparator_superiority",
     "structural_characterization",
 }
+REQUIRED_CLAIM_TYPES = {
+    "molecular_activity",
+    "bounded_comparator_superiority",
+    "structural_characterization",
+    "platform_generalization",
+    "universal_superiority",
+    "clinical_safety",
+    "therapeutic_efficacy",
+    "agricultural_readiness",
+    "independent_replication",
+    "ai_autonomy",
+    "physical_authorization",
+}
 PROHIBITED_SUPPORTED_TYPES = {
     "universal_superiority",
     "clinical_safety",
@@ -38,6 +51,7 @@ PROHIBITED_SUPPORTED_TYPES = {
     "ai_autonomy",
     "physical_authorization",
 }
+FUNCTIONAL_SYSTEMS = {"bacterial_cells", "plant_cells", "human_cells", "other"}
 
 
 def require(condition: bool, message: str, errors: list[str]) -> None:
@@ -101,6 +115,7 @@ def validate(record: dict[str, Any]) -> list[str]:
 
     screening = record.get("screening_context", {})
     require(isinstance(screening, dict), "screening_context must be an object", errors)
+    selection_status = None
     if isinstance(screening, dict):
         generation_scale = screening.get("generation_scale")
         generated = screening.get("generated_count")
@@ -145,7 +160,11 @@ def validate(record: dict[str, Any]) -> list[str]:
             unit_status = assay.get("biological_unit_status")
             independent_n = assay.get("independent_biological_n")
             if unit_status == "established":
-                require(isinstance(independent_n, int) and independent_n > 0, f"assay {assay_id}: established biological unit requires positive independent N", errors)
+                require(
+                    isinstance(independent_n, int) and not isinstance(independent_n, bool) and independent_n > 0,
+                    f"assay {assay_id}: established biological unit requires positive independent N",
+                    errors,
+                )
             if unit_status in {"unresolved", "not_applicable"}:
                 require(independent_n is None, f"assay {assay_id}: unresolved or non-applicable unit must not invent independent N", errors)
 
@@ -171,6 +190,7 @@ def validate(record: dict[str, Any]) -> list[str]:
     claims = record.get("claim_audit", [])
     require(isinstance(claims, list) and bool(claims), "claim_audit must be a non-empty array", errors)
     supported_claims = 0
+    observed_claim_types: set[str] = set()
     if isinstance(claims, list):
         seen_claims: set[str] = set()
         for index, claim in enumerate(claims):
@@ -187,14 +207,19 @@ def validate(record: dict[str, Any]) -> list[str]:
             if claim_id:
                 require(claim_id not in seen_claims, f"duplicate claim_id: {claim_id}", errors)
                 seen_claims.add(str(claim_id))
+            if isinstance(claim_type, str):
+                observed_claim_types.add(claim_type)
             require(isinstance(refs, list) and bool(refs), f"claim {claim_id}: evidence_refs must be non-empty", errors)
+            claim_assays: list[dict[str, Any]] = []
             if isinstance(refs, list):
                 for ref in refs:
                     require(ref == "publication" or ref in assay_by_id, f"claim {claim_id}: unknown evidence ref {ref}", errors)
+                    if ref in assay_by_id:
+                        claim_assays.append(assay_by_id[ref])
 
             if status == "supported_with_limits":
                 supported_claims += 1
-                require(claim_type in SUPPORTED_TYPES, f"claim {claim_id}: {claim_type} cannot be supported by this contract", errors)
+                require(claim_type in SUPPORTED_TYPES, f"claim {claim_id}: {claim_type} cannot be supported by this preview contract", errors)
 
             if claim_type in PROHIBITED_SUPPORTED_TYPES:
                 require(status in {"not_established", "blocked"}, f"claim {claim_id}: {claim_type} must be blocked or not established", errors)
@@ -203,37 +228,65 @@ def validate(record: dict[str, Any]) -> list[str]:
                 require(status == "blocked", f"claim {claim_id}: universal superiority must be blocked", errors)
                 require(scope in {"cas9_or_cas12", "all_natural_editors"}, f"claim {claim_id}: universal-superiority scope must name the broader comparator", errors)
 
+            if claim_type in {"ai_autonomy", "physical_authorization"}:
+                require(status == "blocked", f"claim {claim_id}: {claim_type} must be blocked", errors)
+
             if claim_type == "bounded_comparator_superiority" and status == "supported_with_limits":
                 require(scope in {"wild_type_same_family", "specific_test_context"}, f"claim {claim_id}: superiority must remain comparator-bounded", errors)
                 require(comparator.get("comparator_class") == "wild_type_same_family", f"claim {claim_id}: supported superiority requires a wild-type same-family comparator", errors)
                 require(comparator.get("scope") == "test_context_bounded", f"claim {claim_id}: supported superiority requires test-context-bounded scope", errors)
+                require(selection_status != "BLOCK", f"claim {claim_id}: blocked selection-bias status cannot support superiority", errors)
+                require(bool(claim_assays), f"claim {claim_id}: supported superiority must reference a functional assay", errors)
+                comparator_name = comparator.get("name")
+                require(
+                    all(assay.get("comparator") == comparator_name for assay in claim_assays),
+                    f"claim {claim_id}: every referenced assay must use the named comparator",
+                    errors,
+                )
                 exceeded = [
                     assay
-                    for assay in assay_by_id.values()
-                    if assay.get("result_direction") == "exceeded_reference_activity"
+                    for assay in claim_assays
+                    if assay.get("system") in FUNCTIONAL_SYSTEMS
+                    and assay.get("result_direction") == "exceeded_reference_activity"
                     and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1) >= EVIDENCE_ORDER["F3"]
                 ]
-                require(bool(exceeded), f"claim {claim_id}: no F3+ assay exceeds the named reference", errors)
+                require(bool(exceeded), f"claim {claim_id}: no referenced F3+ functional assay exceeds the named reference", errors)
 
             if claim_type == "molecular_activity" and status == "supported_with_limits":
                 active = [
                     assay
-                    for assay in assay_by_id.values()
-                    if assay.get("result_direction") in {"retained_reference_activity", "exceeded_reference_activity", "mixed"}
+                    for assay in claim_assays
+                    if assay.get("system") in FUNCTIONAL_SYSTEMS
+                    and assay.get("result_direction") in {"retained_reference_activity", "exceeded_reference_activity", "mixed"}
                     and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1) >= EVIDENCE_ORDER["F3"]
                 ]
-                require(bool(active), f"claim {claim_id}: molecular activity support requires an F3+ functional assay", errors)
+                require(bool(active), f"claim {claim_id}: molecular activity support requires a referenced F3+ functional assay", errors)
 
             if claim_type == "structural_characterization" and status == "supported_with_limits":
+                structural_assays = [
+                    assay
+                    for assay in claim_assays
+                    if assay.get("system") == "cryo_em_structure"
+                    and assay.get("result_direction") == "structural_observation"
+                    and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1) >= EVIDENCE_ORDER["F3"]
+                ]
+                require(bool(structural_assays), f"claim {claim_id}: structural support requires a referenced F3+ cryo-EM assay", errors)
                 require(isinstance(mechanism, dict) and mechanism.get("cryo_em_characterized") is True, f"claim {claim_id}: structural support requires cryo-EM characterization", errors)
                 require(isinstance(mechanism, dict) and mechanism.get("status") == "structural_contacts_observed", f"claim {claim_id}: structural claim exceeds recorded mechanism evidence", errors)
 
-            if claim_type == "independent_replication" and status == "supported_with_limits":
-                require(independent_replication == "established", f"claim {claim_id}: independent replication is not established", errors)
-                require(same_collaboration_only is False, f"claim {claim_id}: same-collaboration work is not independent replication", errors)
+            if claim_type == "independent_replication":
+                if independent_replication != "established" or same_collaboration_only is not False:
+                    require(status in {"not_established", "blocked"}, f"claim {claim_id}: independent replication is not established", errors)
 
-            if claim_type == "platform_generalization" and status == "supported_with_limits":
-                require(independent_replication == "established", f"claim {claim_id}: platform generalization requires independent replication", errors)
+            if claim_type == "platform_generalization":
+                require(status in {"not_established", "blocked"}, f"claim {claim_id}: platform generalization is outside the supported preview scope", errors)
+
+        missing_claim_types = sorted(REQUIRED_CLAIM_TYPES - observed_claim_types)
+        require(
+            not missing_claim_types,
+            f"claim firewall missing required claim types: {missing_claim_types}",
+            errors,
+        )
 
     overall = record.get("overall_verdict")
     require(overall in {"ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"}, "invalid overall_verdict", errors)
