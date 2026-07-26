@@ -111,14 +111,15 @@ flowchart TD
     A[Paper, supplement, structure, or frozen evidence artifact]
     B[Designed entity identity]
     C[Candidate-stage reconciliation]
-    D[Assay endpoint and comparator map]
+    D[Assay system, result, endpoint, and comparator map]
     E[Level-aware provenance authority]
-    F[External evidence registry]
+    F[Typed external evidence registry]
     G[Replication and platform-coverage gates]
     H[Risk-specific evidence matrix]
     I[Application-claim firewall]
-    J[Machine-readable claim audit]
-    K[Human-readable report]
+    J[Generated mutation regressions]
+    K[Machine-readable claim audit]
+    L[Human-readable report]
 
     A --> B
     B --> C
@@ -131,6 +132,7 @@ flowchart TD
     H --> I
     I --> J
     J --> K
+    K --> L
 ```
 
 Preview.4 contract questions:
@@ -138,14 +140,15 @@ Preview.4 contract questions:
 | Layer | Primary question | Fail-closed boundary |
 |---|---|---|
 | Designed entity identity | What did the model output, and what did the laboratory physically create? | A proposed protein sequence cannot be represented as an autonomously created and validated physical system. |
-| Candidate reconciliation | Are generated, excluded, screened, failed, and selected candidates all accounted for? | A denominator is complete only when `generated = excluded + screened` and `screened = failed + selected`. |
+| Candidate reconciliation | Are generated, excluded, screened, failed, and selected candidates all accounted for? | Complete denominators must satisfy both reconciliation equations; known partial counts must still remain monotonic and physically possible. |
 | Comparator map | Which exact reference was exceeded, on which target and endpoint? | Wild-type TnpB superiority cannot become superiority over Cas9, Cas12, or all natural editors. |
-| Assay endpoint map | Which claim or risk endpoint does each assay actually measure? | A structural or activity assay cannot be reused as delivery, toxicity, immunogenicity, durability, off-target, or ecological-safety evidence. |
+| Assay semantic map | Do system, result direction, and endpoint agree? | A cryo-EM observation is structurally bound; a cellular activity assay cannot be relabeled as delivery, toxicity, immunogenicity, durability, off-target, ecological-safety, or structural evidence. |
 | Evidence authority | What kind of source justifies F2, F3, F4, or F5? | Ordinary publication reporting is capped at F2; F3 requires a digested executable artifact; F4 requires repository or laboratory confirmation; F5 requires a frozen independent-laboratory artifact. |
-| External evidence registry | Can replication, platform, or risk evidence be resolved to a provenance-bearing object? | Arbitrary reference strings cannot mint evidence authority. |
+| Typed external evidence registry | Do evidence kind, endpoint, provenance artifact kind, and coverage agree? | A risk artifact cannot mint replication or platform authority, and a replication artifact cannot mint risk authority. |
 | Replication status | Is an unrelated laboratory replication accepted at F5? | Peer review, code, correspondence, and multiple systems within one collaboration do not equal independent replication. |
 | Platform coverage | Are targets, laboratories, delivery systems, organisms, and populations each represented broadly enough? | One independent reproduction cannot become platform-wide generalization. |
-| Risk matrix | Does each established risk dimension cite its own endpoint at the required level? | Activity and structure cannot silently establish safety. |
+| Risk matrix | Does each established risk dimension cite an external risk-assessment object with its own endpoint at the required level? | Activity and structure cannot silently establish safety. |
+| Mutation authority | Are known semantic bypasses executable as negative cases? | A receipt is impossible unless every generated attack blocks without traceback. |
 | Application firewall | Which medical, agricultural, safety, or deployment claims are supported? | Clinical, therapeutic, agricultural-field, and execution claims remain blocked unless their own evidence gates are met. |
 
 ### Evidence-level authority
@@ -159,6 +162,43 @@ F5 = frozen unrelated-laboratory replication or risk evidence
 
 Evidence levels describe authority and reproducibility, not importance. A real peer-reviewed molecular result may remain F2 when the audit has not reconstructed an executable artifact. F3 or F4 cannot be assigned merely because a publication exists.
 
+### Count consistency
+
+```text
+complete:
+  generated = excluded_before_screen + screened
+  screened = failed_screen + selected
+
+known partial values:
+  screened <= generated
+  selected <= screened
+  selected <= generated
+  excluded_before_screen <= generated
+  failed_screen <= screened
+```
+
+Unknown stages may remain null. Known stages may not contradict one another.
+
+### Typed external authority
+
+```text
+independent_replication
+  -> endpoint: independent_replication
+  -> artifact: independent_replication_record
+  -> level: F5
+
+platform_generalization
+  -> endpoint: platform_generalization
+  -> artifact: independent_replication_record
+  -> level: F5
+  -> multidimensional coverage required
+
+risk_assessment
+  -> endpoint: named risk dimension
+  -> artifact: risk_assessment_record
+  -> dimension-specific minimum level
+```
+
 The preview contract accepts only bounded molecular, named-comparator, and selected-structure claims. It contains no sequence instructions, physical procedures, delivery methods, concentrations, or execution authorization.
 
 ## Reproducibility boundary
@@ -171,6 +211,9 @@ Every accepted evidence path must preserve:
 - validator and schema versions and digests;
 - every audit record included in an acceptance result;
 - generated mutation-regression cases and their expected BLOCK markers;
+- assay system/result/endpoint consistency;
+- external evidence kind/artifact-kind consistency;
+- known partial-count constraints and complete-stage reconciliation;
 - model parameters and random seeds where applicable;
 - exclusions, missingness, transformations, and deviations;
 - positive evidence, negative evidence, and unresolved unknowns;
@@ -179,4 +222,4 @@ Every accepted evidence path must preserve:
 
 ## v0.2 boundary
 
-NVIDIA BioNeMo and other foundation-model integrations belong in a separate v0.2 branch. Model output must pass compatibility, domain-shift, species, modality, timing, training-overlap, designed-entity identity, candidate-reconciliation, comparator, endpoint, provenance-authority, external-evidence, replication, platform-coverage, risk, and evidence-level gates before entering this stack.
+NVIDIA BioNeMo and other foundation-model integrations belong in a separate v0.2 branch. Model output must pass compatibility, domain-shift, species, modality, timing, training-overlap, designed-entity identity, candidate-reconciliation, comparator, assay-semantic, provenance-authority, typed-external-evidence, replication, platform-coverage, risk, mutation-regression, and evidence-level gates before entering this stack.
