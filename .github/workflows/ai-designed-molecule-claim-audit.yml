@@ -72,7 +72,7 @@ jobs:
           grep -q 'contract=ai-designed-molecule' syntnpb-accepted.txt
           ! grep -q 'Traceback' syntnpb-accepted.txt
 
-      - name: Prove universal and clinical overclaims fail closed
+      - name: Prove universal, clinical, autonomous-AI, and execution claims fail closed
         shell: bash
         run: |
           set -euo pipefail
@@ -88,7 +88,28 @@ jobs:
           grep -q '^BLOCK ' syntnpb-overclaim-block.txt
           grep -q 'universal_superiority' syntnpb-overclaim-block.txt
           grep -q 'clinical_safety' syntnpb-overclaim-block.txt
+          grep -q 'ai_autonomy must be blocked' syntnpb-overclaim-block.txt
+          grep -q 'physical_authorization must be blocked' syntnpb-overclaim-block.txt
+          grep -q 'claim firewall missing required claim types' syntnpb-overclaim-block.txt
           ! grep -q 'Traceback' syntnpb-overclaim-block.txt
+
+      - name: Prove superiority evidence is claim-referenced and comparator-bound
+        shell: bash
+        run: |
+          set -euo pipefail
+          fixture=tests/fixtures/invalid_ai_designed_molecule_unreferenced_comparator_evidence.json
+          set +e
+          python scripts/validate_bioevidence_contract.py \
+            ai-designed-molecule "$fixture" \
+            > syntnpb-comparator-binding-block.txt 2>&1
+          code=$?
+          set -e
+          cat syntnpb-comparator-binding-block.txt
+          test "$code" -ne 0
+          grep -q '^BLOCK ' syntnpb-comparator-binding-block.txt
+          grep -q 'every referenced assay must use the named comparator' syntnpb-comparator-binding-block.txt
+          grep -q 'no referenced F3+ functional assay exceeds the named reference' syntnpb-comparator-binding-block.txt
+          ! grep -q 'Traceback' syntnpb-comparator-binding-block.txt
 
       - name: Build exact-head claim-audit receipt
         if: always()
@@ -102,6 +123,8 @@ jobs:
             echo "checked_out_sha=$(git rev-parse HEAD)"
             echo "workflow_run_id=${GITHUB_RUN_ID}"
             echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "required_claim_firewall=complete"
+            echo "claim_evidence_binding=required"
             echo "physical_biology_authorized=false"
             echo "clinical_or_field_use_authorized=false"
             sha256sum \
@@ -110,6 +133,7 @@ jobs:
               scripts/validate_bioevidence_contract.py \
               examples/syntnpb-2026.ai-designed-molecule-claim-audit.json \
               tests/fixtures/invalid_ai_designed_molecule_claims_universal_and_clinical.json \
+              tests/fixtures/invalid_ai_designed_molecule_unreferenced_comparator_evidence.json \
               reports/syntnpb-2026-ai-designed-nuclease-claim-audit.md
           } > syntnpb-claim-audit-receipt.txt
           cat syntnpb-claim-audit-receipt.txt
@@ -123,6 +147,7 @@ jobs:
           path: |
             syntnpb-accepted.txt
             syntnpb-overclaim-block.txt
+            syntnpb-comparator-binding-block.txt
             syntnpb-claim-audit-receipt.txt
           if-no-files-found: error
           retention-days: 30
