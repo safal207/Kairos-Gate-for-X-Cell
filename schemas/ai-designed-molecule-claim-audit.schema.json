@@ -158,7 +158,6 @@
           "claim_id",
           "claim_subject",
           "claim_predicate",
-          "statement",
           "claim_type",
           "comparator_scope",
           "status",
@@ -192,11 +191,6 @@
               "was_created_and_validated_autonomously_by_ai",
               "authorizes_physical_biology"
             ]
-          },
-          "statement": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Display-only rendering. Normative semantics come from claim_subject and claim_predicate."
           },
           "claim_type": {
             "enum": [
