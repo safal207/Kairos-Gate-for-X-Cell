@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2.0-preview.2",
+  "schema_version": "0.2.0-preview.3",
   "case_id": "invalid-protected-claims",
   "source_publication": {
     "title": "Synthetic protected-claim fixture",
@@ -45,6 +45,13 @@
       "independent_biological_n": null,
       "result_direction": "exceeded_reference_activity",
       "evidence_level": "F3",
+      "provenance": {
+        "source_role": "primary_publication",
+        "source_url": "https://example.org/protected-fixture",
+        "source_locator": "Synthetic fixture assay locator",
+        "derivation": "directly_reported",
+        "artifact_sha256": null
+      },
       "limitations": ["Cell activity cannot establish protected downstream claims."]
     }
   ],
@@ -90,6 +97,14 @@
       "limitations": ["Physical authorization requires blocked status."]
     }
   ],
+  "risk_assessment": {
+    "specificity_off_target": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["Not established."]},
+    "delivery": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["Not established."]},
+    "immunogenicity": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["Not established."]},
+    "toxicity": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["Not established."]},
+    "durability": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["Not established."]},
+    "ecological_safety": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["Not established."]}
+  },
   "mechanism_evidence": {
     "cryo_em_characterized": false,
     "scope": "No structural evidence in this fixture.",
