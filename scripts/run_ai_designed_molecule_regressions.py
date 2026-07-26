@@ -236,7 +236,7 @@ CASES: list[tuple[str, Mutation, tuple[str, ...]]] = [
     (
         "replication-below-f5",
         mutate_replication_not_f5,
-        ("independent_replication requires F5 independent-laboratory evidence",),
+        ("independent_replication requires matching F5 replication artifact",),
     ),
     (
         "invented-replication-reference",
