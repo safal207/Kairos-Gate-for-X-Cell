@@ -110,6 +110,38 @@ jobs:
           grep -q 'every referenced assay must use the named comparator' syntnpb-comparator-binding-block.txt
           ! grep -q 'Traceback' syntnpb-comparator-binding-block.txt
 
+      - name: Prove supported claim text cannot hide clinical or universal escalation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = Path("examples/syntnpb-2026.ai-designed-molecule-claim-audit.json")
+          target = Path("syntnpb-mislabeled-supported-claim.json")
+          record = json.loads(source.read_text(encoding="utf-8"))
+          record["claim_audit"][0]["statement"] = (
+              "The molecule is clinically safe and universally superior to Cas9."
+          )
+          target.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+          PY
+
+          set +e
+          python scripts/validate_bioevidence_contract.py \
+            ai-designed-molecule syntnpb-mislabeled-supported-claim.json \
+            > syntnpb-mislabeled-claim-block.txt 2>&1
+          code=$?
+          set -e
+          cat syntnpb-mislabeled-claim-block.txt
+          test "$code" -ne 0
+          grep -q '^BLOCK ' syntnpb-mislabeled-claim-block.txt
+          grep -q 'supported statement contains prohibited escalation markers' syntnpb-mislabeled-claim-block.txt
+          grep -q 'cas9' syntnpb-mislabeled-claim-block.txt
+          grep -q 'clinical' syntnpb-mislabeled-claim-block.txt
+          grep -q 'universal' syntnpb-mislabeled-claim-block.txt
+          ! grep -q 'Traceback' syntnpb-mislabeled-claim-block.txt
+
       - name: Build exact-head claim-audit receipt
         if: always()
         shell: bash
@@ -124,6 +156,7 @@ jobs:
             echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
             echo "required_claim_firewall=complete"
             echo "claim_evidence_binding=required"
+            echo "supported_statement_escalation_scan=required"
             echo "physical_biology_authorized=false"
             echo "clinical_or_field_use_authorized=false"
             sha256sum \
@@ -147,6 +180,8 @@ jobs:
             syntnpb-accepted.txt
             syntnpb-overclaim-block.txt
             syntnpb-comparator-binding-block.txt
+            syntnpb-mislabeled-supported-claim.json
+            syntnpb-mislabeled-claim-block.txt
             syntnpb-claim-audit-receipt.txt
           if-no-files-found: error
           retention-days: 30
