@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2.0-preview.1",
+  "schema_version": "0.2.0-preview.2",
   "case_id": "invalid-unreferenced-comparator-evidence",
   "source_publication": {
     "title": "Synthetic comparator-binding fixture",
@@ -29,6 +29,7 @@
     "generated_count": null,
     "screened_count": null,
     "selected_count": null,
+    "selected_count_status": "positive_nonexact",
     "denominator_completeness": "unknown",
     "winner_selection_prespecified": null,
     "failed_candidate_reporting": "unknown",
@@ -55,8 +56,7 @@
       "independent_biological_n": null,
       "result_direction": "exceeded_reference_activity",
       "evidence_level": "F3",
-      "limitations": ["This assay exists but is not cited by the claim."
-      ]
+      "limitations": ["This assay exists but is not cited by the claim."]
     },
     {
       "assay_id": "referenced-activity",
@@ -84,6 +84,8 @@
   "claim_audit": [
     {
       "claim_id": "C1",
+      "claim_subject": "designed_molecule",
+      "claim_predicate": "has_bounded_molecular_activity",
       "statement": "The molecule has bounded molecular activity.",
       "claim_type": "molecular_activity",
       "comparator_scope": "specific_test_context",
@@ -93,16 +95,19 @@
     },
     {
       "claim_id": "C2",
+      "claim_subject": "selected_variants",
+      "claim_predicate": "exceeds_named_comparator_in_test_context",
       "statement": "The molecule exceeds the named wild-type comparator.",
       "claim_type": "bounded_comparator_superiority",
       "comparator_scope": "wild_type_same_family",
       "status": "supported_with_limits",
       "evidence_refs": ["publication", "referenced-wrong-comparator"],
-      "limitations": ["The only cited functional assay uses the wrong comparator."
-      ]
+      "limitations": ["The only cited functional assay uses the wrong comparator."]
     },
     {
       "claim_id": "C3",
+      "claim_subject": "selected_variant_structure",
+      "claim_predicate": "has_selected_variant_structural_contacts",
       "statement": "A selected structure was characterized.",
       "claim_type": "structural_characterization",
       "comparator_scope": "specific_test_context",
@@ -112,6 +117,8 @@
     },
     {
       "claim_id": "C4",
+      "claim_subject": "design_platform",
+      "claim_predicate": "generalizes_across_targets_labs_delivery_populations",
       "statement": "Platform generalization is established.",
       "claim_type": "platform_generalization",
       "comparator_scope": "not_applicable",
@@ -121,6 +128,8 @@
     },
     {
       "claim_id": "C5",
+      "claim_subject": "designed_molecule",
+      "claim_predicate": "outperforms_cas9_cas12_or_all_natural_editors",
       "statement": "Universal superiority is established.",
       "claim_type": "universal_superiority",
       "comparator_scope": "all_natural_editors",
@@ -130,6 +139,8 @@
     },
     {
       "claim_id": "C6",
+      "claim_subject": "designed_molecule",
+      "claim_predicate": "is_clinically_safe",
       "statement": "Clinical safety is established.",
       "claim_type": "clinical_safety",
       "comparator_scope": "not_applicable",
@@ -139,6 +150,8 @@
     },
     {
       "claim_id": "C7",
+      "claim_subject": "designed_molecule",
+      "claim_predicate": "has_therapeutic_efficacy",
       "statement": "Therapeutic efficacy is established.",
       "claim_type": "therapeutic_efficacy",
       "comparator_scope": "not_applicable",
@@ -148,6 +161,8 @@
     },
     {
       "claim_id": "C8",
+      "claim_subject": "designed_molecule",
+      "claim_predicate": "is_ready_for_agricultural_deployment",
       "statement": "Agricultural readiness is established.",
       "claim_type": "agricultural_readiness",
       "comparator_scope": "not_applicable",
@@ -157,6 +172,8 @@
     },
     {
       "claim_id": "C9",
+      "claim_subject": "study_findings",
+      "claim_predicate": "has_unrelated_laboratory_replication",
       "statement": "Independent replication is established.",
       "claim_type": "independent_replication",
       "comparator_scope": "not_applicable",
@@ -166,6 +183,8 @@
     },
     {
       "claim_id": "C10",
+      "claim_subject": "ai_system",
+      "claim_predicate": "was_created_and_validated_autonomously_by_ai",
       "statement": "AI autonomy is established.",
       "claim_type": "ai_autonomy",
       "comparator_scope": "not_applicable",
@@ -175,6 +194,8 @@
     },
     {
       "claim_id": "C11",
+      "claim_subject": "audit_record",
+      "claim_predicate": "authorizes_physical_biology",
       "statement": "Physical work is authorized.",
       "claim_type": "physical_authorization",
       "comparator_scope": "not_applicable",
@@ -191,7 +212,8 @@
   },
   "replication_status": {
     "same_collaboration_only": true,
-    "independent_replication": "not_assessed"
+    "independent_replication": "not_assessed",
+    "replication_evidence": null
   },
   "overall_verdict": "ACCEPT_WITH_LIMITS",
   "next_valid_action": "Block the comparator-evidence mismatch.",
