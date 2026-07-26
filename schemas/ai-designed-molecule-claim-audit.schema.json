@@ -19,7 +19,7 @@
     "safety_status"
   ],
   "properties": {
-    "schema_version": {"const": "0.2.0-preview.1"},
+    "schema_version": {"const": "0.2.0-preview.2"},
     "case_id": {"type": "string", "minLength": 1},
     "source_publication": {
       "type": "object",
@@ -86,6 +86,7 @@
         "generated_count",
         "screened_count",
         "selected_count",
+        "selected_count_status",
         "denominator_completeness",
         "winner_selection_prespecified",
         "failed_candidate_reporting",
@@ -96,11 +97,26 @@
         "generated_count": {"type": ["integer", "null"], "minimum": 0},
         "screened_count": {"type": ["integer", "null"], "minimum": 0},
         "selected_count": {"type": ["integer", "null"], "minimum": 0},
+        "selected_count_status": {"enum": ["positive_exact", "positive_nonexact", "zero_exact", "unknown"]},
         "denominator_completeness": {"enum": ["complete", "partial", "unknown"]},
         "winner_selection_prespecified": {"type": ["boolean", "null"]},
         "failed_candidate_reporting": {"enum": ["complete", "partial", "not_reported", "unknown"]},
         "selection_bias_status": {"enum": ["LOW", "HOLD", "BLOCK"]}
-      }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"selected_count_status": {"const": "positive_exact"}}},
+          "then": {"properties": {"selected_count": {"type": "integer", "minimum": 1}}}
+        },
+        {
+          "if": {"properties": {"selected_count_status": {"const": "zero_exact"}}},
+          "then": {"properties": {"selected_count": {"const": 0}}}
+        },
+        {
+          "if": {"properties": {"selected_count_status": {"enum": ["positive_nonexact", "unknown"]}}},
+          "then": {"properties": {"selected_count": {"type": "null"}}}
+        }
+      ]
     },
     "assays": {
       "type": "array",
@@ -138,10 +154,50 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["claim_id", "statement", "claim_type", "comparator_scope", "status", "evidence_refs", "limitations"],
+        "required": [
+          "claim_id",
+          "claim_subject",
+          "claim_predicate",
+          "statement",
+          "claim_type",
+          "comparator_scope",
+          "status",
+          "evidence_refs",
+          "limitations"
+        ],
         "properties": {
           "claim_id": {"type": "string", "minLength": 1},
-          "statement": {"type": "string", "minLength": 1},
+          "claim_subject": {
+            "enum": [
+              "designed_molecule",
+              "selected_variants",
+              "selected_variant_structure",
+              "design_platform",
+              "study_findings",
+              "ai_system",
+              "audit_record"
+            ]
+          },
+          "claim_predicate": {
+            "enum": [
+              "has_bounded_molecular_activity",
+              "exceeds_named_comparator_in_test_context",
+              "has_selected_variant_structural_contacts",
+              "generalizes_across_targets_labs_delivery_populations",
+              "outperforms_cas9_cas12_or_all_natural_editors",
+              "is_clinically_safe",
+              "has_therapeutic_efficacy",
+              "is_ready_for_agricultural_deployment",
+              "has_unrelated_laboratory_replication",
+              "was_created_and_validated_autonomously_by_ai",
+              "authorizes_physical_biology"
+            ]
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Display-only rendering. Normative semantics come from claim_subject and claim_predicate."
+          },
           "claim_type": {
             "enum": [
               "molecular_activity",
@@ -161,7 +217,53 @@
           "status": {"enum": ["supported_with_limits", "descriptive_only", "not_established", "blocked"]},
           "evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
           "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
-        }
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"claim_type": {"const": "molecular_activity"}}},
+            "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "has_bounded_molecular_activity"}}}
+          },
+          {
+            "if": {"properties": {"claim_type": {"const": "bounded_comparator_superiority"}}},
+            "then": {"properties": {"claim_subject": {"const": "selected_variants"}, "claim_predicate": {"const": "exceeds_named_comparator_in_test_context"}}}
+          },
+          {
+            "if": {"properties": {"claim_type": {"const": "structural_characterization"}}},
+            "then": {"properties": {"claim_subject": {"const": "selected_variant_structure"}, "claim_predicate": {"const": "has_selected_variant_structural_contacts"}}}
+          },
+          {
+            "if": {"properties": {"claim_type": {"const": "platform_generalization"}}},
+            "then": {"properties": {"claim_subject": {"const": "design_platform"}, "claim_predicate": {"const": "generalizes_across_targets_labs_delivery_populations"}}}
+          },
+          {
+            "if": {"properties": {"claim_type": {"const": "universal_superiority"}}},
+            "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "outperforms_cas9_cas12_or_all_natural_editors"}}}
+          },
+          {
+            "if": {"properties": {"claim_type": {"const": "clinical_safety"}}},
+            "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "is_clinically_safe"}}}
+          },
+          {
+            "if": {"properties": {"claim_type": {"const": "therapeutic_efficacy"}}},
+            "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "has_therapeutic_efficacy"}}}
+          },
+          {
+            "if": {"properties": {"claim_type": {"const": "agricultural_readiness"}}},
+            "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "is_ready_for_agricultural_deployment"}}}
+          },
+          {
+            "if": {"properties": {"claim_type": {"const": "independent_replication"}}},
+            "then": {"properties": {"claim_subject": {"const": "study_findings"}, "claim_predicate": {"const": "has_unrelated_laboratory_replication"}}}
+          },
+          {
+            "if": {"properties": {"claim_type": {"const": "ai_autonomy"}}},
+            "then": {"properties": {"claim_subject": {"const": "ai_system"}, "claim_predicate": {"const": "was_created_and_validated_autonomously_by_ai"}}}
+          },
+          {
+            "if": {"properties": {"claim_type": {"const": "physical_authorization"}}},
+            "then": {"properties": {"claim_subject": {"const": "audit_record"}, "claim_predicate": {"const": "authorizes_physical_biology"}}}
+          }
+        ]
       }
     },
     "mechanism_evidence": {
@@ -178,11 +280,46 @@
     "replication_status": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["same_collaboration_only", "independent_replication"],
+      "required": ["same_collaboration_only", "independent_replication", "replication_evidence"],
       "properties": {
         "same_collaboration_only": {"type": "boolean"},
-        "independent_replication": {"enum": ["established", "not_found", "not_assessed"]}
-      }
+        "independent_replication": {"enum": ["established", "not_found", "not_assessed"]},
+        "replication_evidence": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "unrelated_laboratory_identity",
+                "independent_materials",
+                "replication_unit",
+                "evidence_refs",
+                "evidence_level"
+              ],
+              "properties": {
+                "unrelated_laboratory_identity": {"type": "string", "minLength": 1},
+                "independent_materials": {"const": true},
+                "replication_unit": {"type": "string", "minLength": 1},
+                "evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+                "evidence_level": {"enum": ["F3", "F4", "F5"]}
+              }
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"independent_replication": {"const": "established"}}},
+          "then": {
+            "properties": {
+              "same_collaboration_only": {"const": false},
+              "replication_evidence": {"type": "object"}
+            }
+          },
+          "else": {"properties": {"replication_evidence": {"type": "null"}}}
+        }
+      ]
     },
     "overall_verdict": {"enum": ["ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"]},
     "next_valid_action": {"type": "string", "minLength": 1},
