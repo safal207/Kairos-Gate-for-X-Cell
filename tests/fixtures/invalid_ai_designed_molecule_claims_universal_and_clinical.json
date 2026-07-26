@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2.0-preview.1",
+  "schema_version": "0.2.0-preview.2",
   "case_id": "invalid-syntnpb-overclaim",
   "source_publication": {
     "title": "Structure and evolution-guided design of minimal RNA-guided nucleases",
@@ -29,6 +29,7 @@
     "generated_count": null,
     "screened_count": null,
     "selected_count": null,
+    "selected_count_status": "positive_nonexact",
     "denominator_completeness": "partial",
     "winner_selection_prespecified": null,
     "failed_candidate_reporting": "partial",
@@ -50,6 +51,8 @@
   "claim_audit": [
     {
       "claim_id": "BAD1",
+      "claim_subject": "designed_molecule",
+      "claim_predicate": "outperforms_cas9_cas12_or_all_natural_editors",
       "statement": "SynTnpB is universally superior to Cas9, Cas12, and all natural editors.",
       "claim_type": "universal_superiority",
       "comparator_scope": "all_natural_editors",
@@ -59,6 +62,8 @@
     },
     {
       "claim_id": "BAD2",
+      "claim_subject": "designed_molecule",
+      "claim_predicate": "is_clinically_safe",
       "statement": "SynTnpB is clinically safe for humans.",
       "claim_type": "clinical_safety",
       "comparator_scope": "not_applicable",
@@ -68,6 +73,8 @@
     },
     {
       "claim_id": "BAD3",
+      "claim_subject": "ai_system",
+      "claim_predicate": "was_created_and_validated_autonomously_by_ai",
       "statement": "The AI autonomously created and validated the editor without human scientific work.",
       "claim_type": "ai_autonomy",
       "comparator_scope": "not_applicable",
@@ -77,6 +84,8 @@
     },
     {
       "claim_id": "BAD4",
+      "claim_subject": "audit_record",
+      "claim_predicate": "authorizes_physical_biology",
       "statement": "This audit authorizes physical synthesis and deployment.",
       "claim_type": "physical_authorization",
       "comparator_scope": "not_applicable",
@@ -93,7 +102,8 @@
   },
   "replication_status": {
     "same_collaboration_only": true,
-    "independent_replication": "not_assessed"
+    "independent_replication": "not_assessed",
+    "replication_evidence": null
   },
   "overall_verdict": "ACCEPT_WITH_LIMITS",
   "next_valid_action": "Block universal, clinical, autonomous-AI, and execution overclaims.",
