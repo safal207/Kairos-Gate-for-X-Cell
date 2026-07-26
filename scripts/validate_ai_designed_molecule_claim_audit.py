@@ -29,6 +29,8 @@ SUPPORTED_TYPES = {
     "molecular_activity",
     "bounded_comparator_superiority",
     "structural_characterization",
+    "platform_generalization",
+    "independent_replication",
 }
 REQUIRED_CLAIM_TYPES = {
     "molecular_activity",
@@ -50,6 +52,49 @@ PROHIBITED_SUPPORTED_TYPES = {
     "agricultural_readiness",
     "ai_autonomy",
     "physical_authorization",
+}
+CLAIM_SEMANTICS: dict[str, tuple[str, str]] = {
+    "molecular_activity": (
+        "designed_molecule",
+        "has_bounded_molecular_activity",
+    ),
+    "bounded_comparator_superiority": (
+        "selected_variants",
+        "exceeds_named_comparator_in_test_context",
+    ),
+    "structural_characterization": (
+        "selected_variant_structure",
+        "has_selected_variant_structural_contacts",
+    ),
+    "platform_generalization": (
+        "design_platform",
+        "generalizes_across_targets_labs_delivery_populations",
+    ),
+    "universal_superiority": (
+        "designed_molecule",
+        "outperforms_cas9_cas12_or_all_natural_editors",
+    ),
+    "clinical_safety": ("designed_molecule", "is_clinically_safe"),
+    "therapeutic_efficacy": (
+        "designed_molecule",
+        "has_therapeutic_efficacy",
+    ),
+    "agricultural_readiness": (
+        "designed_molecule",
+        "is_ready_for_agricultural_deployment",
+    ),
+    "independent_replication": (
+        "study_findings",
+        "has_unrelated_laboratory_replication",
+    ),
+    "ai_autonomy": (
+        "ai_system",
+        "was_created_and_validated_autonomously_by_ai",
+    ),
+    "physical_authorization": (
+        "audit_record",
+        "authorizes_physical_biology",
+    ),
 }
 SUPPORTED_STATEMENT_PROHIBITED_MARKERS = {
     "cas9",
@@ -76,6 +121,7 @@ SUPPORTED_STATEMENT_PROHIBITED_MARKERS = {
     "best editor",
 }
 FUNCTIONAL_SYSTEMS = {"bacterial_cells", "plant_cells", "human_cells", "other"}
+POSITIVE_SELECTION_STATES = {"positive_exact", "positive_nonexact"}
 
 
 def require(condition: bool, message: str, errors: list[str]) -> None:
@@ -93,6 +139,21 @@ def load_json(path: Path) -> dict[str, Any]:
     return value
 
 
+def replication_evidence_complete(value: Any) -> bool:
+    """Return whether structured unrelated-laboratory evidence is complete."""
+    if not isinstance(value, dict):
+        return False
+    refs = value.get("evidence_refs")
+    return (
+        bool(value.get("unrelated_laboratory_identity"))
+        and value.get("independent_materials") is True
+        and bool(value.get("replication_unit"))
+        and isinstance(refs, list)
+        and bool(refs)
+        and value.get("evidence_level") in {"F3", "F4", "F5"}
+    )
+
+
 def validate(record: dict[str, Any]) -> list[str]:
     """Return all semantic contract violations for one audit record."""
     errors: list[str] = []
@@ -100,8 +161,8 @@ def validate(record: dict[str, Any]) -> list[str]:
     missing = sorted(REQUIRED_TOP_LEVEL - record.keys())
     require(not missing, f"missing required fields: {missing}", errors)
     require(
-        record.get("schema_version") == "0.2.0-preview.1",
-        "schema_version must be 0.2.0-preview.1",
+        record.get("schema_version") == "0.2.0-preview.2",
+        "schema_version must be 0.2.0-preview.2",
         errors,
     )
     require(bool(record.get("case_id")), "case_id is required", errors)
@@ -140,29 +201,64 @@ def validate(record: dict[str, Any]) -> list[str]:
     screening = record.get("screening_context", {})
     require(isinstance(screening, dict), "screening_context must be an object", errors)
     selection_status = None
+    selected_count = None
     if isinstance(screening, dict):
         generation_scale = screening.get("generation_scale")
         generated = screening.get("generated_count")
         screened = screening.get("screened_count")
-        selected = screening.get("selected_count")
+        selected_count = screening.get("selected_count")
+        selection_status = screening.get("selected_count_status")
         denominator = screening.get("denominator_completeness")
         prespecified = screening.get("winner_selection_prespecified")
         failed_reporting = screening.get("failed_candidate_reporting")
-        selection_status = screening.get("selection_bias_status")
+        selection_bias = screening.get("selection_bias_status")
 
         if generation_scale == "exact_count_reported":
-            require(isinstance(generated, int), "exact_count_reported requires generated_count", errors)
+            require(
+                isinstance(generated, int) and not isinstance(generated, bool),
+                "exact_count_reported requires generated_count",
+                errors,
+            )
         if generation_scale in {"reported_as_thousands", "reported_as_many", "unknown"}:
-            require(generated is None, "non-exact generation scale must not invent generated_count", errors)
+            require(
+                generated is None,
+                "non-exact generation scale must not invent generated_count",
+                errors,
+            )
         if isinstance(generated, int) and isinstance(screened, int):
             require(screened <= generated, "screened_count cannot exceed generated_count", errors)
-        if isinstance(screened, int) and isinstance(selected, int):
-            require(selected <= screened, "selected_count cannot exceed screened_count", errors)
+        if isinstance(screened, int) and isinstance(selected_count, int):
+            require(selected_count <= screened, "selected_count cannot exceed screened_count", errors)
+
+        if selection_status == "positive_exact":
+            require(
+                isinstance(selected_count, int)
+                and not isinstance(selected_count, bool)
+                and selected_count > 0,
+                "positive_exact requires a positive selected_count",
+                errors,
+            )
+        elif selection_status == "zero_exact":
+            require(selected_count == 0, "zero_exact requires selected_count=0", errors)
+        elif selection_status in {"positive_nonexact", "unknown"}:
+            require(selected_count is None, f"{selection_status} requires selected_count=null", errors)
+        else:
+            errors.append("invalid selected_count_status")
+
         if denominator == "complete":
             require(isinstance(generated, int), "complete denominator requires generated_count", errors)
             require(isinstance(screened, int), "complete denominator requires screened_count", errors)
-            require(failed_reporting == "complete", "complete denominator requires complete failed-candidate reporting", errors)
-        if selection_status == "LOW":
+            require(
+                selection_status in {"positive_exact", "zero_exact"},
+                "complete denominator requires an exact selected-count status",
+                errors,
+            )
+            require(
+                failed_reporting == "complete",
+                "complete denominator requires complete failed-candidate reporting",
+                errors,
+            )
+        if selection_bias == "LOW":
             require(denominator == "complete", "LOW selection bias requires a complete denominator", errors)
             require(prespecified is True, "LOW selection bias requires prespecified winner selection", errors)
 
@@ -211,19 +307,38 @@ def validate(record: dict[str, Any]) -> list[str]:
     require(isinstance(replication, dict), "replication_status must be an object", errors)
     independent_replication = None
     same_collaboration_only = None
+    replication_evidence: Any = None
+    replication_refs: set[str] = set()
     if isinstance(replication, dict):
         independent_replication = replication.get("independent_replication")
         same_collaboration_only = replication.get("same_collaboration_only")
+        replication_evidence = replication.get("replication_evidence")
         if independent_replication == "established":
             require(
                 same_collaboration_only is False,
                 "independent replication cannot be same-collaboration only",
                 errors,
             )
+            require(
+                replication_evidence_complete(replication_evidence),
+                "established independent replication requires complete structured evidence",
+                errors,
+            )
+            if isinstance(replication_evidence, dict):
+                raw_refs = replication_evidence.get("evidence_refs", [])
+                if isinstance(raw_refs, list):
+                    replication_refs = {str(ref) for ref in raw_refs}
+        else:
+            require(
+                replication_evidence is None,
+                "non-established replication status requires replication_evidence=null",
+                errors,
+            )
 
     claims = record.get("claim_audit", [])
     require(isinstance(claims, list) and bool(claims), "claim_audit must be a non-empty array", errors)
     supported_claims = 0
+    selected_candidate_support = False
     observed_claim_types: set[str] = set()
     if isinstance(claims, list):
         seen_claims: set[str] = set()
@@ -233,6 +348,8 @@ def validate(record: dict[str, Any]) -> list[str]:
                 continue
             claim_id = claim.get("claim_id")
             claim_type = claim.get("claim_type")
+            claim_subject = claim.get("claim_subject")
+            claim_predicate = claim.get("claim_predicate")
             status = claim.get("status")
             scope = claim.get("comparator_scope")
             statement = claim.get("statement")
@@ -244,12 +361,26 @@ def validate(record: dict[str, Any]) -> list[str]:
                 seen_claims.add(str(claim_id))
             if isinstance(claim_type, str):
                 observed_claim_types.add(claim_type)
+
+            expected_semantics = CLAIM_SEMANTICS.get(str(claim_type))
+            require(
+                expected_semantics is not None,
+                f"claim {claim_id}: unknown structured claim type",
+                errors,
+            )
+            if expected_semantics is not None:
+                require(
+                    (claim_subject, claim_predicate) == expected_semantics,
+                    f"claim {claim_id}: structured subject/predicate do not match {claim_type}",
+                    errors,
+                )
+
             require(isinstance(refs, list) and bool(refs), f"claim {claim_id}: evidence_refs must be non-empty", errors)
             claim_assays: list[dict[str, Any]] = []
             if isinstance(refs, list):
                 for ref in refs:
                     require(
-                        ref == "publication" or ref in assay_by_id,
+                        ref == "publication" or ref in assay_by_id or ref in replication_refs,
                         f"claim {claim_id}: unknown evidence ref {ref}",
                         errors,
                     )
@@ -283,11 +414,7 @@ def validate(record: dict[str, Any]) -> list[str]:
                 )
 
             if claim_type == "universal_superiority":
-                require(
-                    status == "blocked",
-                    f"claim {claim_id}: universal superiority must be blocked",
-                    errors,
-                )
+                require(status == "blocked", f"claim {claim_id}: universal superiority must be blocked", errors)
                 require(
                     scope in {"cas9_or_cas12", "all_natural_editors"},
                     f"claim {claim_id}: universal-superiority scope must name the broader comparator",
@@ -295,13 +422,10 @@ def validate(record: dict[str, Any]) -> list[str]:
                 )
 
             if claim_type in {"ai_autonomy", "physical_authorization"}:
-                require(
-                    status == "blocked",
-                    f"claim {claim_id}: {claim_type} must be blocked",
-                    errors,
-                )
+                require(status == "blocked", f"claim {claim_id}: {claim_type} must be blocked", errors)
 
             if claim_type == "bounded_comparator_superiority" and status == "supported_with_limits":
+                selected_candidate_support = True
                 require(
                     scope in {"wild_type_same_family", "specific_test_context"},
                     f"claim {claim_id}: superiority must remain comparator-bounded",
@@ -318,15 +442,11 @@ def validate(record: dict[str, Any]) -> list[str]:
                     errors,
                 )
                 require(
-                    selection_status != "BLOCK",
+                    screening.get("selection_bias_status") != "BLOCK" if isinstance(screening, dict) else False,
                     f"claim {claim_id}: blocked selection-bias status cannot support superiority",
                     errors,
                 )
-                require(
-                    bool(claim_assays),
-                    f"claim {claim_id}: supported superiority must reference a functional assay",
-                    errors,
-                )
+                require(bool(claim_assays), f"claim {claim_id}: supported superiority must reference a functional assay", errors)
                 comparator_name = comparator.get("name")
                 require(
                     all(assay.get("comparator") == comparator_name for assay in claim_assays),
@@ -338,8 +458,7 @@ def validate(record: dict[str, Any]) -> list[str]:
                     for assay in claim_assays
                     if assay.get("system") in FUNCTIONAL_SYSTEMS
                     and assay.get("result_direction") == "exceeded_reference_activity"
-                    and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1)
-                    >= EVIDENCE_ORDER["F3"]
+                    and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1) >= EVIDENCE_ORDER["F3"]
                 ]
                 require(
                     bool(exceeded),
@@ -348,14 +467,14 @@ def validate(record: dict[str, Any]) -> list[str]:
                 )
 
             if claim_type == "molecular_activity" and status == "supported_with_limits":
+                selected_candidate_support = True
                 active = [
                     assay
                     for assay in claim_assays
                     if assay.get("system") in FUNCTIONAL_SYSTEMS
                     and assay.get("result_direction")
                     in {"retained_reference_activity", "exceeded_reference_activity", "mixed"}
-                    and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1)
-                    >= EVIDENCE_ORDER["F3"]
+                    and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1) >= EVIDENCE_ORDER["F3"]
                 ]
                 require(
                     bool(active),
@@ -364,13 +483,13 @@ def validate(record: dict[str, Any]) -> list[str]:
                 )
 
             if claim_type == "structural_characterization" and status == "supported_with_limits":
+                selected_candidate_support = True
                 structural_assays = [
                     assay
                     for assay in claim_assays
                     if assay.get("system") == "cryo_em_structure"
                     and assay.get("result_direction") == "structural_observation"
-                    and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1)
-                    >= EVIDENCE_ORDER["F3"]
+                    and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1) >= EVIDENCE_ORDER["F3"]
                 ]
                 require(
                     bool(structural_assays),
@@ -378,32 +497,36 @@ def validate(record: dict[str, Any]) -> list[str]:
                     errors,
                 )
                 require(
-                    isinstance(mechanism, dict)
-                    and mechanism.get("cryo_em_characterized") is True,
+                    isinstance(mechanism, dict) and mechanism.get("cryo_em_characterized") is True,
                     f"claim {claim_id}: structural support requires cryo-EM characterization",
                     errors,
                 )
                 require(
-                    isinstance(mechanism, dict)
-                    and mechanism.get("status") == "structural_contacts_observed",
+                    isinstance(mechanism, dict) and mechanism.get("status") == "structural_contacts_observed",
                     f"claim {claim_id}: structural claim exceeds recorded mechanism evidence",
                     errors,
                 )
 
-            if claim_type == "independent_replication":
-                if independent_replication != "established" or same_collaboration_only is not False:
+            if claim_type in {"independent_replication", "platform_generalization"}:
+                if status == "supported_with_limits":
                     require(
-                        status in {"not_established", "blocked"},
-                        f"claim {claim_id}: independent replication is not established",
+                        independent_replication == "established"
+                        and same_collaboration_only is False
+                        and replication_evidence_complete(replication_evidence),
+                        f"claim {claim_id}: supported {claim_type} requires structured unrelated-laboratory replication evidence",
                         errors,
                     )
-
-            if claim_type == "platform_generalization":
-                require(
-                    status in {"not_established", "blocked"},
-                    f"claim {claim_id}: platform generalization is outside the supported preview scope",
-                    errors,
-                )
+                    require(
+                        replication_refs.issubset({str(ref) for ref in refs}),
+                        f"claim {claim_id}: supported {claim_type} must reference the replication evidence",
+                        errors,
+                    )
+                elif independent_replication != "established":
+                    require(
+                        status in {"not_established", "blocked"},
+                        f"claim {claim_id}: {claim_type} is not established",
+                        errors,
+                    )
 
         missing_claim_types = sorted(REQUIRED_CLAIM_TYPES - observed_claim_types)
         require(
@@ -412,12 +535,21 @@ def validate(record: dict[str, Any]) -> list[str]:
             errors,
         )
 
+    if selected_candidate_support:
+        require(
+            selection_status in POSITIVE_SELECTION_STATES,
+            "supported activity, superiority, or selected-structure claims require positive selected candidates",
+            errors,
+        )
+        if selection_status == "positive_exact":
+            require(
+                isinstance(selected_count, int) and selected_count > 0,
+                "positive_exact supported claims require selected_count > 0",
+                errors,
+            )
+
     overall = record.get("overall_verdict")
-    require(
-        overall in {"ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"},
-        "invalid overall_verdict",
-        errors,
-    )
+    require(overall in {"ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"}, "invalid overall_verdict", errors)
     if overall == "ACCEPT_WITH_LIMITS":
         require(
             supported_claims > 0,
@@ -433,26 +565,10 @@ def validate(record: dict[str, Any]) -> list[str]:
             "safety mode must be computational_documentary_only",
             errors,
         )
-        require(
-            safety.get("physical_biology_authorized") is False,
-            "physical biology must remain unauthorized",
-            errors,
-        )
-        require(
-            safety.get("physical_protocol_included") is False,
-            "physical protocols must not be included",
-            errors,
-        )
-        require(
-            safety.get("sequence_instructions_included") is False,
-            "sequence instructions must not be included",
-            errors,
-        )
-        require(
-            safety.get("clinical_or_field_use_authorized") is False,
-            "clinical or field use must remain unauthorized",
-            errors,
-        )
+        require(safety.get("physical_biology_authorized") is False, "physical biology must remain unauthorized", errors)
+        require(safety.get("physical_protocol_included") is False, "physical protocols must not be included", errors)
+        require(safety.get("sequence_instructions_included") is False, "sequence instructions must not be included", errors)
+        require(safety.get("clinical_or_field_use_authorized") is False, "clinical or field use must remain unauthorized", errors)
 
     return errors
 
