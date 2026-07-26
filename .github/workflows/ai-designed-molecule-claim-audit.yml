@@ -60,19 +60,30 @@ jobs:
             scripts/validate_bioevidence_contract.py \
             scripts/validate_ai_designed_molecule_claim_audit.py
 
-      - name: Validate bounded SynTnpB audit through canonical authority
+      - name: Validate every AI-designed molecule audit through canonical authority
+        id: positive
         shell: bash
         run: |
           set -euo pipefail
-          python scripts/validate_bioevidence_contract.py \
-            ai-designed-molecule \
-            examples/syntnpb-2026.ai-designed-molecule-claim-audit.json \
-            | tee syntnpb-accepted.txt
-          grep -q '^ACCEPT examples/syntnpb-2026.ai-designed-molecule-claim-audit.json' syntnpb-accepted.txt
-          grep -q 'contract=ai-designed-molecule' syntnpb-accepted.txt
-          ! grep -q 'Traceback' syntnpb-accepted.txt
+          mapfile -t audits < <(
+            find examples -maxdepth 1 -type f \
+              -name '*.ai-designed-molecule-claim-audit.json' -print | sort
+          )
+          test "${#audits[@]}" -gt 0
+          : > audits-accepted.txt
+          for audit in "${audits[@]}"; do
+            output="$(mktemp)"
+            python scripts/validate_bioevidence_contract.py \
+              ai-designed-molecule "$audit" | tee "$output"
+            grep -q "^ACCEPT ${audit}$" "$output"
+            grep -q 'contract=ai-designed-molecule' "$output"
+            ! grep -q 'Traceback' "$output"
+            cat "$output" >> audits-accepted.txt
+          done
+          test "$(grep -c '^ACCEPT ' audits-accepted.txt)" -eq "${#audits[@]}"
 
       - name: Prove universal, clinical, autonomous-AI, and execution claims fail closed
+        id: protected_claims
         shell: bash
         run: |
           set -euo pipefail
@@ -94,6 +105,7 @@ jobs:
           ! grep -q 'Traceback' syntnpb-overclaim-block.txt
 
       - name: Prove superiority evidence is claim-referenced and comparator-bound
+        id: comparator_binding
         shell: bash
         run: |
           set -euo pipefail
@@ -110,7 +122,8 @@ jobs:
           grep -q 'every referenced assay must use the named comparator' syntnpb-comparator-binding-block.txt
           ! grep -q 'Traceback' syntnpb-comparator-binding-block.txt
 
-      - name: Prove supported claim text cannot hide clinical or universal escalation
+      - name: Prove structured predicates cannot be relabeled
+        id: structured_predicate
         shell: bash
         run: |
           set -euo pipefail
@@ -119,8 +132,9 @@ jobs:
           from pathlib import Path
 
           source = Path("examples/syntnpb-2026.ai-designed-molecule-claim-audit.json")
-          target = Path("syntnpb-mislabeled-supported-claim.json")
+          target = Path("syntnpb-mislabeled-structured-claim.json")
           record = json.loads(source.read_text(encoding="utf-8"))
+          record["claim_audit"][0]["claim_predicate"] = "is_clinically_safe"
           record["claim_audit"][0]["statement"] = (
               "The molecule is clinically safe and universally superior to Cas9."
           )
@@ -129,34 +143,120 @@ jobs:
 
           set +e
           python scripts/validate_bioevidence_contract.py \
-            ai-designed-molecule syntnpb-mislabeled-supported-claim.json \
+            ai-designed-molecule syntnpb-mislabeled-structured-claim.json \
             > syntnpb-mislabeled-claim-block.txt 2>&1
           code=$?
           set -e
           cat syntnpb-mislabeled-claim-block.txt
           test "$code" -ne 0
           grep -q '^BLOCK ' syntnpb-mislabeled-claim-block.txt
-          grep -q 'supported statement contains prohibited escalation markers' syntnpb-mislabeled-claim-block.txt
-          grep -q 'cas9' syntnpb-mislabeled-claim-block.txt
-          grep -q 'clinical' syntnpb-mislabeled-claim-block.txt
-          grep -q 'universal' syntnpb-mislabeled-claim-block.txt
+          grep -q 'claim_predicate' syntnpb-mislabeled-claim-block.txt
           ! grep -q 'Traceback' syntnpb-mislabeled-claim-block.txt
 
-      - name: Build exact-head claim-audit receipt
-        if: always()
+      - name: Prove platform generalization cites structured replication evidence
+        id: replication_binding
         shell: bash
         run: |
           set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = Path("examples/syntnpb-2026.ai-designed-molecule-claim-audit.json")
+          target = Path("syntnpb-platform-with-uncited-replication.json")
+          record = json.loads(source.read_text(encoding="utf-8"))
+          record["replication_status"] = {
+              "same_collaboration_only": False,
+              "independent_replication": "established",
+              "replication_evidence": {
+                  "unrelated_laboratory_identity": "external-lab-test-fixture",
+                  "independent_materials": True,
+                  "replication_unit": "independent biological preparation",
+                  "evidence_refs": ["replication:external-test-fixture"],
+                  "evidence_level": "F3"
+              }
+          }
+          for claim in record["claim_audit"]:
+              if claim["claim_type"] == "platform_generalization":
+                  claim["status"] = "supported_with_limits"
+                  claim["evidence_refs"] = ["publication"]
+              if claim["claim_type"] == "independent_replication":
+                  claim["status"] = "supported_with_limits"
+                  claim["evidence_refs"] = [
+                      "publication",
+                      "replication:external-test-fixture"
+                  ]
+          target.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+          PY
+
+          set +e
+          python scripts/validate_bioevidence_contract.py \
+            ai-designed-molecule syntnpb-platform-with-uncited-replication.json \
+            > syntnpb-replication-binding-block.txt 2>&1
+          code=$?
+          set -e
+          cat syntnpb-replication-binding-block.txt
+          test "$code" -ne 0
+          grep -q '^BLOCK ' syntnpb-replication-binding-block.txt
+          grep -q 'platform_generalization must reference the replication evidence' \
+            syntnpb-replication-binding-block.txt
+          ! grep -q 'Traceback' syntnpb-replication-binding-block.txt
+
+      - name: Prove supported selected-candidate claims require positive selection
+        id: selected_candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = Path("examples/syntnpb-2026.ai-designed-molecule-claim-audit.json")
+          target = Path("syntnpb-zero-selected-candidates.json")
+          record = json.loads(source.read_text(encoding="utf-8"))
+          record["screening_context"]["selected_count"] = 0
+          record["screening_context"]["selected_count_status"] = "zero_exact"
+          target.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+          PY
+
+          set +e
+          python scripts/validate_bioevidence_contract.py \
+            ai-designed-molecule syntnpb-zero-selected-candidates.json \
+            > syntnpb-zero-selected-block.txt 2>&1
+          code=$?
+          set -e
+          cat syntnpb-zero-selected-block.txt
+          test "$code" -ne 0
+          grep -q '^BLOCK ' syntnpb-zero-selected-block.txt
+          grep -q 'require positive selected candidates' syntnpb-zero-selected-block.txt
+          ! grep -q 'Traceback' syntnpb-zero-selected-block.txt
+
+      - name: Build exact-head acceptance receipt
+        id: receipt
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test '${{ steps.positive.outcome }}' = success
+          test '${{ steps.protected_claims.outcome }}' = success
+          test '${{ steps.comparator_binding.outcome }}' = success
+          test '${{ steps.structured_predicate.outcome }}' = success
+          test '${{ steps.replication_binding.outcome }}' = success
+          test '${{ steps.selected_candidates.outcome }}' = success
           {
             echo "contract=ai-designed-molecule"
-            echo "schema_version=0.2.0-preview.1"
+            echo "schema_version=0.2.0-preview.2"
             echo "head_sha=$BIOEVIDENCE_HEAD_SHA"
             echo "checked_out_sha=$(git rev-parse HEAD)"
             echo "workflow_run_id=${GITHUB_RUN_ID}"
             echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
-            echo "required_claim_firewall=complete"
-            echo "claim_evidence_binding=required"
-            echo "supported_statement_escalation_scan=required"
+            echo "positive=${{ steps.positive.outcome }}"
+            echo "protected_claims=${{ steps.protected_claims.outcome }}"
+            echo "comparator_binding=${{ steps.comparator_binding.outcome }}"
+            echo "structured_predicate=${{ steps.structured_predicate.outcome }}"
+            echo "replication_binding=${{ steps.replication_binding.outcome }}"
+            echo "selected_candidates=${{ steps.selected_candidates.outcome }}"
+            echo "acceptance_receipt=true"
             echo "physical_biology_authorized=false"
             echo "clinical_or_field_use_authorized=false"
             sha256sum \
@@ -167,9 +267,28 @@ jobs:
               tests/fixtures/invalid_ai_designed_molecule_claims_universal_and_clinical.json \
               tests/fixtures/invalid_ai_designed_molecule_unreferenced_comparator_evidence.json \
               reports/syntnpb-2026-ai-designed-nuclease-claim-audit.md
-          } > syntnpb-claim-audit-receipt.txt
-          cat syntnpb-claim-audit-receipt.txt
+          } > syntnpb-claim-audit-acceptance-receipt.txt
+          cat syntnpb-claim-audit-acceptance-receipt.txt
           test "$(git rev-parse HEAD)" = "$BIOEVIDENCE_HEAD_SHA"
+
+      - name: Write workflow diagnostic state
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "head_sha=$BIOEVIDENCE_HEAD_SHA"
+            echo "checked_out_sha=$(git rev-parse HEAD)"
+            echo "job_status=${{ job.status }}"
+            echo "positive=${{ steps.positive.outcome }}"
+            echo "protected_claims=${{ steps.protected_claims.outcome }}"
+            echo "comparator_binding=${{ steps.comparator_binding.outcome }}"
+            echo "structured_predicate=${{ steps.structured_predicate.outcome }}"
+            echo "replication_binding=${{ steps.replication_binding.outcome }}"
+            echo "selected_candidates=${{ steps.selected_candidates.outcome }}"
+            echo "receipt=${{ steps.receipt.outcome }}"
+            echo "acceptance_receipt_requires_all_success=true"
+          } > syntnpb-workflow-state.txt
+          cat syntnpb-workflow-state.txt
 
       - name: Upload claim-audit evidence
         if: always()
@@ -177,11 +296,16 @@ jobs:
         with:
           name: syntnpb-ai-designed-molecule-audit-${{ env.BIOEVIDENCE_HEAD_SHA }}
           path: |
-            syntnpb-accepted.txt
+            audits-accepted.txt
             syntnpb-overclaim-block.txt
             syntnpb-comparator-binding-block.txt
-            syntnpb-mislabeled-supported-claim.json
+            syntnpb-mislabeled-structured-claim.json
             syntnpb-mislabeled-claim-block.txt
-            syntnpb-claim-audit-receipt.txt
+            syntnpb-platform-with-uncited-replication.json
+            syntnpb-replication-binding-block.txt
+            syntnpb-zero-selected-candidates.json
+            syntnpb-zero-selected-block.txt
+            syntnpb-claim-audit-acceptance-receipt.txt
+            syntnpb-workflow-state.txt
           if-no-files-found: error
           retention-days: 30
