@@ -108,40 +108,58 @@ The SynTnpB flagship case adds a separate claim-audit path without changing the 
 
 ```mermaid
 flowchart TD
-    A[Peer-reviewed paper, DOI, supplement, structural record]
+    A[Paper, supplement, structure, or frozen evidence artifact]
     B[Designed entity identity]
-    C[Candidate-generation and screening denominator]
-    D[Comparator and assay map]
-    E[Independent-unit and replication status]
-    F[Mechanism evidence]
-    G[Application-claim firewall]
-    H[Machine-readable claim audit]
-    I[Human-readable report]
+    C[Candidate-stage reconciliation]
+    D[Assay endpoint and comparator map]
+    E[Level-aware provenance authority]
+    F[External evidence registry]
+    G[Replication and platform-coverage gates]
+    H[Risk-specific evidence matrix]
+    I[Application-claim firewall]
+    J[Machine-readable claim audit]
+    K[Human-readable report]
 
     A --> B
     B --> C
     C --> D
     D --> E
-    D --> F
-    E --> G
+    E --> F
     F --> G
-    G --> H
+    D --> H
+    G --> I
     H --> I
+    I --> J
+    J --> K
 ```
 
-Preview contract questions:
+Preview.4 contract questions:
 
 | Layer | Primary question | Fail-closed boundary |
 |---|---|---|
 | Designed entity identity | What did the model output, and what did the laboratory physically create? | A proposed protein sequence cannot be represented as an autonomously created and validated physical system. |
-| Screening denominator | How many candidates were generated, screened, selected, and structurally characterized? | Winner performance cannot silently represent an incomplete or unknown candidate denominator. |
-| Comparator map | Which exact reference was exceeded, on which target and assay? | Wild-type TnpB superiority cannot become superiority over Cas9, Cas12, or all natural editors. |
-| Assay scope | What was observed in bacterial, plant-cell, human-cell, or structural systems? | Cellular molecular activity cannot become in-vivo, clinical, or field readiness. |
-| Replication status | Is an unrelated laboratory replication accepted? | Peer review and multiple systems within one collaboration do not equal independent replication. |
-| Mechanism evidence | What does cryo-EM or another structural assay establish? | Structural contacts cannot become complete functional causality or safety. |
+| Candidate reconciliation | Are generated, excluded, screened, failed, and selected candidates all accounted for? | A denominator is complete only when `generated = excluded + screened` and `screened = failed + selected`. |
+| Comparator map | Which exact reference was exceeded, on which target and endpoint? | Wild-type TnpB superiority cannot become superiority over Cas9, Cas12, or all natural editors. |
+| Assay endpoint map | Which claim or risk endpoint does each assay actually measure? | A structural or activity assay cannot be reused as delivery, toxicity, immunogenicity, durability, off-target, or ecological-safety evidence. |
+| Evidence authority | What kind of source justifies F2, F3, F4, or F5? | Ordinary publication reporting is capped at F2; F3 requires a digested executable artifact; F4 requires repository or laboratory confirmation; F5 requires a frozen independent-laboratory artifact. |
+| External evidence registry | Can replication, platform, or risk evidence be resolved to a provenance-bearing object? | Arbitrary reference strings cannot mint evidence authority. |
+| Replication status | Is an unrelated laboratory replication accepted at F5? | Peer review, code, correspondence, and multiple systems within one collaboration do not equal independent replication. |
+| Platform coverage | Are targets, laboratories, delivery systems, organisms, and populations each represented broadly enough? | One independent reproduction cannot become platform-wide generalization. |
+| Risk matrix | Does each established risk dimension cite its own endpoint at the required level? | Activity and structure cannot silently establish safety. |
 | Application firewall | Which medical, agricultural, safety, or deployment claims are supported? | Clinical, therapeutic, agricultural-field, and execution claims remain blocked unless their own evidence gates are met. |
 
-The preview contract accepts only bounded molecular and comparator claims. It contains no sequence instructions, physical procedures, delivery methods, concentrations, or execution authorization.
+### Evidence-level authority
+
+```text
+F2 = peer-reviewed or repository-reported observation
+F3 = digested executable analysis or reproducibility bundle
+F4 = deposited repository record or explicit author/laboratory confirmation
+F5 = frozen unrelated-laboratory replication or risk evidence
+```
+
+Evidence levels describe authority and reproducibility, not importance. A real peer-reviewed molecular result may remain F2 when the audit has not reconstructed an executable artifact. F3 or F4 cannot be assigned merely because a publication exists.
+
+The preview contract accepts only bounded molecular, named-comparator, and selected-structure claims. It contains no sequence instructions, physical procedures, delivery methods, concentrations, or execution authorization.
 
 ## Reproducibility boundary
 
@@ -151,6 +169,8 @@ Every accepted evidence path must preserve:
 - source checksums where available;
 - exact commit and workflow run;
 - validator and schema versions and digests;
+- every audit record included in an acceptance result;
+- generated mutation-regression cases and their expected BLOCK markers;
 - model parameters and random seeds where applicable;
 - exclusions, missingness, transformations, and deviations;
 - positive evidence, negative evidence, and unresolved unknowns;
@@ -159,4 +179,4 @@ Every accepted evidence path must preserve:
 
 ## v0.2 boundary
 
-NVIDIA BioNeMo and other foundation-model integrations belong in a separate v0.2 branch. Model output must pass compatibility, domain-shift, species, modality, timing, training-overlap, designed-entity identity, candidate-denominator, comparator, assay-scope, replication, and evidence-level gates before entering this stack.
+NVIDIA BioNeMo and other foundation-model integrations belong in a separate v0.2 branch. Model output must pass compatibility, domain-shift, species, modality, timing, training-overlap, designed-entity identity, candidate-reconciliation, comparator, endpoint, provenance-authority, external-evidence, replication, platform-coverage, risk, and evidence-level gates before entering this stack.
