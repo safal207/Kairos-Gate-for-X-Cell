@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2.0-preview.3",
+  "schema_version": "0.2.0-preview.4",
   "case_id": "syntnpb-science-aed6123-2026",
   "source_publication": {
     "title": "Structure and evolution-guided design of minimal RNA-guided nucleases",
@@ -35,7 +35,9 @@
   "screening_context": {
     "generation_scale": "reported_as_thousands",
     "generated_count": null,
+    "excluded_before_screen_count": null,
     "screened_count": null,
+    "failed_screen_count": null,
     "selected_count": null,
     "selected_count_status": "positive_nonexact",
     "denominator_completeness": "partial",
@@ -47,35 +49,41 @@
     {
       "assay_id": "bacterial-functional-screen",
       "system": "bacterial_cells",
-      "assay_scope": "Reported functional screen in bacterial cells.",
+      "assay_scope": "Peer-reviewed publication reports a functional screen in bacterial cells.",
       "comparator": "wild-type TnpB reference used by the study",
       "biological_unit_status": "unresolved",
       "independent_biological_n": null,
       "result_direction": "mixed",
-      "evidence_level": "F3",
+      "evidence_level": "F2",
+      "endpoint_types": ["molecular_activity", "bounded_comparator_superiority"],
       "provenance": {
         "source_role": "primary_publication",
         "source_url": "https://pubmed.ncbi.nlm.nih.gov/41573840/",
         "source_locator": "PubMed abstract: active designed nucleases reported in bacterial cells",
         "derivation": "directly_reported",
+        "artifact_kind": "publication_report",
+        "confirmation_type": null,
         "artifact_sha256": null
       },
-      "limitations": ["Independent biological N and the full candidate denominator are unresolved."]
+      "limitations": ["The public abstract does not reconstruct independent biological N or the complete candidate denominator."]
     },
     {
       "assay_id": "plant-cell-functional-validation",
       "system": "plant_cells",
-      "assay_scope": "Reported activity of selected variants in a plant-cell system.",
+      "assay_scope": "Peer-reviewed publication reports activity of selected variants in plant cells.",
       "comparator": "wild-type TnpB reference used by the study",
       "biological_unit_status": "unresolved",
       "independent_biological_n": null,
       "result_direction": "exceeded_reference_activity",
-      "evidence_level": "F3",
+      "evidence_level": "F2",
+      "endpoint_types": ["molecular_activity", "bounded_comparator_superiority"],
       "provenance": {
         "source_role": "primary_publication",
         "source_url": "https://pubmed.ncbi.nlm.nih.gov/41573840/",
         "source_locator": "PubMed abstract: enhanced activity reported in plant cells",
         "derivation": "directly_reported",
+        "artifact_kind": "publication_report",
+        "confirmation_type": null,
         "artifact_sha256": null
       },
       "limitations": ["Plant-cell activity is not field readiness or ecological safety."]
@@ -83,17 +91,20 @@
     {
       "assay_id": "human-cell-functional-validation",
       "system": "human_cells",
-      "assay_scope": "Reported activity of selected variants in a human-cell system.",
+      "assay_scope": "Peer-reviewed publication reports activity of selected variants in human cells.",
       "comparator": "wild-type TnpB reference used by the study",
       "biological_unit_status": "unresolved",
       "independent_biological_n": null,
       "result_direction": "exceeded_reference_activity",
-      "evidence_level": "F3",
+      "evidence_level": "F2",
+      "endpoint_types": ["molecular_activity", "bounded_comparator_superiority"],
       "provenance": {
         "source_role": "primary_publication",
         "source_url": "https://pubmed.ncbi.nlm.nih.gov/41573840/",
         "source_locator": "PubMed abstract: enhanced activity reported in human cells",
         "derivation": "directly_reported",
+        "artifact_kind": "publication_report",
+        "confirmation_type": null,
         "artifact_sha256": null
       },
       "limitations": ["Human-cell activity is not clinical safety or therapeutic efficacy."]
@@ -101,22 +112,26 @@
     {
       "assay_id": "cryo-em-selected-variant",
       "system": "cryo_em_structure",
-      "assay_scope": "Cryo-EM characterization of a selected active divergent variant.",
+      "assay_scope": "Deposited cryo-EM structure record for a selected active divergent variant.",
       "comparator": "structural interpretation within the selected SynTnpB case",
       "biological_unit_status": "not_applicable",
       "independent_biological_n": null,
       "result_direction": "structural_observation",
       "evidence_level": "F4",
+      "endpoint_types": ["structural_characterization"],
       "provenance": {
         "source_role": "structure_record",
         "source_url": "https://www.rcsb.org/structure/9YYG",
         "source_locator": "RCSB PDB accession 9YYG",
         "derivation": "directly_reported",
+        "artifact_kind": "deposited_structure",
+        "confirmation_type": "repository_record",
         "artifact_sha256": null
       },
-      "limitations": ["One selected structure does not represent the complete designed library."]
+      "limitations": ["One deposited selected structure does not represent the complete designed library."]
     }
   ],
+  "external_evidence": [],
   "claim_audit": [
     {
       "claim_id": "C1",
@@ -126,7 +141,7 @@
       "comparator_scope": "specific_test_context",
       "status": "supported_with_limits",
       "evidence_refs": ["publication", "bacterial-functional-screen", "plant-cell-functional-validation", "human-cell-functional-validation"],
-      "limitations": ["The model proposed sequences; laboratories created and tested physical molecules."]
+      "limitations": ["Support is bounded to peer-reviewed reported activity; it is not an executable F3 replication package."]
     },
     {
       "claim_id": "C2",
@@ -136,7 +151,7 @@
       "comparator_scope": "wild_type_same_family",
       "status": "supported_with_limits",
       "evidence_refs": ["publication", "plant-cell-functional-validation", "human-cell-functional-validation"],
-      "limitations": ["The comparison is bounded to the named wild-type TnpB reference and tested contexts."]
+      "limitations": ["The comparison is bounded to the named wild-type TnpB reference and reported test contexts."]
     },
     {
       "claim_id": "C3",
@@ -146,7 +161,7 @@
       "comparator_scope": "specific_test_context",
       "status": "supported_with_limits",
       "evidence_refs": ["publication", "cryo-em-selected-variant"],
-      "limitations": ["Structural contacts do not establish complete functional causality or safety."]
+      "limitations": ["The deposited structure supports characterization, not complete functional causality or safety."]
     },
     {
       "claim_id": "C4",
@@ -156,7 +171,7 @@
       "comparator_scope": "not_applicable",
       "status": "not_established",
       "evidence_refs": ["publication"],
-      "limitations": ["Unrelated-laboratory replication and broad delivery generalization are not established."]
+      "limitations": ["No F5 evidence covers multiple targets, unrelated laboratories, delivery systems, organisms, and populations."]
     },
     {
       "claim_id": "C5",
@@ -166,7 +181,7 @@
       "comparator_scope": "all_natural_editors",
       "status": "blocked",
       "evidence_refs": ["publication"],
-      "limitations": ["No universal cross-editor benchmark is accepted by this record."]
+      "limitations": ["No universal cross-editor benchmark is accepted."]
     },
     {
       "claim_id": "C6",
@@ -206,7 +221,7 @@
       "comparator_scope": "not_applicable",
       "status": "not_established",
       "evidence_refs": ["publication"],
-      "limitations": ["Peer review and one collaboration do not equal unrelated-laboratory replication."]
+      "limitations": ["Peer review and one collaboration do not equal unrelated-laboratory F5 replication."]
     },
     {
       "claim_id": "C10",
@@ -230,12 +245,12 @@
     }
   ],
   "risk_assessment": {
-    "specificity_off_target": {"status": "not_established", "evidence_refs": ["publication", "human-cell-functional-validation"], "limitations": ["No comprehensive off-target superiority claim is accepted."]},
-    "delivery": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["Systemic or tissue-specific delivery is outside the accepted evidence."]},
-    "immunogenicity": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["Human immunogenicity is not established."]},
-    "toxicity": {"status": "not_established", "evidence_refs": ["publication", "human-cell-functional-validation"], "limitations": ["Cell activity does not establish organism-level toxicity."]},
-    "durability": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["Long-term editing durability is not established."]},
-    "ecological_safety": {"status": "not_established", "evidence_refs": ["publication", "plant-cell-functional-validation"], "limitations": ["Plant-cell activity does not establish environmental safety."]}
+    "specificity_off_target": {"status": "not_established", "evidence_refs": ["publication", "human-cell-functional-validation"], "limitations": ["No risk-specific off-target evidence is represented."]},
+    "delivery": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["No risk-specific delivery evidence is represented."]},
+    "immunogenicity": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["No risk-specific immunogenicity evidence is represented."]},
+    "toxicity": {"status": "not_established", "evidence_refs": ["publication", "human-cell-functional-validation"], "limitations": ["Activity assays are not toxicity endpoints."]},
+    "durability": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["No long-term durability endpoint is represented."]},
+    "ecological_safety": {"status": "not_established", "evidence_refs": ["publication", "plant-cell-functional-validation"], "limitations": ["Plant-cell activity is not an ecological-safety endpoint."]}
   },
   "mechanism_evidence": {
     "cryo_em_characterized": true,
@@ -249,7 +264,7 @@
     "replication_evidence": null
   },
   "overall_verdict": "ACCEPT_WITH_LIMITS",
-  "next_valid_action": "Audit the full article and supplements for denominators, biological units, comparator tables, specificity evidence, and independent replication without adding physical experimental instructions.",
+  "next_valid_action": "Audit the full article and supplements for exact denominators, executable analysis artifacts, risk-specific endpoints, and unrelated-laboratory F5 replication without adding physical experimental instructions.",
   "safety_status": {
     "mode": "computational_documentary_only",
     "physical_biology_authorized": false,
