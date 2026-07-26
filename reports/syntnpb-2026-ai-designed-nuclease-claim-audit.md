@@ -81,7 +81,7 @@ Consequences for this case:
 | Comparator performance | Peer-reviewed reported named-comparator results, F2 | Some selected variants exceeded the study wild-type TnpB reference in reported contexts | Superiority over Cas9, Cas12, or all natural editors |
 | Human-cell assay | Reported editing activity in a human-cell system, F2 | Human-cell molecular activity | Clinical safety or therapeutic efficacy |
 | Plant-cell assay | Reported editing activity in a plant-cell system, F2 | Plant-cell molecular activity | Field readiness, ecological safety, or agricultural deployment |
-| Cryo-EM | Deposited structure `9YYG`, F4 | A selected variant has a repository-confirmed structural record | Complete causal mechanism, safety, or broad superiority |
+| Cryo-EM | Deposited structure `9YYG`, F4 | A selected variant has a repository-confirmed structural record | Complete causal mechanism, safety, delivery, or broad superiority |
 | Publication | Peer-reviewed originating-collaboration report | The findings were published after journal review | Independent unrelated-laboratory replication |
 
 ## Candidate-denominator boundary
@@ -93,7 +93,17 @@ generated = excluded_before_screen + screened
 screened = failed_screen + selected
 ```
 
-The public abstract and news summaries describe thousands of computational variants and high-throughput screening, but this audit cannot currently fill those equations.
+Partial reporting permits unknown stages, but it does not permit impossible known counts. Whenever the corresponding values are known:
+
+```text
+screened <= generated
+selected <= screened
+selected <= generated
+excluded_before_screen <= generated
+failed_screen <= screened
+```
+
+The public abstract and news summaries describe thousands of computational variants and high-throughput screening, but this audit cannot currently fill the complete reconciliation equations.
 
 Unresolved fields include:
 
@@ -112,7 +122,7 @@ DENOMINATOR_COMPLETENESS = partial
 SELECTION_BIAS_STATUS = HOLD
 ```
 
-This does not invalidate the active molecules. It prevents winner performance from being silently generalized to the complete generated class.
+This does not invalidate the active molecules. It prevents winner performance from being silently generalized to the complete generated class and prevents contradictory known counts from receiving an acceptance receipt.
 
 ## Independent-unit and replication boundary
 
@@ -128,18 +138,20 @@ INDEPENDENT_REPLICATION = not_assessed
 Established independent replication would require all of the following:
 
 - a registered external evidence object;
+- evidence kind `independent_replication`;
+- artifact kind `independent_replication_record`;
 - F5 authority;
 - a frozen artifact digest;
 - unrelated-laboratory identity;
 - independent materials;
 - an accepted replication unit;
-- exact references shared by the replication status and replication claim.
+- exact references shared by the evidence object, replication status, and replication claim.
 
-Peer review and multi-system testing do not themselves establish unrelated-laboratory replication.
+Peer review and multi-system testing do not themselves establish unrelated-laboratory replication. A risk-assessment artifact cannot mint replication authority merely by being labeled F5.
 
 ## Platform-generalization boundary
 
-One independent reproduction would still not prove that a platform generalizes broadly. A supported platform claim must carry F5 external evidence whose combined coverage includes at least two distinct entries in **every** claimed dimension:
+One independent reproduction would still not prove that a platform generalizes broadly. A supported platform claim must carry F5 external evidence whose kind, endpoint, and artifact class agree and whose combined coverage includes at least two distinct entries in **every** claimed dimension:
 
 - target classes;
 - laboratories;
@@ -149,9 +161,16 @@ One independent reproduction would still not prove that a platform generalizes b
 
 The SynTnpB reference record contains no such platform evidence and therefore keeps platform generalization `not_established`.
 
-## Risk-specific evidence boundary
+## Assay-semantic and risk-specific evidence boundary
 
-Every risk dimension is mandatory, but presence in the matrix is not evidence of safety. An `established` status must cite evidence whose endpoint explicitly matches that risk.
+Endpoint labels are not accepted as free-form authority.
+
+- A cryo-EM structural observation must expose exactly the `structural_characterization` endpoint.
+- Cellular activity assays may expose only bounded molecular-activity or named-comparator endpoints.
+- Structural and activity assays cannot be relabeled as delivery, toxicity, immunogenicity, durability, off-target, or ecological-safety evidence.
+- Established risk dimensions must resolve to external evidence objects of kind `risk_assessment` whose artifact kind is `risk_assessment_record` and whose endpoint explicitly matches the risk.
+
+Every risk dimension is mandatory, but presence in the matrix is not evidence of safety.
 
 Minimum preview.4 authority:
 
@@ -197,18 +216,21 @@ A cryo-EM structure cannot establish delivery or toxicity. A molecular-activity 
 
 ## Executable regression boundary
 
-The exact-head workflow generates mutation cases from the accepted reference record rather than relying on a manually maintained fixture list. It must block at least these paths:
+The exact-head workflow generates mutation cases from the accepted reference record rather than relying on a manually maintained fixture list. It currently proves fail-closed behavior for 13 paths:
 
-- protected claim promoted to supported;
-- mismatched comparator;
-- structured predicate relabeling;
-- ordinary publication reporting mislabeled F3;
-- replication below F5;
-- invented replication reference;
-- platform evidence with insufficient dimensional coverage;
-- unreconciled candidate denominator;
-- risk status supported by the wrong endpoint;
-- supported selected-candidate claims with zero selected candidates.
+1. protected claim promoted to supported;
+2. mismatched comparator;
+3. structured predicate relabeling;
+4. ordinary publication reporting mislabeled F3;
+5. replication below F5;
+6. invented replication reference;
+7. platform evidence with insufficient dimensional coverage;
+8. unreconciled complete candidate denominator;
+9. risk status supported by the wrong evidence endpoint;
+10. supported selected-candidate claims with zero selected candidates;
+11. a structural assay relabeled as delivery evidence;
+12. impossible known counts inside a partial denominator;
+13. an F5 artifact kind that contradicts the declared external evidence kind.
 
 The acceptance receipt is created only after the positive audit and the complete mutation suite succeed. It hashes every audit record included in the positive result.
 
