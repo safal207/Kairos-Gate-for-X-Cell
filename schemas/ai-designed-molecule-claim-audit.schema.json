@@ -12,14 +12,38 @@
     "screening_context",
     "assays",
     "claim_audit",
+    "risk_assessment",
     "mechanism_evidence",
     "replication_status",
     "overall_verdict",
     "next_valid_action",
     "safety_status"
   ],
+  "$defs": {
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "risk_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence_refs", "limitations"],
+      "properties": {
+        "status": {"enum": ["established", "not_established", "blocked", "not_applicable"]},
+        "evidence_refs": {"$ref": "#/$defs/evidence_refs"},
+        "limitations": {"$ref": "#/$defs/limitations"}
+      }
+    }
+  },
   "properties": {
-    "schema_version": {"const": "0.2.0-preview.2"},
+    "schema_version": {"const": "0.2.0-preview.3"},
     "case_id": {"type": "string", "minLength": 1},
     "source_publication": {
       "type": "object",
@@ -133,6 +157,7 @@
           "independent_biological_n",
           "result_direction",
           "evidence_level",
+          "provenance",
           "limitations"
         ],
         "properties": {
@@ -144,7 +169,24 @@
           "independent_biological_n": {"type": ["integer", "null"], "minimum": 0},
           "result_direction": {"enum": ["retained_reference_activity", "exceeded_reference_activity", "mixed", "structural_observation", "not_applicable"]},
           "evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4", "F5"]},
-          "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+          "provenance": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_role", "source_url", "source_locator", "derivation", "artifact_sha256"],
+            "properties": {
+              "source_role": {"enum": ["primary_publication", "supplementary_material", "structure_record", "derived_artifact"]},
+              "source_url": {"type": "string", "format": "uri"},
+              "source_locator": {"type": "string", "minLength": 1},
+              "derivation": {"enum": ["directly_reported", "reconstructed", "computed"]},
+              "artifact_sha256": {
+                "oneOf": [
+                  {"type": "null"},
+                  {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+                ]
+              }
+            }
+          },
+          "limitations": {"$ref": "#/$defs/limitations"}
         }
       }
     },
@@ -167,15 +209,7 @@
         "properties": {
           "claim_id": {"type": "string", "minLength": 1},
           "claim_subject": {
-            "enum": [
-              "designed_molecule",
-              "selected_variants",
-              "selected_variant_structure",
-              "design_platform",
-              "study_findings",
-              "ai_system",
-              "audit_record"
-            ]
+            "enum": ["designed_molecule", "selected_variants", "selected_variant_structure", "design_platform", "study_findings", "ai_system", "audit_record"]
           },
           "claim_predicate": {
             "enum": [
@@ -209,55 +243,35 @@
           },
           "comparator_scope": {"enum": ["wild_type_same_family", "specific_test_context", "cas9_or_cas12", "all_natural_editors", "not_applicable"]},
           "status": {"enum": ["supported_with_limits", "descriptive_only", "not_established", "blocked"]},
-          "evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-          "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+          "evidence_refs": {"$ref": "#/$defs/evidence_refs"},
+          "limitations": {"$ref": "#/$defs/limitations"}
         },
         "allOf": [
-          {
-            "if": {"properties": {"claim_type": {"const": "molecular_activity"}}},
-            "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "has_bounded_molecular_activity"}}}
-          },
-          {
-            "if": {"properties": {"claim_type": {"const": "bounded_comparator_superiority"}}},
-            "then": {"properties": {"claim_subject": {"const": "selected_variants"}, "claim_predicate": {"const": "exceeds_named_comparator_in_test_context"}}}
-          },
-          {
-            "if": {"properties": {"claim_type": {"const": "structural_characterization"}}},
-            "then": {"properties": {"claim_subject": {"const": "selected_variant_structure"}, "claim_predicate": {"const": "has_selected_variant_structural_contacts"}}}
-          },
-          {
-            "if": {"properties": {"claim_type": {"const": "platform_generalization"}}},
-            "then": {"properties": {"claim_subject": {"const": "design_platform"}, "claim_predicate": {"const": "generalizes_across_targets_labs_delivery_populations"}}}
-          },
-          {
-            "if": {"properties": {"claim_type": {"const": "universal_superiority"}}},
-            "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "outperforms_cas9_cas12_or_all_natural_editors"}}}
-          },
-          {
-            "if": {"properties": {"claim_type": {"const": "clinical_safety"}}},
-            "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "is_clinically_safe"}}}
-          },
-          {
-            "if": {"properties": {"claim_type": {"const": "therapeutic_efficacy"}}},
-            "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "has_therapeutic_efficacy"}}}
-          },
-          {
-            "if": {"properties": {"claim_type": {"const": "agricultural_readiness"}}},
-            "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "is_ready_for_agricultural_deployment"}}}
-          },
-          {
-            "if": {"properties": {"claim_type": {"const": "independent_replication"}}},
-            "then": {"properties": {"claim_subject": {"const": "study_findings"}, "claim_predicate": {"const": "has_unrelated_laboratory_replication"}}}
-          },
-          {
-            "if": {"properties": {"claim_type": {"const": "ai_autonomy"}}},
-            "then": {"properties": {"claim_subject": {"const": "ai_system"}, "claim_predicate": {"const": "was_created_and_validated_autonomously_by_ai"}}}
-          },
-          {
-            "if": {"properties": {"claim_type": {"const": "physical_authorization"}}},
-            "then": {"properties": {"claim_subject": {"const": "audit_record"}, "claim_predicate": {"const": "authorizes_physical_biology"}}}
-          }
+          {"if": {"properties": {"claim_type": {"const": "molecular_activity"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "has_bounded_molecular_activity"}}}},
+          {"if": {"properties": {"claim_type": {"const": "bounded_comparator_superiority"}}}, "then": {"properties": {"claim_subject": {"const": "selected_variants"}, "claim_predicate": {"const": "exceeds_named_comparator_in_test_context"}}}},
+          {"if": {"properties": {"claim_type": {"const": "structural_characterization"}}}, "then": {"properties": {"claim_subject": {"const": "selected_variant_structure"}, "claim_predicate": {"const": "has_selected_variant_structural_contacts"}}}},
+          {"if": {"properties": {"claim_type": {"const": "platform_generalization"}}}, "then": {"properties": {"claim_subject": {"const": "design_platform"}, "claim_predicate": {"const": "generalizes_across_targets_labs_delivery_populations"}}}},
+          {"if": {"properties": {"claim_type": {"const": "universal_superiority"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "outperforms_cas9_cas12_or_all_natural_editors"}}}},
+          {"if": {"properties": {"claim_type": {"const": "clinical_safety"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "is_clinically_safe"}}}},
+          {"if": {"properties": {"claim_type": {"const": "therapeutic_efficacy"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "has_therapeutic_efficacy"}}}},
+          {"if": {"properties": {"claim_type": {"const": "agricultural_readiness"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "is_ready_for_agricultural_deployment"}}}},
+          {"if": {"properties": {"claim_type": {"const": "independent_replication"}}}, "then": {"properties": {"claim_subject": {"const": "study_findings"}, "claim_predicate": {"const": "has_unrelated_laboratory_replication"}}}},
+          {"if": {"properties": {"claim_type": {"const": "ai_autonomy"}}}, "then": {"properties": {"claim_subject": {"const": "ai_system"}, "claim_predicate": {"const": "was_created_and_validated_autonomously_by_ai"}}}},
+          {"if": {"properties": {"claim_type": {"const": "physical_authorization"}}}, "then": {"properties": {"claim_subject": {"const": "audit_record"}, "claim_predicate": {"const": "authorizes_physical_biology"}}}}
         ]
+      }
+    },
+    "risk_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["specificity_off_target", "delivery", "immunogenicity", "toxicity", "durability", "ecological_safety"],
+      "properties": {
+        "specificity_off_target": {"$ref": "#/$defs/risk_item"},
+        "delivery": {"$ref": "#/$defs/risk_item"},
+        "immunogenicity": {"$ref": "#/$defs/risk_item"},
+        "toxicity": {"$ref": "#/$defs/risk_item"},
+        "durability": {"$ref": "#/$defs/risk_item"},
+        "ecological_safety": {"$ref": "#/$defs/risk_item"}
       }
     },
     "mechanism_evidence": {
@@ -284,18 +298,12 @@
             {
               "type": "object",
               "additionalProperties": false,
-              "required": [
-                "unrelated_laboratory_identity",
-                "independent_materials",
-                "replication_unit",
-                "evidence_refs",
-                "evidence_level"
-              ],
+              "required": ["unrelated_laboratory_identity", "independent_materials", "replication_unit", "evidence_refs", "evidence_level"],
               "properties": {
                 "unrelated_laboratory_identity": {"type": "string", "minLength": 1},
                 "independent_materials": {"const": true},
                 "replication_unit": {"type": "string", "minLength": 1},
-                "evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+                "evidence_refs": {"$ref": "#/$defs/evidence_refs"},
                 "evidence_level": {"enum": ["F3", "F4", "F5"]}
               }
             }
@@ -305,12 +313,7 @@
       "allOf": [
         {
           "if": {"properties": {"independent_replication": {"const": "established"}}},
-          "then": {
-            "properties": {
-              "same_collaboration_only": {"const": false},
-              "replication_evidence": {"type": "object"}
-            }
-          },
+          "then": {"properties": {"same_collaboration_only": {"const": false}, "replication_evidence": {"type": "object"}}},
           "else": {"properties": {"replication_evidence": {"type": "null"}}}
         }
       ]
@@ -320,13 +323,7 @@
     "safety_status": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "mode",
-        "physical_biology_authorized",
-        "physical_protocol_included",
-        "sequence_instructions_included",
-        "clinical_or_field_use_authorized"
-      ],
+      "required": ["mode", "physical_biology_authorized", "physical_protocol_included", "sequence_instructions_included", "clinical_or_field_use_authorized"],
       "properties": {
         "mode": {"const": "computational_documentary_only"},
         "physical_biology_authorized": {"const": false},
