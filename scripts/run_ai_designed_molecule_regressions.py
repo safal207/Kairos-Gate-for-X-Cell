@@ -177,7 +177,7 @@ CASES: list[tuple[str, Mutation, tuple[str, ...]]] = [
     (
         "structured-predicate-mismatch",
         mutate_structured_predicate,
-        ("structured subject/predicate mismatch",),
+        ("claim_predicate", "was expected"),
     ),
     (
         "publication-mislabeled-f3",
