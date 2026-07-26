@@ -163,6 +163,55 @@ def mutate_zero_selected(record: dict[str, Any]) -> None:
     record["screening_context"]["selected_count_status"] = "zero_exact"
 
 
+def mutate_structural_assay_relabelled_as_delivery(record: dict[str, Any]) -> None:
+    structural = next(assay for assay in record["assays"] if assay["system"] == "cryo_em_structure")
+    structural["endpoint_types"] = ["structural_characterization", "delivery"]
+    record["risk_assessment"]["delivery"] = {
+        "status": "established",
+        "evidence_refs": [structural["assay_id"]],
+        "limitations": ["Synthetic endpoint-relabel attack."],
+    }
+
+
+def mutate_partial_impossible_counts(record: dict[str, Any]) -> None:
+    record["screening_context"].update(
+        {
+            "generation_scale": "exact_count_reported",
+            "generated_count": 1,
+            "excluded_before_screen_count": None,
+            "screened_count": 100,
+            "failed_screen_count": None,
+            "selected_count": 101,
+            "selected_count_status": "positive_exact",
+            "denominator_completeness": "partial",
+            "winner_selection_prespecified": None,
+            "failed_candidate_reporting": "partial",
+            "selection_bias_status": "HOLD",
+        }
+    )
+
+
+def mutate_f5_artifact_kind_mismatch(record: dict[str, Any]) -> None:
+    coverage = {
+        "target_classes": ["target-a", "target-b"],
+        "laboratories": ["lab-a", "lab-b"],
+        "delivery_systems": ["delivery-a", "delivery-b"],
+        "organisms": ["organism-a", "organism-b"],
+        "populations": ["population-a", "population-b"],
+    }
+    evidence = external_item(
+        evidence_id="platform-wrong-artifact-kind",
+        kind="platform_generalization",
+        endpoints=["platform_generalization"],
+        coverage=coverage,
+    )
+    evidence["provenance"]["artifact_kind"] = "risk_assessment_record"
+    record["external_evidence"] = [evidence]
+    platform = claim(record, "platform_generalization")
+    platform["status"] = "supported_with_limits"
+    platform["evidence_refs"] = ["publication", evidence["evidence_id"]]
+
+
 CASES: list[tuple[str, Mutation, tuple[str, ...]]] = [
     (
         "protected-supported",
@@ -213,6 +262,21 @@ CASES: list[tuple[str, Mutation, tuple[str, ...]]] = [
         "zero-selected-candidates",
         mutate_zero_selected,
         ("require positive selected candidates",),
+    ),
+    (
+        "structural-assay-relabelled-as-delivery",
+        mutate_structural_assay_relabelled_as_delivery,
+        ("structural assay endpoints must be exactly structural_characterization",),
+    ),
+    (
+        "partial-impossible-counts",
+        mutate_partial_impossible_counts,
+        ("screened_count cannot exceed generated_count", "selected_count cannot exceed screened_count"),
+    ),
+    (
+        "f5-artifact-kind-mismatch",
+        mutate_f5_artifact_kind_mismatch,
+        ("platform_generalization requires matching F5 replication artifact",),
     ),
 ]
 
