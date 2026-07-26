@@ -3,13 +3,14 @@
 ## Audit identity
 
 - **Case:** `syntnpb-science-aed6123-2026`
+- **Contract:** `0.2.0-preview.4`
 - **Primary publication:** *Structure and evolution-guided design of minimal RNA-guided nucleases*
 - **Journal:** *Science*
 - **DOI:** `10.1126/science.aed6123`
 - **Publication date:** 2026-07-16
 - **Primary publication page:** https://www.science.org/doi/10.1126/science.aed6123
-- **Preprint/abstract record:** https://pubmed.ncbi.nlm.nih.gov/41573840/
-- **Structural record example:** https://www.rcsb.org/structure/9YYG
+- **Abstract record:** https://pubmed.ncbi.nlm.nih.gov/41573840/
+- **Structural record:** https://www.rcsb.org/structure/9YYG
 - **News claim under audit:** an iXBT report framed the work as a synthetic CRISPR that surpassed natural enzymes and opened medical and agricultural applications.
 
 ## System boundary
@@ -22,9 +23,9 @@ The paper reports a hybrid design pipeline combining structure-guided inverse pr
 
 The bounded evidence supports the following statements:
 
-1. The strategy generated divergent TnpB candidates that retained functional RNA-guided nuclease activity after laboratory construction and screening.
-2. Some selected SynTnpB variants retained or exceeded the activity of the study's wild-type TnpB reference in reported bacterial, plant-cell, and human-cell test contexts.
-3. Cryo-EM characterization of a selected divergent active variant identified reported stabilizing contacts at RNA and DNA interfaces.
+1. The peer-reviewed publication reports divergent TnpB candidates with functional RNA-guided nuclease activity after laboratory construction and screening.
+2. It reports that some selected SynTnpB variants retained or exceeded the activity of the study's named wild-type TnpB reference in bacterial, plant-cell, and human-cell test contexts.
+3. The deposited RCSB structure `9YYG` supports structural characterization of a selected active divergent variant.
 
 ```text
 BOUNDED_VERDICT = ACCEPT_WITH_LIMITS
@@ -50,40 +51,70 @@ SynTnpB > every natural nuclease
 SynTnpB is the best editor for every target or delivery system
 ```
 
-Universal cross-editor superiority is blocked unless a study directly benchmarks representative editors across prespecified targets, systems, endpoints, and safety dimensions.
+Universal cross-editor superiority is blocked unless evidence directly benchmarks representative editors across prespecified targets, systems, endpoints, and safety dimensions.
+
+## Evidence authority — preview.4
+
+The evidence ladder records **authority and reproducibility**, not scientific prestige. A peer-reviewed finding can be real and important while remaining F2 when this audit has not reconstructed an executable evidence artifact.
+
+```text
+F2 = peer-reviewed or repository-reported observation
+F3 = digested executable analysis or reproducibility bundle
+F4 = deposited repository record or explicit author/laboratory confirmation
+F5 = frozen unrelated-laboratory replication or risk evidence
+```
+
+Consequences for this case:
+
+- the functional bacterial, plant-cell, and human-cell statements currently enter the machine-readable audit as **F2 publication reporting**;
+- they are not promoted to F3 merely because the paper is peer reviewed;
+- F3 would require a reconstructed or computed artifact with a SHA-256 digest and executable or reproducibility semantics;
+- the RCSB PDB `9YYG` deposit qualifies as F4 structural confirmation for the selected structure;
+- independent replication remains unestablished because no provenance-bearing F5 unrelated-laboratory object is registered.
 
 ## Evidence ladder
 
-| Layer | Current evidence | Allowed interpretation | Prohibited escalation |
+| Layer | Current authority | Allowed interpretation | Prohibited escalation |
 |---|---|---|---|
-| AI design | Inverse-folding proposals constrained by structure and evolution | The computational strategy proposed divergent TnpB sequences | “AI autonomously created the complete validated system” |
-| Functional screening | Active candidates in reported cellular systems | Molecular editing activity exists in those test contexts | Universal platform superiority |
-| Comparator performance | Some selected variants retained or exceeded wild-type TnpB activity | Bounded comparator superiority | Superiority over Cas9, Cas12, or all natural editors |
-| Human-cell assay | Editing activity in a human-cell system | Human-cell molecular activity | Clinical safety or therapeutic efficacy |
-| Plant-cell assay | Editing activity in a plant-cell system | Plant-cell molecular activity | Field readiness, ecological safety, or agricultural deployment |
-| Cryo-EM | Structure of a selected divergent active variant | Structural contacts were observed | Complete causal mechanism, safety, or broad superiority |
-| Publication | Peer-reviewed originating-collaboration report | The study passed journal review | Independent replication by an unrelated laboratory |
+| AI design | Publication reports inverse-folding proposals constrained by structure and evolution | The computational strategy proposed divergent TnpB sequences | “AI autonomously created the complete validated system” |
+| Functional screening | Peer-reviewed reported cellular results, F2 | Molecular activity was reported in those test contexts | Executable replication, universal platform superiority |
+| Comparator performance | Peer-reviewed reported named-comparator results, F2 | Some selected variants exceeded the study wild-type TnpB reference in reported contexts | Superiority over Cas9, Cas12, or all natural editors |
+| Human-cell assay | Reported editing activity in a human-cell system, F2 | Human-cell molecular activity | Clinical safety or therapeutic efficacy |
+| Plant-cell assay | Reported editing activity in a plant-cell system, F2 | Plant-cell molecular activity | Field readiness, ecological safety, or agricultural deployment |
+| Cryo-EM | Deposited structure `9YYG`, F4 | A selected variant has a repository-confirmed structural record | Complete causal mechanism, safety, or broad superiority |
+| Publication | Peer-reviewed originating-collaboration report | The findings were published after journal review | Independent unrelated-laboratory replication |
 
-## Selection and denominator boundary
+## Candidate-denominator boundary
 
-The public abstract and news summaries describe thousands of computational variants and high-throughput screening, but this preview audit does not reconstruct a complete candidate denominator.
+A complete screening denominator requires explicit reconciliation across every represented stage:
+
+```text
+generated = excluded_before_screen + screened
+screened = failed_screen + selected
+```
+
+The public abstract and news summaries describe thousands of computational variants and high-throughput screening, but this audit cannot currently fill those equations.
 
 Unresolved fields include:
 
 - exact generated count;
-- exact screened count across every stage;
+- candidates excluded before screening;
+- exact screened count;
+- failed-screen count;
+- exact selected count;
 - complete failed-candidate reporting;
 - whether winner-selection rules were prespecified before observing all outcomes;
 - target-by-target and system-by-system performance distributions;
 - how strongly the selected cryo-EM variant represents the full designed library.
 
 ```text
+DENOMINATOR_COMPLETENESS = partial
 SELECTION_BIAS_STATUS = HOLD
 ```
 
 This does not invalidate the active molecules. It prevents winner performance from being silently generalized to the complete generated class.
 
-## Independent-unit boundary
+## Independent-unit and replication boundary
 
 The study reports activity in multiple biological systems, but the independent biological unit and effective biological N are not reconstructed in this preview record.
 
@@ -94,20 +125,59 @@ INDEPENDENT_BIOLOGICAL_N = unresolved
 INDEPENDENT_REPLICATION = not_assessed
 ```
 
+Established independent replication would require all of the following:
+
+- a registered external evidence object;
+- F5 authority;
+- a frozen artifact digest;
+- unrelated-laboratory identity;
+- independent materials;
+- an accepted replication unit;
+- exact references shared by the replication status and replication claim.
+
 Peer review and multi-system testing do not themselves establish unrelated-laboratory replication.
+
+## Platform-generalization boundary
+
+One independent reproduction would still not prove that a platform generalizes broadly. A supported platform claim must carry F5 external evidence whose combined coverage includes at least two distinct entries in **every** claimed dimension:
+
+- target classes;
+- laboratories;
+- delivery systems;
+- organisms;
+- populations.
+
+The SynTnpB reference record contains no such platform evidence and therefore keeps platform generalization `not_established`.
+
+## Risk-specific evidence boundary
+
+Every risk dimension is mandatory, but presence in the matrix is not evidence of safety. An `established` status must cite evidence whose endpoint explicitly matches that risk.
+
+Minimum preview.4 authority:
+
+| Risk dimension | Minimum authority for `established` |
+|---|---:|
+| Specificity / off-target | F3 |
+| Delivery | F4 |
+| Immunogenicity | F4 |
+| Toxicity | F4 |
+| Durability | F4 |
+| Ecological safety | F5 |
+
+A cryo-EM structure cannot establish delivery or toxicity. A molecular-activity assay cannot establish immunogenicity or ecological safety. All six dimensions remain `not_established` in this case.
 
 ## Claim firewall
 
 ### Supported with limits
 
-- AI/evolution-guided sequence design produced active divergent TnpB variants after human laboratory construction and screening.
-- Some selected SynTnpB variants retained or exceeded the study wild-type TnpB comparator in reported cellular tests.
-- Cryo-EM of a selected active divergent variant revealed reported stabilizing interface contacts.
+- The peer-reviewed publication reports active divergent TnpB variants after human laboratory construction and screening.
+- It reports that some selected variants retained or exceeded the named study wild-type TnpB comparator in bounded cellular contexts.
+- The deposited structure `9YYG` supports structural characterization of a selected active divergent variant.
 
 ### Not established
 
 - reliable generalization across targets, laboratories, delivery platforms, organisms, and populations;
-- comprehensive specificity or off-target superiority;
+- comprehensive specificity or off-target performance;
 - delivery performance;
 - in-vivo efficacy;
 - toxicity, immunogenicity, durability, and clinical safety;
@@ -125,6 +195,23 @@ Peer review and multi-system testing do not themselves establish unrelated-labor
 - “the AI performed the research autonomously”;
 - any claim that this repository authorizes synthesis, testing, deployment, treatment, or field use.
 
+## Executable regression boundary
+
+The exact-head workflow generates mutation cases from the accepted reference record rather than relying on a manually maintained fixture list. It must block at least these paths:
+
+- protected claim promoted to supported;
+- mismatched comparator;
+- structured predicate relabeling;
+- ordinary publication reporting mislabeled F3;
+- replication below F5;
+- invented replication reference;
+- platform evidence with insufficient dimensional coverage;
+- unreconciled candidate denominator;
+- risk status supported by the wrong endpoint;
+- supported selected-candidate claims with zero selected candidates.
+
+The acceptance receipt is created only after the positive audit and the complete mutation suite succeed. It hashes every audit record included in the positive result.
+
 ## Why this is a flagship BioEvidence OS case
 
 The first reference case audits a path from single-cell data to replication and causal claims. SynTnpB exercises a different path:
@@ -132,14 +219,14 @@ The first reference case audits a path from single-cell data to replication and 
 ```text
 AI proposal
   -> generated candidate space
-  -> screening denominator
+  -> candidate-stage reconciliation
   -> selected winner
-  -> functional activity
-  -> structure
-  -> application narrative
+  -> reported functional activity
+  -> deposited structure
+  -> safety and application narrative
 ```
 
-The central governance problem is not whether the discovery is real. It is preventing a bounded molecular result from becoming an unsupported claim about universal superiority, medicine, agriculture, or autonomous AI science.
+The central governance problem is not whether the discovery is real. It is preventing a bounded molecular result from becoming an unsupported claim about universal superiority, medicine, agriculture, safety, or autonomous AI science.
 
 ## Next valid action
 
@@ -148,9 +235,11 @@ Obtain and audit the full article and supplementary information to reconstruct:
 - exact candidate denominators and stage transitions;
 - comparator-by-target performance;
 - independent biological units and replicate counts;
+- executable or reproducibility artifacts capable of F3 classification;
 - specificity and off-target evidence;
 - selection criteria and frozen decision points;
 - scope of structural characterization;
-- independent replication candidates.
+- risk-specific evidence;
+- independently resolvable F5 replication candidates.
 
 The next action remains literature, data, and provenance analysis only. No physical biological work is authorized.
