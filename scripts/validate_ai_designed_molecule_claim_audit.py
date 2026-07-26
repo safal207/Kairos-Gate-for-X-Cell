@@ -4,10 +4,10 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
-
 
 REQUIRED_TOP_LEVEL = {
     "schema_version",
@@ -17,14 +17,16 @@ REQUIRED_TOP_LEVEL = {
     "screening_context",
     "assays",
     "claim_audit",
+    "risk_assessment",
     "mechanism_evidence",
     "replication_status",
     "overall_verdict",
     "next_valid_action",
     "safety_status",
 }
-
 EVIDENCE_ORDER = {"F0": 0, "F1": 1, "F2": 2, "F3": 3, "F4": 4, "F5": 5}
+FUNCTIONAL_SYSTEMS = {"bacterial_cells", "plant_cells", "human_cells", "other"}
+POSITIVE_SELECTION_STATES = {"positive_exact", "positive_nonexact"}
 SUPPORTED_TYPES = {
     "molecular_activity",
     "bounded_comparator_superiority",
@@ -32,20 +34,7 @@ SUPPORTED_TYPES = {
     "platform_generalization",
     "independent_replication",
 }
-REQUIRED_CLAIM_TYPES = {
-    "molecular_activity",
-    "bounded_comparator_superiority",
-    "structural_characterization",
-    "platform_generalization",
-    "universal_superiority",
-    "clinical_safety",
-    "therapeutic_efficacy",
-    "agricultural_readiness",
-    "independent_replication",
-    "ai_autonomy",
-    "physical_authorization",
-}
-PROHIBITED_SUPPORTED_TYPES = {
+PROTECTED_TYPES = {
     "universal_superiority",
     "clinical_safety",
     "therapeutic_efficacy",
@@ -54,10 +43,7 @@ PROHIBITED_SUPPORTED_TYPES = {
     "physical_authorization",
 }
 CLAIM_SEMANTICS: dict[str, tuple[str, str]] = {
-    "molecular_activity": (
-        "designed_molecule",
-        "has_bounded_molecular_activity",
-    ),
+    "molecular_activity": ("designed_molecule", "has_bounded_molecular_activity"),
     "bounded_comparator_superiority": (
         "selected_variants",
         "exceeds_named_comparator_in_test_context",
@@ -75,10 +61,7 @@ CLAIM_SEMANTICS: dict[str, tuple[str, str]] = {
         "outperforms_cas9_cas12_or_all_natural_editors",
     ),
     "clinical_safety": ("designed_molecule", "is_clinically_safe"),
-    "therapeutic_efficacy": (
-        "designed_molecule",
-        "has_therapeutic_efficacy",
-    ),
+    "therapeutic_efficacy": ("designed_molecule", "has_therapeutic_efficacy"),
     "agricultural_readiness": (
         "designed_molecule",
         "is_ready_for_agricultural_deployment",
@@ -91,47 +74,26 @@ CLAIM_SEMANTICS: dict[str, tuple[str, str]] = {
         "ai_system",
         "was_created_and_validated_autonomously_by_ai",
     ),
-    "physical_authorization": (
-        "audit_record",
-        "authorizes_physical_biology",
-    ),
+    "physical_authorization": ("audit_record", "authorizes_physical_biology"),
 }
-SUPPORTED_STATEMENT_PROHIBITED_MARKERS = {
-    "cas9",
-    "cas12",
-    "all natural",
-    "all editors",
-    "universal",
-    "clinically",
-    "clinical",
-    "therapeutic",
-    "treatment",
-    "patient",
-    "safe for",
-    "proven safe",
-    "agricultur",
-    "field-ready",
-    "field ready",
-    "deployment-ready",
-    "deployment ready",
-    "autonomous",
-    "without human",
-    "authorizes",
-    "authorized",
-    "best editor",
+REQUIRED_CLAIM_TYPES = set(CLAIM_SEMANTICS)
+RISK_DIMENSIONS = {
+    "specificity_off_target",
+    "delivery",
+    "immunogenicity",
+    "toxicity",
+    "durability",
+    "ecological_safety",
 }
-FUNCTIONAL_SYSTEMS = {"bacterial_cells", "plant_cells", "human_cells", "other"}
-POSITIVE_SELECTION_STATES = {"positive_exact", "positive_nonexact"}
+SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 
 
 def require(condition: bool, message: str, errors: list[str]) -> None:
-    """Append a validation error when a required condition is false."""
     if not condition:
         errors.append(message)
 
 
 def load_json(path: Path) -> dict[str, Any]:
-    """Load one audit record as a JSON object."""
     with path.open("r", encoding="utf-8") as handle:
         value = json.load(handle)
     if not isinstance(value, dict):
@@ -140,7 +102,6 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def replication_evidence_complete(value: Any) -> bool:
-    """Return whether structured unrelated-laboratory evidence is complete."""
     if not isinstance(value, dict):
         return False
     refs = value.get("evidence_refs")
@@ -155,14 +116,12 @@ def replication_evidence_complete(value: Any) -> bool:
 
 
 def validate(record: dict[str, Any]) -> list[str]:
-    """Return all semantic contract violations for one audit record."""
     errors: list[str] = []
-
     missing = sorted(REQUIRED_TOP_LEVEL - record.keys())
     require(not missing, f"missing required fields: {missing}", errors)
     require(
-        record.get("schema_version") == "0.2.0-preview.2",
-        "schema_version must be 0.2.0-preview.2",
+        record.get("schema_version") == "0.2.0-preview.3",
+        "schema_version must be 0.2.0-preview.3",
         errors,
     )
     require(bool(record.get("case_id")), "case_id is required", errors)
@@ -170,14 +129,14 @@ def validate(record: dict[str, Any]) -> list[str]:
 
     publication = record.get("source_publication", {})
     require(isinstance(publication, dict), "source_publication must be an object", errors)
+    publication_urls: set[str] = set()
     if isinstance(publication, dict):
         require(bool(publication.get("title")), "source publication title is required", errors)
         require(bool(publication.get("doi")), "source publication DOI is required", errors)
-        require(
-            publication.get("publication_status") in {"peer_reviewed", "preprint", "other"},
-            "invalid publication_status",
-            errors,
-        )
+        urls = publication.get("source_urls", [])
+        require(isinstance(urls, list) and bool(urls), "source_urls must be non-empty", errors)
+        if isinstance(urls, list):
+            publication_urls = {str(url) for url in urls}
 
     designed = record.get("designed_system", {})
     require(isinstance(designed, dict), "designed_system must be an object", errors)
@@ -185,7 +144,7 @@ def validate(record: dict[str, Any]) -> list[str]:
     if isinstance(designed, dict):
         require(
             designed.get("generated_entity") == "protein_amino_acid_sequence",
-            "AI output must be represented as a proposed protein amino-acid sequence",
+            "AI output must be a proposed protein amino-acid sequence",
             errors,
         )
         require(
@@ -193,10 +152,10 @@ def validate(record: dict[str, Any]) -> list[str]:
             "physical molecules must be attributed to laboratory creation and testing",
             errors,
         )
-        comparator_value = designed.get("reference_comparator", {})
-        require(isinstance(comparator_value, dict), "reference_comparator must be an object", errors)
-        if isinstance(comparator_value, dict):
-            comparator = comparator_value
+        value = designed.get("reference_comparator", {})
+        require(isinstance(value, dict), "reference_comparator must be an object", errors)
+        if isinstance(value, dict):
+            comparator = value
 
     screening = record.get("screening_context", {})
     require(isinstance(screening, dict), "screening_context must be an object", errors)
@@ -219,12 +178,8 @@ def validate(record: dict[str, Any]) -> list[str]:
                 "exact_count_reported requires generated_count",
                 errors,
             )
-        if generation_scale in {"reported_as_thousands", "reported_as_many", "unknown"}:
-            require(
-                generated is None,
-                "non-exact generation scale must not invent generated_count",
-                errors,
-            )
+        else:
+            require(generated is None, "non-exact generation scale must not invent generated_count", errors)
         if isinstance(generated, int) and isinstance(screened, int):
             require(screened <= generated, "screened_count cannot exceed generated_count", errors)
         if isinstance(screened, int) and isinstance(selected_count, int):
@@ -235,7 +190,7 @@ def validate(record: dict[str, Any]) -> list[str]:
                 isinstance(selected_count, int)
                 and not isinstance(selected_count, bool)
                 and selected_count > 0,
-                "positive_exact requires a positive selected_count",
+                "positive_exact requires selected_count > 0",
                 errors,
             )
         elif selection_status == "zero_exact":
@@ -249,8 +204,9 @@ def validate(record: dict[str, Any]) -> list[str]:
             require(isinstance(generated, int), "complete denominator requires generated_count", errors)
             require(isinstance(screened, int), "complete denominator requires screened_count", errors)
             require(
-                selection_status in {"positive_exact", "zero_exact"},
-                "complete denominator requires an exact selected-count status",
+                selection_status in {"positive_exact", "zero_exact"}
+                and isinstance(selected_count, int),
+                "complete denominator requires an exact integer selected_count",
                 errors,
             )
             require(
@@ -259,24 +215,25 @@ def validate(record: dict[str, Any]) -> list[str]:
                 errors,
             )
         if selection_bias == "LOW":
-            require(denominator == "complete", "LOW selection bias requires a complete denominator", errors)
-            require(prespecified is True, "LOW selection bias requires prespecified winner selection", errors)
+            require(denominator == "complete", "LOW selection bias requires complete denominator", errors)
+            require(prespecified is True, "LOW selection bias requires prespecified selection", errors)
 
     assays = record.get("assays", [])
-    require(isinstance(assays, list) and bool(assays), "assays must be a non-empty array", errors)
+    require(isinstance(assays, list) and bool(assays), "assays must be non-empty", errors)
     assay_by_id: dict[str, dict[str, Any]] = {}
     if isinstance(assays, list):
         for index, assay in enumerate(assays):
             require(isinstance(assay, dict), f"assays[{index}] must be an object", errors)
             if not isinstance(assay, dict):
                 continue
-            assay_id = assay.get("assay_id")
+            assay_id = str(assay.get("assay_id") or "")
             require(bool(assay_id), f"assays[{index}].assay_id is required", errors)
+            require(assay_id not in assay_by_id, f"duplicate assay_id: {assay_id}", errors)
             if assay_id:
-                require(assay_id not in assay_by_id, f"duplicate assay_id: {assay_id}", errors)
-                assay_by_id[str(assay_id)] = assay
-            evidence = assay.get("evidence_level")
-            require(evidence in EVIDENCE_ORDER, f"assay {assay_id}: invalid evidence_level", errors)
+                assay_by_id[assay_id] = assay
+
+            level = assay.get("evidence_level")
+            require(level in EVIDENCE_ORDER, f"assay {assay_id}: invalid evidence_level", errors)
             unit_status = assay.get("biological_unit_status")
             independent_n = assay.get("independent_biological_n")
             if unit_status == "established":
@@ -284,24 +241,55 @@ def validate(record: dict[str, Any]) -> list[str]:
                     isinstance(independent_n, int)
                     and not isinstance(independent_n, bool)
                     and independent_n > 0,
-                    f"assay {assay_id}: established biological unit requires positive independent N",
+                    f"assay {assay_id}: established unit requires positive independent N",
                     errors,
                 )
             if unit_status in {"unresolved", "not_applicable"}:
                 require(
                     independent_n is None,
-                    f"assay {assay_id}: unresolved or non-applicable unit must not invent independent N",
+                    f"assay {assay_id}: unresolved/non-applicable unit must not invent N",
                     errors,
                 )
 
-    mechanism = record.get("mechanism_evidence", {})
-    require(isinstance(mechanism, dict), "mechanism_evidence must be an object", errors)
-    if isinstance(mechanism, dict):
-        require(
-            mechanism.get("functional_causality_identified") is False,
-            "structural characterization must not claim identified functional causality",
-            errors,
-        )
+            provenance = assay.get("provenance", {})
+            require(isinstance(provenance, dict), f"assay {assay_id}: provenance required", errors)
+            if isinstance(provenance, dict):
+                role = provenance.get("source_role")
+                url = provenance.get("source_url")
+                locator = provenance.get("source_locator")
+                derivation = provenance.get("derivation")
+                digest = provenance.get("artifact_sha256")
+                require(bool(locator), f"assay {assay_id}: source_locator required", errors)
+                if role in {"primary_publication", "supplementary_material", "structure_record"}:
+                    require(
+                        url in publication_urls,
+                        f"assay {assay_id}: provenance URL must be listed by source_publication",
+                        errors,
+                    )
+                if derivation in {"reconstructed", "computed"}:
+                    require(
+                        isinstance(digest, str) and SHA256_RE.fullmatch(digest) is not None,
+                        f"assay {assay_id}: reconstructed/computed evidence requires artifact SHA-256",
+                        errors,
+                    )
+                if EVIDENCE_ORDER.get(level, -1) >= EVIDENCE_ORDER["F3"]:
+                    require(
+                        role in {
+                            "primary_publication",
+                            "supplementary_material",
+                            "structure_record",
+                            "derived_artifact",
+                        },
+                        f"assay {assay_id}: F3+ evidence requires structured provenance",
+                        errors,
+                    )
+                if level == "F4" and assay.get("system") == "cryo_em_structure":
+                    require(
+                        role == "structure_record"
+                        or (role == "derived_artifact" and isinstance(digest, str)),
+                        f"assay {assay_id}: F4 structural evidence requires a structure record or digested artifact",
+                        errors,
+                    )
 
     replication = record.get("replication_status", {})
     require(isinstance(replication, dict), "replication_status must be an object", errors)
@@ -314,157 +302,75 @@ def validate(record: dict[str, Any]) -> list[str]:
         same_collaboration_only = replication.get("same_collaboration_only")
         replication_evidence = replication.get("replication_evidence")
         if independent_replication == "established":
-            require(
-                same_collaboration_only is False,
-                "independent replication cannot be same-collaboration only",
-                errors,
-            )
+            require(same_collaboration_only is False, "established replication cannot be same-collaboration", errors)
             require(
                 replication_evidence_complete(replication_evidence),
-                "established independent replication requires complete structured evidence",
+                "established replication requires complete structured evidence",
                 errors,
             )
             if isinstance(replication_evidence, dict):
-                raw_refs = replication_evidence.get("evidence_refs", [])
-                if isinstance(raw_refs, list):
-                    replication_refs = {str(ref) for ref in raw_refs}
+                refs = replication_evidence.get("evidence_refs", [])
+                if isinstance(refs, list):
+                    replication_refs = {str(ref) for ref in refs}
         else:
             require(
                 replication_evidence is None,
-                "non-established replication status requires replication_evidence=null",
+                "non-established replication requires replication_evidence=null",
                 errors,
             )
 
+    allowed_refs = {"publication", *assay_by_id, *replication_refs}
     claims = record.get("claim_audit", [])
-    require(isinstance(claims, list) and bool(claims), "claim_audit must be a non-empty array", errors)
+    require(isinstance(claims, list) and bool(claims), "claim_audit must be non-empty", errors)
+    claim_by_type: dict[str, dict[str, Any]] = {}
     supported_claims = 0
     selected_candidate_support = False
-    observed_claim_types: set[str] = set()
     if isinstance(claims, list):
-        seen_claims: set[str] = set()
+        seen_ids: set[str] = set()
         for index, claim in enumerate(claims):
             require(isinstance(claim, dict), f"claim_audit[{index}] must be an object", errors)
             if not isinstance(claim, dict):
                 continue
-            claim_id = claim.get("claim_id")
-            claim_type = claim.get("claim_type")
-            claim_subject = claim.get("claim_subject")
-            claim_predicate = claim.get("claim_predicate")
+            claim_id = str(claim.get("claim_id") or "")
+            claim_type = str(claim.get("claim_type") or "")
             status = claim.get("status")
-            scope = claim.get("comparator_scope")
-            statement = claim.get("statement")
             refs = claim.get("evidence_refs", [])
+            require(bool(claim_id), f"claim_audit[{index}].claim_id required", errors)
+            require(claim_id not in seen_ids, f"duplicate claim_id: {claim_id}", errors)
+            seen_ids.add(claim_id)
+            require(claim_type not in claim_by_type, f"duplicate claim_type: {claim_type}", errors)
+            if claim_type:
+                claim_by_type[claim_type] = claim
 
-            require(bool(claim_id), f"claim_audit[{index}].claim_id is required", errors)
-            if claim_id:
-                require(claim_id not in seen_claims, f"duplicate claim_id: {claim_id}", errors)
-                seen_claims.add(str(claim_id))
-            if isinstance(claim_type, str):
-                observed_claim_types.add(claim_type)
-
-            expected_semantics = CLAIM_SEMANTICS.get(str(claim_type))
-            require(
-                expected_semantics is not None,
-                f"claim {claim_id}: unknown structured claim type",
-                errors,
-            )
-            if expected_semantics is not None:
+            expected = CLAIM_SEMANTICS.get(claim_type)
+            require(expected is not None, f"claim {claim_id}: unknown claim_type", errors)
+            if expected is not None:
                 require(
-                    (claim_subject, claim_predicate) == expected_semantics,
-                    f"claim {claim_id}: structured subject/predicate do not match {claim_type}",
+                    (claim.get("claim_subject"), claim.get("claim_predicate")) == expected,
+                    f"claim {claim_id}: structured subject/predicate mismatch",
                     errors,
                 )
-
-            require(isinstance(refs, list) and bool(refs), f"claim {claim_id}: evidence_refs must be non-empty", errors)
-            claim_assays: list[dict[str, Any]] = []
-            if isinstance(refs, list):
-                for ref in refs:
-                    require(
-                        ref == "publication" or ref in assay_by_id or ref in replication_refs,
-                        f"claim {claim_id}: unknown evidence ref {ref}",
-                        errors,
-                    )
-                    if ref in assay_by_id:
-                        claim_assays.append(assay_by_id[ref])
+            require(isinstance(refs, list) and bool(refs), f"claim {claim_id}: evidence_refs required", errors)
+            ref_set = {str(ref) for ref in refs} if isinstance(refs, list) else set()
+            unknown = sorted(ref_set - allowed_refs)
+            require(not unknown, f"claim {claim_id}: unknown evidence refs {unknown}", errors)
+            claim_assays = [assay_by_id[ref] for ref in ref_set if ref in assay_by_id]
 
             if status == "supported_with_limits":
                 supported_claims += 1
                 require(
                     claim_type in SUPPORTED_TYPES,
-                    f"claim {claim_id}: {claim_type} cannot be supported by this preview contract",
+                    f"claim {claim_id}: {claim_type} cannot be supported in this preview",
                     errors,
                 )
-                lowered_statement = statement.lower() if isinstance(statement, str) else ""
-                found_markers = sorted(
-                    marker
-                    for marker in SUPPORTED_STATEMENT_PROHIBITED_MARKERS
-                    if marker in lowered_statement
-                )
-                require(
-                    not found_markers,
-                    f"claim {claim_id}: supported statement contains prohibited escalation markers: {found_markers}",
-                    errors,
-                )
-
-            if claim_type in PROHIBITED_SUPPORTED_TYPES:
+            if claim_type in PROTECTED_TYPES:
                 require(
                     status in {"not_established", "blocked"},
                     f"claim {claim_id}: {claim_type} must be blocked or not established",
                     errors,
                 )
-
-            if claim_type == "universal_superiority":
-                require(status == "blocked", f"claim {claim_id}: universal superiority must be blocked", errors)
-                require(
-                    scope in {"cas9_or_cas12", "all_natural_editors"},
-                    f"claim {claim_id}: universal-superiority scope must name the broader comparator",
-                    errors,
-                )
-
-            if claim_type in {"ai_autonomy", "physical_authorization"}:
+            if claim_type in {"universal_superiority", "ai_autonomy", "physical_authorization"}:
                 require(status == "blocked", f"claim {claim_id}: {claim_type} must be blocked", errors)
-
-            if claim_type == "bounded_comparator_superiority" and status == "supported_with_limits":
-                selected_candidate_support = True
-                require(
-                    scope in {"wild_type_same_family", "specific_test_context"},
-                    f"claim {claim_id}: superiority must remain comparator-bounded",
-                    errors,
-                )
-                require(
-                    comparator.get("comparator_class") == "wild_type_same_family",
-                    f"claim {claim_id}: supported superiority requires a wild-type same-family comparator",
-                    errors,
-                )
-                require(
-                    comparator.get("scope") == "test_context_bounded",
-                    f"claim {claim_id}: supported superiority requires test-context-bounded scope",
-                    errors,
-                )
-                require(
-                    screening.get("selection_bias_status") != "BLOCK" if isinstance(screening, dict) else False,
-                    f"claim {claim_id}: blocked selection-bias status cannot support superiority",
-                    errors,
-                )
-                require(bool(claim_assays), f"claim {claim_id}: supported superiority must reference a functional assay", errors)
-                comparator_name = comparator.get("name")
-                require(
-                    all(assay.get("comparator") == comparator_name for assay in claim_assays),
-                    f"claim {claim_id}: every referenced assay must use the named comparator",
-                    errors,
-                )
-                exceeded = [
-                    assay
-                    for assay in claim_assays
-                    if assay.get("system") in FUNCTIONAL_SYSTEMS
-                    and assay.get("result_direction") == "exceeded_reference_activity"
-                    and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1) >= EVIDENCE_ORDER["F3"]
-                ]
-                require(
-                    bool(exceeded),
-                    f"claim {claim_id}: no referenced F3+ functional assay exceeds the named reference",
-                    errors,
-                )
 
             if claim_type == "molecular_activity" and status == "supported_with_limits":
                 selected_candidate_support = True
@@ -476,36 +382,47 @@ def validate(record: dict[str, Any]) -> list[str]:
                     in {"retained_reference_activity", "exceeded_reference_activity", "mixed"}
                     and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1) >= EVIDENCE_ORDER["F3"]
                 ]
+                require(bool(active), f"claim {claim_id}: referenced F3+ functional assay required", errors)
+
+            if claim_type == "bounded_comparator_superiority" and status == "supported_with_limits":
+                selected_candidate_support = True
                 require(
-                    bool(active),
-                    f"claim {claim_id}: molecular activity support requires a referenced F3+ functional assay",
+                    comparator.get("comparator_class") == "wild_type_same_family"
+                    and comparator.get("scope") == "test_context_bounded",
+                    f"claim {claim_id}: comparator must be bounded wild-type same-family",
                     errors,
                 )
+                require(
+                    screening.get("selection_bias_status") != "BLOCK" if isinstance(screening, dict) else False,
+                    f"claim {claim_id}: blocked selection bias cannot support superiority",
+                    errors,
+                )
+                named = comparator.get("name")
+                require(bool(claim_assays), f"claim {claim_id}: referenced assay required", errors)
+                require(
+                    all(assay.get("comparator") == named for assay in claim_assays),
+                    f"claim {claim_id}: every referenced assay must use named comparator",
+                    errors,
+                )
+                exceeded = [
+                    assay
+                    for assay in claim_assays
+                    if assay.get("system") in FUNCTIONAL_SYSTEMS
+                    and assay.get("result_direction") == "exceeded_reference_activity"
+                    and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1) >= EVIDENCE_ORDER["F3"]
+                ]
+                require(bool(exceeded), f"claim {claim_id}: referenced F3+ superiority evidence required", errors)
 
             if claim_type == "structural_characterization" and status == "supported_with_limits":
                 selected_candidate_support = True
-                structural_assays = [
+                structural = [
                     assay
                     for assay in claim_assays
                     if assay.get("system") == "cryo_em_structure"
                     and assay.get("result_direction") == "structural_observation"
                     and EVIDENCE_ORDER.get(assay.get("evidence_level"), -1) >= EVIDENCE_ORDER["F3"]
                 ]
-                require(
-                    bool(structural_assays),
-                    f"claim {claim_id}: structural support requires a referenced F3+ cryo-EM assay",
-                    errors,
-                )
-                require(
-                    isinstance(mechanism, dict) and mechanism.get("cryo_em_characterized") is True,
-                    f"claim {claim_id}: structural support requires cryo-EM characterization",
-                    errors,
-                )
-                require(
-                    isinstance(mechanism, dict) and mechanism.get("status") == "structural_contacts_observed",
-                    f"claim {claim_id}: structural claim exceeds recorded mechanism evidence",
-                    errors,
-                )
+                require(bool(structural), f"claim {claim_id}: referenced F3+ structure required", errors)
 
             if claim_type in {"independent_replication", "platform_generalization"}:
                 if status == "supported_with_limits":
@@ -513,12 +430,12 @@ def validate(record: dict[str, Any]) -> list[str]:
                         independent_replication == "established"
                         and same_collaboration_only is False
                         and replication_evidence_complete(replication_evidence),
-                        f"claim {claim_id}: supported {claim_type} requires structured unrelated-laboratory replication evidence",
+                        f"claim {claim_id}: supported {claim_type} requires structured unrelated-lab evidence",
                         errors,
                     )
                     require(
-                        replication_refs.issubset({str(ref) for ref in refs}),
-                        f"claim {claim_id}: supported {claim_type} must reference the replication evidence",
+                        replication_refs.issubset(ref_set),
+                        f"claim {claim_id}: supported {claim_type} must cite replication evidence",
                         errors,
                     )
                 elif independent_replication != "established":
@@ -528,60 +445,81 @@ def validate(record: dict[str, Any]) -> list[str]:
                         errors,
                     )
 
-        missing_claim_types = sorted(REQUIRED_CLAIM_TYPES - observed_claim_types)
+        missing_types = sorted(REQUIRED_CLAIM_TYPES - claim_by_type.keys())
+        require(not missing_types, f"claim firewall missing types: {missing_types}", errors)
+
+    replication_claim = claim_by_type.get("independent_replication", {})
+    if independent_replication == "established":
         require(
-            not missing_claim_types,
-            f"claim firewall missing required claim types: {missing_claim_types}",
+            replication_claim.get("status") == "supported_with_limits",
+            "established replication requires supported independent_replication claim",
+            errors,
+        )
+        refs = replication_claim.get("evidence_refs", [])
+        require(
+            isinstance(refs, list) and replication_refs.issubset({str(ref) for ref in refs}),
+            "independent_replication claim must cite structured replication evidence",
+            errors,
+        )
+    else:
+        require(
+            replication_claim.get("status") in {"not_established", "blocked"},
+            "non-established replication requires non-supported replication claim",
             errors,
         )
 
     if selected_candidate_support:
         require(
             selection_status in POSITIVE_SELECTION_STATES,
-            "supported activity, superiority, or selected-structure claims require positive selected candidates",
+            "supported selected-candidate claims require positive selected candidates",
             errors,
         )
-        if selection_status == "positive_exact":
-            require(
-                isinstance(selected_count, int) and selected_count > 0,
-                "positive_exact supported claims require selected_count > 0",
-                errors,
-            )
+
+    risk = record.get("risk_assessment", {})
+    require(isinstance(risk, dict), "risk_assessment must be an object", errors)
+    if isinstance(risk, dict):
+        missing_risks = sorted(RISK_DIMENSIONS - risk.keys())
+        extra_risks = sorted(risk.keys() - RISK_DIMENSIONS)
+        require(not missing_risks, f"risk matrix missing dimensions: {missing_risks}", errors)
+        require(not extra_risks, f"risk matrix has unknown dimensions: {extra_risks}", errors)
+        for name in sorted(RISK_DIMENSIONS & risk.keys()):
+            item = risk.get(name, {})
+            require(isinstance(item, dict), f"risk {name}: object required", errors)
+            if not isinstance(item, dict):
+                continue
+            refs = item.get("evidence_refs", [])
+            require(isinstance(refs, list) and bool(refs), f"risk {name}: evidence_refs required", errors)
+            ref_set = {str(ref) for ref in refs} if isinstance(refs, list) else set()
+            unknown = sorted(ref_set - allowed_refs)
+            require(not unknown, f"risk {name}: unknown evidence refs {unknown}", errors)
+            if item.get("status") == "established":
+                require(
+                    bool(ref_set & (set(assay_by_id) | replication_refs)),
+                    f"risk {name}: established status requires assay or replication evidence",
+                    errors,
+                )
 
     overall = record.get("overall_verdict")
     require(overall in {"ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"}, "invalid overall_verdict", errors)
     if overall == "ACCEPT_WITH_LIMITS":
-        require(
-            supported_claims > 0,
-            "ACCEPT_WITH_LIMITS requires at least one bounded supported claim",
-            errors,
-        )
+        require(supported_claims > 0, "ACCEPT_WITH_LIMITS requires bounded supported claim", errors)
 
     safety = record.get("safety_status", {})
     require(isinstance(safety, dict), "safety_status must be an object", errors)
     if isinstance(safety, dict):
-        require(
-            safety.get("mode") == "computational_documentary_only",
-            "safety mode must be computational_documentary_only",
-            errors,
-        )
+        require(safety.get("mode") == "computational_documentary_only", "invalid safety mode", errors)
         require(safety.get("physical_biology_authorized") is False, "physical biology must remain unauthorized", errors)
         require(safety.get("physical_protocol_included") is False, "physical protocols must not be included", errors)
         require(safety.get("sequence_instructions_included") is False, "sequence instructions must not be included", errors)
-        require(safety.get("clinical_or_field_use_authorized") is False, "clinical or field use must remain unauthorized", errors)
+        require(safety.get("clinical_or_field_use_authorized") is False, "clinical/field use must remain unauthorized", errors)
 
     return errors
 
 
 def main(argv: list[str]) -> int:
-    """Validate each path from argv and return a fail-closed process code."""
     if len(argv) < 2:
-        print(
-            "usage: validate_ai_designed_molecule_claim_audit.py AUDIT.json [AUDIT.json ...]",
-            file=sys.stderr,
-        )
+        print("usage: validate_ai_designed_molecule_claim_audit.py AUDIT.json [...]", file=sys.stderr)
         return 2
-
     failed = False
     for raw_path in argv[1:]:
         path = Path(raw_path)
@@ -589,7 +527,6 @@ def main(argv: list[str]) -> int:
             errors = validate(load_json(path))
         except (OSError, json.JSONDecodeError, ValueError) as exc:
             errors = [str(exc)]
-
         if errors:
             failed = True
             print(f"BLOCK {path}")
@@ -597,7 +534,6 @@ def main(argv: list[str]) -> int:
                 print(f"  - {error}")
         else:
             print(f"ACCEPT {path}")
-
     return 1 if failed else 0
 
 
