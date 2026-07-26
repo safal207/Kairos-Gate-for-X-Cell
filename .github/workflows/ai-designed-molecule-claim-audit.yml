@@ -1,0 +1,128 @@
+name: AI-Designed Molecule Claim Audit
+
+on:
+  pull_request:
+    paths:
+      - "schemas/ai-designed-molecule-claim-audit.schema.json"
+      - "examples/*.ai-designed-molecule-claim-audit.json"
+      - "tests/fixtures/invalid_ai_designed_molecule_*.json"
+      - "scripts/validate_ai_designed_molecule_claim_audit.py"
+      - "scripts/validate_bioevidence_contract.py"
+      - "reports/syntnpb-2026-ai-designed-nuclease-claim-audit.md"
+      - "requirements/schema-runtime.txt"
+      - ".github/workflows/ai-designed-molecule-claim-audit.yml"
+  push:
+    paths:
+      - "schemas/ai-designed-molecule-claim-audit.schema.json"
+      - "examples/*.ai-designed-molecule-claim-audit.json"
+      - "tests/fixtures/invalid_ai_designed_molecule_*.json"
+      - "scripts/validate_ai_designed_molecule_claim_audit.py"
+      - "scripts/validate_bioevidence_contract.py"
+      - "reports/syntnpb-2026-ai-designed-nuclease-claim-audit.md"
+      - "requirements/schema-runtime.txt"
+      - ".github/workflows/ai-designed-molecule-claim-audit.yml"
+
+permissions:
+  contents: read
+
+env:
+  BIOEVIDENCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+jobs:
+  syntnpb-claim-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact pull-request head
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          ref: ${{ env.BIOEVIDENCE_HEAD_SHA }}
+          persist-credentials: false
+
+      - name: Verify checked-out head identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$BIOEVIDENCE_HEAD_SHA"
+          echo "exact_head=$BIOEVIDENCE_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned schema runtime
+        run: python -m pip install --disable-pip-version-check -r requirements/schema-runtime.txt
+
+      - name: Compile claim-audit entrypoints
+        run: |
+          python -m compileall -q \
+            scripts/validate_bioevidence_contract.py \
+            scripts/validate_ai_designed_molecule_claim_audit.py
+
+      - name: Validate bounded SynTnpB audit through canonical authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_bioevidence_contract.py \
+            ai-designed-molecule \
+            examples/syntnpb-2026.ai-designed-molecule-claim-audit.json \
+            | tee syntnpb-accepted.txt
+          grep -q '^ACCEPT examples/syntnpb-2026.ai-designed-molecule-claim-audit.json' syntnpb-accepted.txt
+          grep -q 'contract=ai-designed-molecule' syntnpb-accepted.txt
+          ! grep -q 'Traceback' syntnpb-accepted.txt
+
+      - name: Prove universal and clinical overclaims fail closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          fixture=tests/fixtures/invalid_ai_designed_molecule_claims_universal_and_clinical.json
+          set +e
+          python scripts/validate_bioevidence_contract.py \
+            ai-designed-molecule "$fixture" \
+            > syntnpb-overclaim-block.txt 2>&1
+          code=$?
+          set -e
+          cat syntnpb-overclaim-block.txt
+          test "$code" -ne 0
+          grep -q '^BLOCK ' syntnpb-overclaim-block.txt
+          grep -q 'universal_superiority' syntnpb-overclaim-block.txt
+          grep -q 'clinical_safety' syntnpb-overclaim-block.txt
+          ! grep -q 'Traceback' syntnpb-overclaim-block.txt
+
+      - name: Build exact-head claim-audit receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "contract=ai-designed-molecule"
+            echo "schema_version=0.2.0-preview.1"
+            echo "head_sha=$BIOEVIDENCE_HEAD_SHA"
+            echo "checked_out_sha=$(git rev-parse HEAD)"
+            echo "workflow_run_id=${GITHUB_RUN_ID}"
+            echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "physical_biology_authorized=false"
+            echo "clinical_or_field_use_authorized=false"
+            sha256sum \
+              schemas/ai-designed-molecule-claim-audit.schema.json \
+              scripts/validate_ai_designed_molecule_claim_audit.py \
+              scripts/validate_bioevidence_contract.py \
+              examples/syntnpb-2026.ai-designed-molecule-claim-audit.json \
+              tests/fixtures/invalid_ai_designed_molecule_claims_universal_and_clinical.json \
+              reports/syntnpb-2026-ai-designed-nuclease-claim-audit.md
+          } > syntnpb-claim-audit-receipt.txt
+          cat syntnpb-claim-audit-receipt.txt
+          test "$(git rev-parse HEAD)" = "$BIOEVIDENCE_HEAD_SHA"
+
+      - name: Upload claim-audit evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: syntnpb-ai-designed-molecule-audit-${{ env.BIOEVIDENCE_HEAD_SHA }}
+          path: |
+            syntnpb-accepted.txt
+            syntnpb-overclaim-block.txt
+            syntnpb-claim-audit-receipt.txt
+          if-no-files-found: error
+          retention-days: 30
