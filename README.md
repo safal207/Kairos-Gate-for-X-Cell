@@ -176,12 +176,15 @@ The public functional statements in the SynTnpB reference record are classified 
 
 - publication reporting cannot be mislabeled as F3 or F4;
 - replication references must resolve to external provenance-bearing evidence objects;
-- established replication requires F5 and matching unrelated-laboratory identity, materials, and unit;
-- platform generalization requires broad coverage across targets, laboratories, delivery systems, organisms, and populations;
+- established replication requires F5 and matching unrelated-laboratory identity, materials, unit, endpoint, and artifact kind;
+- platform generalization requires matching F5 evidence and broad coverage across targets, laboratories, delivery systems, organisms, and populations;
 - a complete denominator must reconcile generated, excluded, screened, failed, and selected candidates;
-- every assay and external evidence object declares the claim or risk endpoints it actually measures;
-- established risk dimensions require risk-specific evidence at defined minimum levels;
-- one generated mutation suite exercises every normative negative path;
+- known partial counts must remain physically possible, including `screened <= generated` and `selected <= screened`;
+- cryo-EM evidence is structurally bound and cannot be relabeled as delivery, toxicity, or another risk endpoint;
+- cellular activity assays cannot silently become safety or structural evidence;
+- F5 artifact kinds must agree with their declared external evidence kinds;
+- established risk dimensions require external risk-assessment evidence with matching endpoints and defined minimum levels;
+- one generated mutation suite currently exercises 13 normative negative paths;
 - the exact-head receipt hashes every audit included in the positive result.
 
 This preview is stacked on the hardened schema-first authority and is not part of the v0.1 release claim. It contains no sequences, physical procedures, delivery instructions, or experimental authorization.
