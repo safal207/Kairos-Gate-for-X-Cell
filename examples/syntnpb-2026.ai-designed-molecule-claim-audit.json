@@ -22,8 +22,8 @@
     "physical_entity_created_by_laboratory": true,
     "design_method": [
       "structure-guided inverse protein folding",
-      "evolution-informed residue constraints",
-      "laboratory high-throughput functional screening"
+      "evolution-informed constraints",
+      "laboratory functional screening"
     ],
     "sequence_identity_to_reference_percent": null,
     "reference_comparator": {
@@ -47,62 +47,46 @@
     {
       "assay_id": "bacterial-functional-screen",
       "system": "bacterial_cells",
-      "assay_scope": "Functional editing activity reported for generated SynTnpB candidates in the study's bacterial test context.",
+      "assay_scope": "Reported functional screen in bacterial cells.",
       "comparator": "wild-type TnpB reference used by the study",
       "biological_unit_status": "unresolved",
       "independent_biological_n": null,
       "result_direction": "mixed",
       "evidence_level": "F3",
-      "limitations": [
-        "The public abstract does not establish an independent biological N for this audit.",
-        "Candidate-level failures and the complete screened denominator are not reconstructed here.",
-        "This assay does not compare SynTnpB with all Cas9 or Cas12 editors."
-      ]
+      "limitations": ["Independent biological N and full candidate denominator are unresolved."]
     },
     {
       "assay_id": "plant-cell-functional-validation",
       "system": "plant_cells",
-      "assay_scope": "Selected SynTnpB candidates were assessed for editing activity in a plant-cell system.",
+      "assay_scope": "Reported activity of selected variants in a plant-cell system.",
       "comparator": "wild-type TnpB reference used by the study",
       "biological_unit_status": "unresolved",
       "independent_biological_n": null,
       "result_direction": "exceeded_reference_activity",
       "evidence_level": "F3",
-      "limitations": [
-        "Cell-system activity is not field performance or agricultural readiness.",
-        "Delivery, ecological impact, durability, and independent replication are not established by this audit.",
-        "The comparison remains bounded to the study's named TnpB reference and test conditions."
-      ]
+      "limitations": ["Plant-cell activity is not field readiness or ecological safety."]
     },
     {
       "assay_id": "human-cell-functional-validation",
       "system": "human_cells",
-      "assay_scope": "Selected SynTnpB candidates were assessed for editing activity in a human-cell system.",
+      "assay_scope": "Reported activity of selected variants in a human-cell system.",
       "comparator": "wild-type TnpB reference used by the study",
       "biological_unit_status": "unresolved",
       "independent_biological_n": null,
       "result_direction": "exceeded_reference_activity",
       "evidence_level": "F3",
-      "limitations": [
-        "Activity in human cells is not in-vivo efficacy, clinical safety, or therapeutic benefit.",
-        "Off-target superiority, delivery, immunogenicity, toxicity, and durability are not established by this audit.",
-        "The comparison does not establish universal superiority over Cas9 or Cas12."
-      ]
+      "limitations": ["Human-cell activity is not clinical safety or therapeutic efficacy."]
     },
     {
       "assay_id": "cryo-em-selected-variant",
       "system": "cryo_em_structure",
-      "assay_scope": "Cryo-EM characterization of a selected divergent active SynTnpB variant across reported conformational states.",
+      "assay_scope": "Cryo-EM characterization of a selected active divergent variant.",
       "comparator": "structural interpretation within the selected SynTnpB case",
       "biological_unit_status": "not_applicable",
       "independent_biological_n": null,
       "result_direction": "structural_observation",
       "evidence_level": "F4",
-      "limitations": [
-        "A selected structure does not characterize all generated or screened candidates.",
-        "Observed contacts support a structural explanation, not clinical safety or broad causal superiority.",
-        "The selected variant is subject to winner-selection context."
-      ]
+      "limitations": ["One selected structure does not represent the complete designed library."]
     }
   ],
   "claim_audit": [
@@ -110,7 +94,6 @@
       "claim_id": "C1",
       "claim_subject": "designed_molecule",
       "claim_predicate": "has_bounded_molecular_activity",
-      "statement": "The hybrid AI and evolution-guided strategy generated divergent TnpB sequences that produced active RNA-guided nucleases after laboratory construction and screening.",
       "claim_type": "molecular_activity",
       "comparator_scope": "specific_test_context",
       "status": "supported_with_limits",
@@ -120,17 +103,12 @@
         "plant-cell-functional-validation",
         "human-cell-functional-validation"
       ],
-      "limitations": [
-        "The AI proposed sequences; laboratories created and experimentally tested the physical molecules.",
-        "The complete generation-to-failure denominator is not reconstructed in this preview audit.",
-        "Activity is bounded to the reported systems and assays."
-      ]
+      "limitations": ["The model proposed sequences; laboratories created and tested physical molecules."]
     },
     {
       "claim_id": "C2",
       "claim_subject": "selected_variants",
       "claim_predicate": "exceeds_named_comparator_in_test_context",
-      "statement": "Some selected SynTnpB variants retained or exceeded the activity of the study's wild-type TnpB reference in tested cellular systems.",
       "claim_type": "bounded_comparator_superiority",
       "comparator_scope": "wild_type_same_family",
       "status": "supported_with_limits",
@@ -139,160 +117,102 @@
         "plant-cell-functional-validation",
         "human-cell-functional-validation"
       ],
-      "limitations": [
-        "The comparator is the study's wild-type TnpB reference, not every natural nuclease.",
-        "Performance may be target-, assay-, cell-system-, and variant-dependent.",
-        "Editing activity alone does not establish specificity, safety, delivery, or therapeutic utility."
-      ]
+      "limitations": ["The comparison is bounded to the named wild-type TnpB reference and tested contexts."]
     },
     {
       "claim_id": "C3",
       "claim_subject": "selected_variant_structure",
       "claim_predicate": "has_selected_variant_structural_contacts",
-      "statement": "Cryo-EM of a selected divergent active variant revealed stabilizing contacts at reported RNA and DNA interfaces.",
       "claim_type": "structural_characterization",
       "comparator_scope": "specific_test_context",
       "status": "supported_with_limits",
-      "evidence_refs": [
-        "publication",
-        "cryo-em-selected-variant"
-      ],
-      "limitations": [
-        "The structure concerns a selected active variant rather than the entire generated library.",
-        "Structural contacts do not independently identify the complete functional mechanism.",
-        "The observation does not establish safety or clinical superiority."
-      ]
+      "evidence_refs": ["publication", "cryo-em-selected-variant"],
+      "limitations": ["Structural contacts do not establish complete functional causality or safety."]
     },
     {
       "claim_id": "C4",
       "claim_subject": "design_platform",
       "claim_predicate": "generalizes_across_targets_labs_delivery_populations",
-      "statement": "The SynTnpB design strategy generalizes reliably across targets, laboratories, delivery systems, and populations.",
       "claim_type": "platform_generalization",
       "comparator_scope": "not_applicable",
       "status": "not_established",
       "evidence_refs": ["publication"],
-      "limitations": [
-        "Independent replication is not established in this audit.",
-        "Broad target and delivery generalization require additional evidence.",
-        "The reported cellular systems do not constitute population-level validation."
-      ]
+      "limitations": ["Unrelated-laboratory replication and broad delivery generalization are not established."]
     },
     {
       "claim_id": "C5",
       "claim_subject": "designed_molecule",
       "claim_predicate": "outperforms_cas9_cas12_or_all_natural_editors",
-      "statement": "SynTnpB universally outperforms Cas9, Cas12, and natural gene editors.",
       "claim_type": "universal_superiority",
       "comparator_scope": "all_natural_editors",
       "status": "blocked",
       "evidence_refs": ["publication"],
-      "limitations": [
-        "The reported comparator is a wild-type TnpB reference.",
-        "No universal cross-editor benchmark is established by this record.",
-        "Activity in selected assays cannot support an all-context superiority claim."
-      ]
+      "limitations": ["No universal cross-editor benchmark is accepted by this record."]
     },
     {
       "claim_id": "C6",
       "claim_subject": "designed_molecule",
       "claim_predicate": "is_clinically_safe",
-      "statement": "SynTnpB is clinically safe in humans.",
       "claim_type": "clinical_safety",
       "comparator_scope": "not_applicable",
       "status": "not_established",
-      "evidence_refs": [
-        "publication",
-        "human-cell-functional-validation"
-      ],
-      "limitations": [
-        "Human-cell activity is not clinical safety.",
-        "In-vivo toxicity, immunogenicity, delivery, durability, and comprehensive off-target risk are outside the supported record.",
-        "No clinical authorization follows from this audit."
-      ]
+      "evidence_refs": ["publication", "human-cell-functional-validation"],
+      "limitations": ["Cell activity does not establish in-vivo safety, delivery, toxicity, or immunogenicity."]
     },
     {
       "claim_id": "C7",
       "claim_subject": "designed_molecule",
       "claim_predicate": "has_therapeutic_efficacy",
-      "statement": "SynTnpB has demonstrated therapeutic efficacy.",
       "claim_type": "therapeutic_efficacy",
       "comparator_scope": "not_applicable",
       "status": "not_established",
       "evidence_refs": ["publication"],
-      "limitations": [
-        "Molecular editing activity is not treatment efficacy.",
-        "No patient-level or therapeutic-outcome evidence is represented here.",
-        "Clinical claims remain blocked."
-      ]
+      "limitations": ["No patient-level therapeutic outcome is represented."]
     },
     {
       "claim_id": "C8",
       "claim_subject": "designed_molecule",
       "claim_predicate": "is_ready_for_agricultural_deployment",
-      "statement": "SynTnpB is ready for agricultural deployment.",
       "claim_type": "agricultural_readiness",
       "comparator_scope": "not_applicable",
       "status": "not_established",
-      "evidence_refs": [
-        "publication",
-        "plant-cell-functional-validation"
-      ],
-      "limitations": [
-        "Plant-cell activity is not field performance or ecological safety.",
-        "Regulatory, containment, durability, and environmental evidence are not established.",
-        "Field use is not authorized."
-      ]
+      "evidence_refs": ["publication", "plant-cell-functional-validation"],
+      "limitations": ["Plant-cell activity is not field performance or ecological safety."]
     },
     {
       "claim_id": "C9",
       "claim_subject": "study_findings",
       "claim_predicate": "has_unrelated_laboratory_replication",
-      "statement": "The SynTnpB findings have been independently replicated by an unrelated laboratory.",
       "claim_type": "independent_replication",
       "comparator_scope": "not_applicable",
       "status": "not_established",
       "evidence_refs": ["publication"],
-      "limitations": [
-        "This audit records the originating collaboration's publication.",
-        "No unrelated-laboratory replication is accepted in the current record.",
-        "Publication and peer review do not themselves equal independent replication."
-      ]
+      "limitations": ["Peer review and one collaboration do not equal unrelated-laboratory replication."]
     },
     {
       "claim_id": "C10",
       "claim_subject": "ai_system",
       "claim_predicate": "was_created_and_validated_autonomously_by_ai",
-      "statement": "The AI autonomously created and experimentally validated the gene editor without human scientific work.",
       "claim_type": "ai_autonomy",
       "comparator_scope": "not_applicable",
       "status": "blocked",
       "evidence_refs": ["publication"],
-      "limitations": [
-        "Humans selected constraints, constructed molecules, ran screens, interpreted results, and performed structural work.",
-        "The model role was sequence proposal within a human-designed pipeline.",
-        "Attribution must preserve the full human and experimental chain."
-      ]
+      "limitations": ["Human scientists designed constraints, built molecules, ran assays, and interpreted evidence."]
     },
     {
       "claim_id": "C11",
       "claim_subject": "audit_record",
       "claim_predicate": "authorizes_physical_biology",
-      "statement": "This audit authorizes synthesis, testing, deployment, or use of SynTnpB systems.",
       "claim_type": "physical_authorization",
       "comparator_scope": "not_applicable",
       "status": "blocked",
       "evidence_refs": ["publication"],
-      "limitations": [
-        "BioEvidence OS is computational and documentary only.",
-        "No sequences, procedures, delivery methods, concentrations, or optimization instructions are included.",
-        "Physical work requires institution-owned scientific, biosafety, ethical, legal, and regulatory governance."
-      ]
+      "limitations": ["This computational audit grants no physical, clinical, or field authorization."]
     }
   ],
   "mechanism_evidence": {
     "cryo_em_characterized": true,
-    "scope": "Selected divergent active SynTnpB variant with reported RNA and DNA interface contacts across structural states.",
+    "scope": "Selected active divergent SynTnpB variant.",
     "status": "structural_contacts_observed",
     "functional_causality_identified": false
   },
@@ -302,13 +222,13 @@
     "replication_evidence": null
   },
   "overall_verdict": "ACCEPT_WITH_LIMITS",
-  "next_valid_action": "Obtain the full article and supplementary methods for denominator reconstruction, comparator-specific target tables, biological-unit accounting, off-target evidence mapping, and independent-replication search without adding physical experimental instructions.",
+  "next_valid_action": "Audit the full article and supplements for denominators, biological units, comparator tables, specificity evidence, and independent replication without adding physical experimental instructions.",
   "safety_status": {
     "mode": "computational_documentary_only",
     "physical_biology_authorized": false,
     "physical_protocol_included": false,
     "sequence_instructions_included": false,
     "clinical_or_field_use_authorized": false,
-    "notes": "This record audits evidence and claim scope only. It does not authorize or instruct biological modification."
+    "notes": "Evidence and claim-scope audit only."
   }
 }
