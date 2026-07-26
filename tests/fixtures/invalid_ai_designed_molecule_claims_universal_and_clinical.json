@@ -17,7 +17,7 @@
     "generated_entity": "protein_amino_acid_sequence",
     "physical_entity_created_by_laboratory": true,
     "design_method": ["inverse protein folding", "laboratory screening"],
-    "sequence_identity_to_reference_percent": 77.0,
+    "sequence_identity_to_reference_percent": null,
     "reference_comparator": {
       "name": "wild-type TnpB",
       "comparator_class": "wild_type_same_family",
@@ -65,6 +65,24 @@
       "status": "supported_with_limits",
       "evidence_refs": ["publication", "human-cell-assay"],
       "limitations": ["This should be not established or blocked."]
+    },
+    {
+      "claim_id": "BAD3",
+      "statement": "The AI autonomously created and validated the editor without human scientific work.",
+      "claim_type": "ai_autonomy",
+      "comparator_scope": "not_applicable",
+      "status": "not_established",
+      "evidence_refs": ["publication"],
+      "limitations": ["This contract requires an explicit blocked status."]
+    },
+    {
+      "claim_id": "BAD4",
+      "statement": "This audit authorizes physical synthesis and deployment.",
+      "claim_type": "physical_authorization",
+      "comparator_scope": "not_applicable",
+      "status": "not_established",
+      "evidence_refs": ["publication"],
+      "limitations": ["This contract requires an explicit blocked status."]
     }
   ],
   "mechanism_evidence": {
@@ -78,7 +96,7 @@
     "independent_replication": "not_assessed"
   },
   "overall_verdict": "ACCEPT_WITH_LIMITS",
-  "next_valid_action": "Block universal and clinical overclaims.",
+  "next_valid_action": "Block universal, clinical, autonomous-AI, and execution overclaims.",
   "safety_status": {
     "mode": "computational_documentary_only",
     "physical_biology_authorized": false,
