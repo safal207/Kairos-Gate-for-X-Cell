@@ -25,7 +25,7 @@
       "evolution-informed residue constraints",
       "laboratory high-throughput functional screening"
     ],
-    "sequence_identity_to_reference_percent": 77.0,
+    "sequence_identity_to_reference_percent": null,
     "reference_comparator": {
       "name": "wild-type TnpB reference used by the study",
       "comparator_class": "wild_type_same_family",
