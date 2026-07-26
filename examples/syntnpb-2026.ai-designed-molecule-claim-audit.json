@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2.0-preview.2",
+  "schema_version": "0.2.0-preview.3",
   "case_id": "syntnpb-science-aed6123-2026",
   "source_publication": {
     "title": "Structure and evolution-guided design of minimal RNA-guided nucleases",
@@ -53,7 +53,14 @@
       "independent_biological_n": null,
       "result_direction": "mixed",
       "evidence_level": "F3",
-      "limitations": ["Independent biological N and full candidate denominator are unresolved."]
+      "provenance": {
+        "source_role": "primary_publication",
+        "source_url": "https://pubmed.ncbi.nlm.nih.gov/41573840/",
+        "source_locator": "PubMed abstract: active designed nucleases reported in bacterial cells",
+        "derivation": "directly_reported",
+        "artifact_sha256": null
+      },
+      "limitations": ["Independent biological N and the full candidate denominator are unresolved."]
     },
     {
       "assay_id": "plant-cell-functional-validation",
@@ -64,6 +71,13 @@
       "independent_biological_n": null,
       "result_direction": "exceeded_reference_activity",
       "evidence_level": "F3",
+      "provenance": {
+        "source_role": "primary_publication",
+        "source_url": "https://pubmed.ncbi.nlm.nih.gov/41573840/",
+        "source_locator": "PubMed abstract: enhanced activity reported in plant cells",
+        "derivation": "directly_reported",
+        "artifact_sha256": null
+      },
       "limitations": ["Plant-cell activity is not field readiness or ecological safety."]
     },
     {
@@ -75,6 +89,13 @@
       "independent_biological_n": null,
       "result_direction": "exceeded_reference_activity",
       "evidence_level": "F3",
+      "provenance": {
+        "source_role": "primary_publication",
+        "source_url": "https://pubmed.ncbi.nlm.nih.gov/41573840/",
+        "source_locator": "PubMed abstract: enhanced activity reported in human cells",
+        "derivation": "directly_reported",
+        "artifact_sha256": null
+      },
       "limitations": ["Human-cell activity is not clinical safety or therapeutic efficacy."]
     },
     {
@@ -86,6 +107,13 @@
       "independent_biological_n": null,
       "result_direction": "structural_observation",
       "evidence_level": "F4",
+      "provenance": {
+        "source_role": "structure_record",
+        "source_url": "https://www.rcsb.org/structure/9YYG",
+        "source_locator": "RCSB PDB accession 9YYG",
+        "derivation": "directly_reported",
+        "artifact_sha256": null
+      },
       "limitations": ["One selected structure does not represent the complete designed library."]
     }
   ],
@@ -97,12 +125,7 @@
       "claim_type": "molecular_activity",
       "comparator_scope": "specific_test_context",
       "status": "supported_with_limits",
-      "evidence_refs": [
-        "publication",
-        "bacterial-functional-screen",
-        "plant-cell-functional-validation",
-        "human-cell-functional-validation"
-      ],
+      "evidence_refs": ["publication", "bacterial-functional-screen", "plant-cell-functional-validation", "human-cell-functional-validation"],
       "limitations": ["The model proposed sequences; laboratories created and tested physical molecules."]
     },
     {
@@ -112,11 +135,7 @@
       "claim_type": "bounded_comparator_superiority",
       "comparator_scope": "wild_type_same_family",
       "status": "supported_with_limits",
-      "evidence_refs": [
-        "publication",
-        "plant-cell-functional-validation",
-        "human-cell-functional-validation"
-      ],
+      "evidence_refs": ["publication", "plant-cell-functional-validation", "human-cell-functional-validation"],
       "limitations": ["The comparison is bounded to the named wild-type TnpB reference and tested contexts."]
     },
     {
@@ -210,6 +229,14 @@
       "limitations": ["This computational audit grants no physical, clinical, or field authorization."]
     }
   ],
+  "risk_assessment": {
+    "specificity_off_target": {"status": "not_established", "evidence_refs": ["publication", "human-cell-functional-validation"], "limitations": ["No comprehensive off-target superiority claim is accepted."]},
+    "delivery": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["Systemic or tissue-specific delivery is outside the accepted evidence."]},
+    "immunogenicity": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["Human immunogenicity is not established."]},
+    "toxicity": {"status": "not_established", "evidence_refs": ["publication", "human-cell-functional-validation"], "limitations": ["Cell activity does not establish organism-level toxicity."]},
+    "durability": {"status": "not_established", "evidence_refs": ["publication"], "limitations": ["Long-term editing durability is not established."]},
+    "ecological_safety": {"status": "not_established", "evidence_refs": ["publication", "plant-cell-functional-validation"], "limitations": ["Plant-cell activity does not establish environmental safety."]}
+  },
   "mechanism_evidence": {
     "cryo_em_characterized": true,
     "scope": "Selected active divergent SynTnpB variant.",
