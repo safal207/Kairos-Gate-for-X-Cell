@@ -1,0 +1,206 @@
+{
+  "schema_version": "0.2.0-preview.1",
+  "case_id": "invalid-unreferenced-comparator-evidence",
+  "source_publication": {
+    "title": "Synthetic comparator-binding fixture",
+    "venue": "test fixture",
+    "doi": "10.0000/test.fixture",
+    "publication_status": "other",
+    "published_on": "2026-07-16",
+    "source_urls": ["https://example.org/test-fixture"]
+  },
+  "designed_system": {
+    "designed_name": "SyntheticTnpB",
+    "entity_class": "rna_guided_nuclease",
+    "family": "TnpB",
+    "model_role": "hybrid",
+    "generated_entity": "protein_amino_acid_sequence",
+    "physical_entity_created_by_laboratory": true,
+    "design_method": ["synthetic test construction"],
+    "sequence_identity_to_reference_percent": null,
+    "reference_comparator": {
+      "name": "named wild-type TnpB comparator",
+      "comparator_class": "wild_type_same_family",
+      "scope": "test_context_bounded"
+    }
+  },
+  "screening_context": {
+    "generation_scale": "unknown",
+    "generated_count": null,
+    "screened_count": null,
+    "selected_count": null,
+    "denominator_completeness": "unknown",
+    "winner_selection_prespecified": null,
+    "failed_candidate_reporting": "unknown",
+    "selection_bias_status": "HOLD"
+  },
+  "assays": [
+    {
+      "assay_id": "referenced-wrong-comparator",
+      "system": "human_cells",
+      "assay_scope": "Referenced assay using a different comparator.",
+      "comparator": "unrelated comparator",
+      "biological_unit_status": "unresolved",
+      "independent_biological_n": null,
+      "result_direction": "exceeded_reference_activity",
+      "evidence_level": "F3",
+      "limitations": ["This assay cannot support the named-comparator claim."]
+    },
+    {
+      "assay_id": "unreferenced-correct-comparator",
+      "system": "plant_cells",
+      "assay_scope": "Unreferenced assay using the named comparator.",
+      "comparator": "named wild-type TnpB comparator",
+      "biological_unit_status": "unresolved",
+      "independent_biological_n": null,
+      "result_direction": "exceeded_reference_activity",
+      "evidence_level": "F3",
+      "limitations": ["This assay exists but is not cited by the claim."
+      ]
+    },
+    {
+      "assay_id": "referenced-activity",
+      "system": "bacterial_cells",
+      "assay_scope": "Referenced activity assay.",
+      "comparator": "named wild-type TnpB comparator",
+      "biological_unit_status": "unresolved",
+      "independent_biological_n": null,
+      "result_direction": "retained_reference_activity",
+      "evidence_level": "F3",
+      "limitations": ["Activity only."]
+    },
+    {
+      "assay_id": "referenced-structure",
+      "system": "cryo_em_structure",
+      "assay_scope": "Referenced structural assay.",
+      "comparator": "structural interpretation",
+      "biological_unit_status": "not_applicable",
+      "independent_biological_n": null,
+      "result_direction": "structural_observation",
+      "evidence_level": "F4",
+      "limitations": ["Structure only."]
+    }
+  ],
+  "claim_audit": [
+    {
+      "claim_id": "C1",
+      "statement": "The molecule has bounded molecular activity.",
+      "claim_type": "molecular_activity",
+      "comparator_scope": "specific_test_context",
+      "status": "supported_with_limits",
+      "evidence_refs": ["publication", "referenced-activity"],
+      "limitations": ["Bounded activity claim."]
+    },
+    {
+      "claim_id": "C2",
+      "statement": "The molecule exceeds the named wild-type comparator.",
+      "claim_type": "bounded_comparator_superiority",
+      "comparator_scope": "wild_type_same_family",
+      "status": "supported_with_limits",
+      "evidence_refs": ["publication", "referenced-wrong-comparator"],
+      "limitations": ["The only cited functional assay uses the wrong comparator."
+      ]
+    },
+    {
+      "claim_id": "C3",
+      "statement": "A selected structure was characterized.",
+      "claim_type": "structural_characterization",
+      "comparator_scope": "specific_test_context",
+      "status": "supported_with_limits",
+      "evidence_refs": ["publication", "referenced-structure"],
+      "limitations": ["Structure only."]
+    },
+    {
+      "claim_id": "C4",
+      "statement": "Platform generalization is established.",
+      "claim_type": "platform_generalization",
+      "comparator_scope": "not_applicable",
+      "status": "not_established",
+      "evidence_refs": ["publication"],
+      "limitations": ["Not established."]
+    },
+    {
+      "claim_id": "C5",
+      "statement": "Universal superiority is established.",
+      "claim_type": "universal_superiority",
+      "comparator_scope": "all_natural_editors",
+      "status": "blocked",
+      "evidence_refs": ["publication"],
+      "limitations": ["Blocked."]
+    },
+    {
+      "claim_id": "C6",
+      "statement": "Clinical safety is established.",
+      "claim_type": "clinical_safety",
+      "comparator_scope": "not_applicable",
+      "status": "not_established",
+      "evidence_refs": ["publication"],
+      "limitations": ["Not established."]
+    },
+    {
+      "claim_id": "C7",
+      "statement": "Therapeutic efficacy is established.",
+      "claim_type": "therapeutic_efficacy",
+      "comparator_scope": "not_applicable",
+      "status": "not_established",
+      "evidence_refs": ["publication"],
+      "limitations": ["Not established."]
+    },
+    {
+      "claim_id": "C8",
+      "statement": "Agricultural readiness is established.",
+      "claim_type": "agricultural_readiness",
+      "comparator_scope": "not_applicable",
+      "status": "not_established",
+      "evidence_refs": ["publication"],
+      "limitations": ["Not established."]
+    },
+    {
+      "claim_id": "C9",
+      "statement": "Independent replication is established.",
+      "claim_type": "independent_replication",
+      "comparator_scope": "not_applicable",
+      "status": "not_established",
+      "evidence_refs": ["publication"],
+      "limitations": ["Not established."]
+    },
+    {
+      "claim_id": "C10",
+      "statement": "AI autonomy is established.",
+      "claim_type": "ai_autonomy",
+      "comparator_scope": "not_applicable",
+      "status": "blocked",
+      "evidence_refs": ["publication"],
+      "limitations": ["Blocked."]
+    },
+    {
+      "claim_id": "C11",
+      "statement": "Physical work is authorized.",
+      "claim_type": "physical_authorization",
+      "comparator_scope": "not_applicable",
+      "status": "blocked",
+      "evidence_refs": ["publication"],
+      "limitations": ["Blocked."]
+    }
+  ],
+  "mechanism_evidence": {
+    "cryo_em_characterized": true,
+    "scope": "Synthetic structural fixture.",
+    "status": "structural_contacts_observed",
+    "functional_causality_identified": false
+  },
+  "replication_status": {
+    "same_collaboration_only": true,
+    "independent_replication": "not_assessed"
+  },
+  "overall_verdict": "ACCEPT_WITH_LIMITS",
+  "next_valid_action": "Block the comparator-evidence mismatch.",
+  "safety_status": {
+    "mode": "computational_documentary_only",
+    "physical_biology_authorized": false,
+    "physical_protocol_included": false,
+    "sequence_instructions_included": false,
+    "clinical_or_field_use_authorized": false,
+    "notes": "Negative comparator-binding fixture."
+  }
+}
