@@ -1,0 +1,43 @@
+{
+  "schema": "kairos.smacgmax-phase-compatibility.v0.1",
+  "case_id": "smacgmax-2026",
+  "generated_at": "2026-07-29T15:42:00Z",
+  "assessment": {
+    "status": "KAIROS_PARTIAL_NO_PREINTERVENTION_PHASE",
+    "provisional": true,
+    "basis": "The article landing page and transparent peer-review record establish a perturbation-to-allele-to-selection evidence chain but do not establish a per-cell or matched-population phase measurement collected before editing.",
+    "phase_variable": null,
+    "phase_measurement_time": null,
+    "phase_confidence": null,
+    "phase_source": null,
+    "unlock_condition": "Supplementary or source data must expose a versioned, pre-intervention phase measurement with source-backed sample linkage and replicate semantics."
+  },
+  "admissible_candidates_to_search": [
+    "cell_cycle_phase_or_score_before_transfection",
+    "metabolic_state_proxy_before_transfection",
+    "calcium_signalling_state_before_transfection",
+    "membrane_potential_state_before_transfection",
+    "experimentally_controlled_circadian_phase"
+  ],
+  "inadmissible_substitutions": [
+    "post_editing_cell_cycle_measurement",
+    "collection_time_without_state_readiness_measurement",
+    "selection_outcome_used_as_phase",
+    "guide_or_sequence_context_relabelled_as_phase",
+    "undefined_information_field_or_intention"
+  ],
+  "static_evidence_case": {
+    "supported": true,
+    "input": "pre-intervention cell context + editor/guide/target + dose/duration",
+    "response": "allele distribution and selected phenotype"
+  },
+  "phase_conditioned_preregistration": {
+    "unlocked": false,
+    "reason": "NO_VERIFIED_PREINTERVENTION_PHASE"
+  },
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "experiment_authorization": false,
+    "clinical_authorization": false
+  }
+}
