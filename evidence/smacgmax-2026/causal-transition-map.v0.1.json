@@ -1,0 +1,43 @@
+{
+  "schema": "kairos.smacgmax-causal-transition-map.v0.1",
+  "case_id": "smacgmax-2026",
+  "generated_at": "2026-07-29T15:42:00Z",
+  "nodes": [
+    {"id": "S0", "type": "pre_intervention_state", "label": "Cell line, genotype, viability, culture and unmeasured dynamic state"},
+    {"id": "E", "type": "environment", "label": "Batch, replicate, culture conditions, transfection conditions"},
+    {"id": "P", "type": "candidate_phase", "label": "Pre-intervention measurable phase; currently unresolved"},
+    {"id": "I", "type": "intervention", "label": "smACGmax construct plus guide and target context"},
+    {"id": "D", "type": "dose_duration", "label": "Delivery amount, exposure duration and sampling horizon"},
+    {"id": "A", "type": "allele_distribution", "label": "Single-, double- and triple-conversion allele frequencies"},
+    {"id": "Q", "type": "sequence_context", "label": "Editable bases, window and motifs including NGR"},
+    {"id": "SEL", "type": "selection", "label": "Diphtheria toxin or splicing-screen selection"},
+    {"id": "POP", "type": "post_selection_population", "label": "Enriched or surviving population"},
+    {"id": "Y", "type": "phenotype", "label": "Survival or alternative splicing readout"},
+    {"id": "G", "type": "kairos_assessment", "label": "Phase compatibility and evidence disposition"}
+  ],
+  "edges": [
+    {"from": "S0", "to": "I", "relation": "conditions_response_to"},
+    {"from": "E", "to": "S0", "relation": "shapes"},
+    {"from": "E", "to": "A", "relation": "confounds"},
+    {"from": "E", "to": "Y", "relation": "confounds"},
+    {"from": "P", "to": "I", "relation": "candidate_timing_context_for"},
+    {"from": "I", "to": "A", "relation": "generates"},
+    {"from": "D", "to": "A", "relation": "modulates"},
+    {"from": "Q", "to": "A", "relation": "constrains"},
+    {"from": "A", "to": "SEL", "relation": "enters"},
+    {"from": "SEL", "to": "POP", "relation": "filters"},
+    {"from": "POP", "to": "Y", "relation": "supports_measurement_of"},
+    {"from": "A", "to": "Y", "relation": "candidate_cause_requires_linkage"},
+    {"from": "P", "to": "G", "relation": "required_for_phase_case"},
+    {"from": "A", "to": "G", "relation": "evidence_input"},
+    {"from": "Y", "to": "G", "relation": "evidence_input"}
+  ],
+  "critical_biases": [
+    "Selection can enrich linked passenger variants and does not alone identify the causal allele.",
+    "Post-editing state measurements cannot be relabelled as pre-intervention phase.",
+    "Sequence context, dose, duration, cell line and batch can alter both editing distribution and phenotype.",
+    "Population-level allele frequencies may not provide per-cell allele-to-phenotype linkage."
+  ],
+  "counterfactual_question": "For a matched cell population with the same initial state, editor, guide, target, dose and environment, would the allele or phenotype response differ if a valid pre-intervention phase were different?",
+  "causal_claim_status": "NOT_ESTABLISHED"
+}

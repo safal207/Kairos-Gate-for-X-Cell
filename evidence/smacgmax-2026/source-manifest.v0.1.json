@@ -1,0 +1,135 @@
+{
+  "schema": "kairos.smacgmax-source-manifest.v0.1",
+  "case_id": "smacgmax-2026",
+  "generated_at": "2026-07-29T15:42:00Z",
+  "primary_citation": {
+    "title": "High-diversity base mutagenesis via simultaneous adenine, cytosine and guanine editing",
+    "authors_short": "Hong, Luan, Yuan et al.",
+    "journal": "Nature Communications",
+    "doi": "10.1038/s41467-026-76020-6",
+    "received_at": "2026-03-16",
+    "accepted_at": "2026-07-07",
+    "published_at": "2026-07-27",
+    "article_version_status": "UNEDITED_EARLY_ACCESS"
+  },
+  "retrieval": {
+    "retrieved_at": "2026-07-29T15:42:00Z",
+    "retrieval_mode": "URL_RESOLUTION_ONLY",
+    "bytes_downloaded": false,
+    "reason": "The current audit resolved publisher URLs and source roles but did not obtain immutable local bytes. No cryptographic digest is asserted until a byte retrieval run succeeds.",
+    "next_action": "Run scripts/audit_smacgmax_sources.py in a network-enabled environment, review redirects and licences, then commit only the generated digest report or permitted derived metadata."
+  },
+  "licensing": {
+    "article_and_article_supplements": "CC-BY-NC-ND-4.0 as stated on the article page; do not redistribute adapted article material.",
+    "transparent_peer_review": "CC-BY-4.0 as stated in the peer-review file.",
+    "repository_policy": "Do not commit publisher-hosted binary files. Store URLs, digests, metadata, and independently authored audit results only."
+  },
+  "sources": [
+    {
+      "id": "article_page",
+      "role": "primary_article_landing_page",
+      "url": "https://www.nature.com/articles/s41467-026-76020-6",
+      "media_type": "text/html",
+      "publisher": "Nature Communications",
+      "published_at": "2026-07-27",
+      "version_status": "unedited_early_access",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "article_reference_pdf",
+      "role": "primary_article_pdf",
+      "url": "https://www.nature.com/articles/s41467-026-76020-6_reference.pdf",
+      "media_type": "application/pdf",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "supplementary_information",
+      "role": "supplementary_methods_figures",
+      "url": "https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-026-76020-6/MediaObjects/41467_2026_76020_MOESM1_ESM.pdf",
+      "media_type": "application/pdf",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "additional_files_description",
+      "role": "supplementary_file_index",
+      "url": "https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-026-76020-6/MediaObjects/41467_2026_76020_MOESM2_ESM.pdf",
+      "media_type": "application/pdf",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "supplementary_data_1",
+      "role": "supplementary_data_1",
+      "url": "https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-026-76020-6/MediaObjects/41467_2026_76020_MOESM3_ESM.xlsx",
+      "media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "supplementary_data_2",
+      "role": "supplementary_data_2",
+      "url": "https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-026-76020-6/MediaObjects/41467_2026_76020_MOESM4_ESM.xlsx",
+      "media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "supplementary_data_3",
+      "role": "supplementary_data_3",
+      "url": "https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-026-76020-6/MediaObjects/41467_2026_76020_MOESM5_ESM.xlsx",
+      "media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "supplementary_data_4",
+      "role": "supplementary_data_4",
+      "url": "https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-026-76020-6/MediaObjects/41467_2026_76020_MOESM6_ESM.xlsx",
+      "media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "supplementary_data_5",
+      "role": "supplementary_data_5",
+      "url": "https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-026-76020-6/MediaObjects/41467_2026_76020_MOESM7_ESM.xlsx",
+      "media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "reporting_summary",
+      "role": "reporting_summary",
+      "url": "https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-026-76020-6/MediaObjects/41467_2026_76020_MOESM8_ESM.pdf",
+      "media_type": "application/pdf",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "transparent_peer_review",
+      "role": "reviewer_reports_and_author_responses",
+      "url": "https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-026-76020-6/MediaObjects/41467_2026_76020_MOESM9_ESM.pdf",
+      "media_type": "application/pdf",
+      "license": "CC-BY-4.0",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "source_data",
+      "role": "article_source_data",
+      "url": "https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-026-76020-6/MediaObjects/41467_2026_76020_MOESM10_ESM.xlsx",
+      "media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    }
+  ],
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "experiment_authorization": false,
+    "clinical_authorization": false,
+    "merge_authorization": false
+  }
+}

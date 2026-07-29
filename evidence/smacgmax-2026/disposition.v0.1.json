@@ -1,0 +1,47 @@
+{
+  "schema": "kairos.smacgmax-disposition.v0.1",
+  "case_id": "smacgmax-2026",
+  "generated_at": "2026-07-29T15:42:00Z",
+  "primary_status": "KAIROS_PARTIAL_NO_PREINTERVENTION_PHASE",
+  "secondary_statuses": [
+    "EVIDENCE_CASE_CANDIDATE",
+    "SOURCE_BYTES_AND_DIGESTS_PENDING",
+    "METRIC_REPRODUCTION_PENDING",
+    "REPLICATE_SEMANTICS_PENDING",
+    "ALLELE_PHENOTYPE_LINKAGE_PENDING",
+    "NO_EXPERIMENT_AUTHORIZATION"
+  ],
+  "ready_now": [
+    "atomic claim audit",
+    "publisher source manifest",
+    "peer-review limitation map",
+    "causal transition map",
+    "static perturbation evidence audit"
+  ],
+  "blocked_now": [
+    "phase-conditioned benchmark",
+    "confirmatory predictive modelling",
+    "causal timing claim",
+    "independent replication claim",
+    "therapeutic or safety claim"
+  ],
+  "next_actions": [
+    "Retrieve exact publisher bytes and record SHA-256 digests without committing restricted binaries.",
+    "Inspect supplementary and source-data fields for pre-intervention phase, sample identifiers and biological replicate semantics.",
+    "Recalculate maximum, mean and target-stratified editing metrics where source data permit.",
+    "Separate allele enrichment from allele-to-phenotype causal linkage.",
+    "Update this disposition only through an evidence-backed review."
+  ],
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "experiment_authorization": false,
+    "clinical_authorization": false,
+    "merge_authorization": false
+  },
+  "limitations": [
+    "The current status is based on the article landing page and transparent peer-review text, not a completed byte-level source-data audit.",
+    "No publisher-hosted binary has been copied into the repository.",
+    "No wet-lab protocol, guide design, treatment recommendation or experimental approval is provided.",
+    "The status may change if exact supplementary data establish an admissible pre-intervention phase."
+  ]
+}

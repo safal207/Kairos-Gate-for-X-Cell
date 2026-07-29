@@ -1,0 +1,80 @@
+{
+  "schema": "kairos.smacgmax-claim-map.v0.1",
+  "case_id": "smacgmax-2026",
+  "generated_at": "2026-07-29T15:42:00Z",
+  "claims": [
+    {
+      "id": "C1",
+      "claim": "smACG constructs can generate adenine-, cytosine-, and guanine-associated conversions within the same allele.",
+      "source_basis": ["article_page:abstract"],
+      "status": "SUPPORTED_BY_PRIMARY_REPORT",
+      "verification_level": "AUTHOR_REPORTED_NOT_INDEPENDENTLY_REPLICATED"
+    },
+    {
+      "id": "C2",
+      "claim": "smACGmax reached up to 41 percent simultaneous triple-base conversion in tested sequence contexts.",
+      "source_basis": ["article_page:abstract", "transparent_peer_review:author_response"],
+      "status": "SUPPORTED_AS_MAXIMUM_NOT_TYPICAL_RATE",
+      "verification_level": "AUTHOR_REPORTED_NOT_RECALCULATED"
+    },
+    {
+      "id": "C3",
+      "claim": "In the 71 HBEGF sites described in the rebuttal, triple-conversion alleles ranged from 0.3 to 28 percent with a mean of 5.5 percent.",
+      "source_basis": ["transparent_peer_review:author_response"],
+      "status": "SUPPORTED_BY_REBUTTAL_TEXT",
+      "verification_level": "AUTHOR_REPORTED_NOT_RECALCULATED"
+    },
+    {
+      "id": "C4",
+      "claim": "Guanine editing retains an NGR-context preference and average efficiency near 20 percent in the discussed comparisons.",
+      "source_basis": ["transparent_peer_review:reviewer_4", "transparent_peer_review:author_response"],
+      "status": "LIMITATION_ACKNOWLEDGED",
+      "verification_level": "AUTHOR_AND_REVIEWER_TEXT_NOT_RECALCULATED"
+    },
+    {
+      "id": "C5",
+      "claim": "The HBEGF screen achieved 94 percent targeted mutagenesis coverage and identified diphtheria-toxin-resistant variants.",
+      "source_basis": ["article_page:abstract"],
+      "status": "SUPPORTED_BY_PRIMARY_REPORT",
+      "verification_level": "AUTHOR_REPORTED_NOT_RECALCULATED"
+    },
+    {
+      "id": "C6",
+      "claim": "smACGmax was the first triple-base editor.",
+      "source_basis": ["transparent_peer_review:reviewer_4", "transparent_peer_review:author_response"],
+      "status": "REJECTED_PRIORITY_CLAIM",
+      "verification_level": "PRIMACY_REMOVED_AFTER_PARALLEL_2026_REPORTS"
+    },
+    {
+      "id": "C7",
+      "claim": "smACGmax provides universal or saturated access to all possible local substitutions.",
+      "source_basis": ["transparent_peer_review:reviewer_4", "transparent_peer_review:author_response"],
+      "status": "REJECTED_OVERCLAIM",
+      "verification_level": "AUTHORS_REFRAMED_AS_HIGH_DIVERSITY_COMBINATORIAL_MUTAGENESIS"
+    },
+    {
+      "id": "C8",
+      "claim": "A valid pre-intervention biological phase variable was measured for each edited cell or matched population.",
+      "source_basis": ["article_page", "transparent_peer_review"],
+      "status": "NOT_ESTABLISHED",
+      "verification_level": "REQUIRES_SUPPLEMENTARY_AND_SOURCE_DATA_AUDIT"
+    },
+    {
+      "id": "C9",
+      "claim": "A specific enriched triple-edited allele caused diphtheria-toxin resistance.",
+      "source_basis": ["transparent_peer_review:author_response"],
+      "status": "PARTIALLY_SUPPORTED_ASSOCIATION",
+      "verification_level": "REQUIRES_ALLELE_TO_PHENOTYPE_LINKAGE_OR_RECONSTRUCTION"
+    }
+  ],
+  "rules": [
+    "Do not substitute the maximum triple-editing rate for a typical or across-target rate.",
+    "Do not treat selected-population enrichment as direct causal proof for a specific allele without linkage evidence.",
+    "Do not restore a priority claim removed during peer review.",
+    "Do not infer a Kairos phase variable from collection time alone."
+  ],
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "experiment_authorization": false
+  }
+}
