@@ -1,0 +1,172 @@
+{
+  "schema": "kairos.scientific-usability-outreach.v0.1",
+  "campaign_id": "smacgmax-scientific-usability-2026-07",
+  "generated_at": "2026-07-29T16:18:00Z",
+  "objective": "Obtain bounded usability feedback on whether scientists and scientific agents can correctly interpret and reuse the Kairos Gate evidence structure.",
+  "default_call_to_action": {
+    "time_box_minutes": 10,
+    "request": "Review the smACGmax 60-second demo and return one response code.",
+    "response_codes": [
+      "A_CLEAR",
+      "B_MISSING_FIELD",
+      "C_WRONG_CLASSIFICATION",
+      "D_PILOT_PAPER",
+      "E_ROUTE"
+    ]
+  },
+  "pilot_offer": "Nominate one recent public biological paper. Kairos Gate will return a machine-readable evidence case for critique without claiming independent replication or endorsement.",
+  "cadence": [
+    {
+      "stage": "DAY_0_INITIAL",
+      "date": "2026-07-29",
+      "purpose": "Introduce the problem, mechanism, evidence case and one bounded CTA."
+    },
+    {
+      "stage": "DAY_3_VALUE_FOLLOWUP",
+      "date": "2026-08-01",
+      "purpose": "Share the 60-second demo and request one response code."
+    },
+    {
+      "stage": "DAY_7_ROUTE_OR_PILOT",
+      "date": "2026-08-05",
+      "purpose": "Request routing to the correct scientist or nomination of one public pilot paper."
+    },
+    {
+      "stage": "DAY_14_POLITE_CLOSE",
+      "date": "2026-08-12",
+      "purpose": "Close the sequence without interpreting silence and send no further follow-up unless invited."
+    }
+  ],
+  "contact_nodes": [
+    {
+      "organization": "smACGmax authors",
+      "role": "primary-source clarification",
+      "status": "MESSAGE_SENT",
+      "requested_feedback": [
+        "source correction",
+        "replicate semantics",
+        "pre-intervention phase availability",
+        "reuse feedback"
+      ]
+    },
+    {
+      "organization": "Google DeepMind / AlphaGenome",
+      "role": "genomic prediction and evidence boundary",
+      "status": "MESSAGE_SENT",
+      "requested_feedback": [
+        "prediction-to-evidence wrapper usability",
+        "missing integration fields",
+        "pilot paper nomination"
+      ]
+    },
+    {
+      "organization": "OpenAI for Science",
+      "role": "scientific-agent evaluation",
+      "status": "ROUTING_REQUEST_SENT",
+      "requested_feedback": [
+        "scientific-agent usability",
+        "benchmark suitability",
+        "pilot paper nomination"
+      ]
+    },
+    {
+      "organization": "Anthropic Science",
+      "role": "reviewer-agent and evidence-boundary evaluation",
+      "status": "MESSAGE_SENT",
+      "requested_feedback": [
+        "claim-state clarity",
+        "reviewer-agent benchmark suitability",
+        "missing evidence states"
+      ]
+    },
+    {
+      "organization": "Microsoft Research AI for Science",
+      "role": "biomolecular modelling workflow",
+      "status": "ROUTING_REQUEST_SENT",
+      "requested_feedback": [
+        "biomolecular evidence-state compatibility",
+        "workflow integration fields"
+      ]
+    },
+    {
+      "organization": "FutureHouse",
+      "role": "AI Scientist traceability",
+      "status": "MESSAGE_SENT",
+      "requested_feedback": [
+        "agent traceability",
+        "machine-readable evidence transitions",
+        "pilot paper nomination"
+      ]
+    },
+    {
+      "organization": "Arc Institute",
+      "role": "virtual-cell and perturbation modelling",
+      "status": "MESSAGE_SENT",
+      "requested_feedback": [
+        "pre-intervention state representation",
+        "perturbation compatibility",
+        "virtual-cell benchmark suitability"
+      ]
+    },
+    {
+      "organization": "Broad Institute Data Sciences Platform",
+      "role": "scientific workflow and provenance infrastructure",
+      "status": "MESSAGE_SENT",
+      "requested_feedback": [
+        "sample linkage",
+        "replicate semantics",
+        "workflow interoperability"
+      ]
+    },
+    {
+      "organization": "NVIDIA BioNeMo",
+      "role": "agentic life-sciences infrastructure",
+      "status": "ROUTING_REQUEST_SENT",
+      "requested_feedback": [
+        "agent-tool provenance",
+        "claim-boundary integration",
+        "skill evaluation compatibility"
+      ]
+    }
+  ],
+  "observable_metrics": {
+    "organizations_contacted": 9,
+    "responses_received": 0,
+    "internal_routes_received": 0,
+    "scientific_corrections_received": 0,
+    "missing_fields_identified": 0,
+    "pilot_papers_nominated": 0,
+    "pilots_started": 0
+  },
+  "allowed_states": [
+    "CONTACT_IDENTIFIED",
+    "MESSAGE_SENT",
+    "ROUTING_REQUEST_SENT",
+    "RESPONSE_RECEIVED",
+    "ROUTED_INTERNALLY",
+    "TEN_MINUTE_REVIEW_ACCEPTED",
+    "FEEDBACK_RECEIVED",
+    "PILOT_PAPER_NOMINATED",
+    "PILOT_STARTED",
+    "CLOSED_NO_RESPONSE",
+    "CLOSED_OUT_OF_SCOPE",
+    "DO_NOT_CONTACT"
+  ],
+  "stop_rules": [
+    "Stop when a recipient replies.",
+    "Stop when a recipient requests no further contact.",
+    "Stop when an address bounces.",
+    "Stop when a better contact is supplied and route once.",
+    "Stop after the Day 14 polite close unless invited to continue."
+  ],
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "independent_replication_claim": false,
+    "guide_design": false,
+    "wet_lab_instructions": false,
+    "clinical_claim": false,
+    "safety_approval": false,
+    "experiment_authorization": false
+  },
+  "interpretation_boundary": "Silence is not endorsement, rejection, adoption, partnership, or scientific validation."
+}
