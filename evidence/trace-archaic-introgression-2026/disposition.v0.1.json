@@ -1,0 +1,59 @@
+{
+  "schema": "kairos.trace-archaic-disposition.v0.1",
+  "case_id": "trace-archaic-introgression-2026",
+  "generated_at": "2026-07-31T04:10:00Z",
+  "primary_status": "KAIROS_PARTIAL_COMPUTATIONAL_INFERENCE",
+  "secondary_statuses": [
+    "NO_DIRECT_ARCHAIC_GENOME",
+    "NO_DIRECT_FOSSIL_ASSIGNMENT",
+    "TAXONOMIC_IDENTITY_UNRESOLVED",
+    "FUNCTIONAL_ADAPTATION_UNRESOLVED",
+    "REPRODUCTION_PENDING",
+    "PROCESSED_DATA_PENDING",
+    "OUTSIDE_CELLULAR_PHASE_DOMAIN"
+  ],
+  "supported_summary": "TRACE is a public computational method that uses inferred ancestral recombination graph features from present-day genomes. The authors report recovery of known archaic signals and infer a ghost contribution shared across sampled African and non-African populations plus a deeper contribution associated with Denisovan ancestry in Oceanians.",
+  "evidence_ceiling": "The current package supports model-based ancestry-source hypotheses and genomic segment candidates. It does not support direct observation, named-species assignment, universal individual-level segment identity, adaptive causality, or independent replication by Kairos.",
+  "confidence_by_layer": {
+    "method_exists_and_is_public": "HIGH",
+    "author_reported_simulation_and_positive_control_performance": "MODERATE_TO_HIGH",
+    "ghost_introgression_signal": "MODERATE_MODEL_DEPENDENT",
+    "super_archaic_via_denisovan_signal": "MODERATE_MODEL_DEPENDENT",
+    "exact_lineage_identity": "UNRESOLVED",
+    "exact_dates_and_proportions": "MODEL_DEPENDENT",
+    "adaptive_function": "UNRESOLVED_ASSOCIATIONAL",
+    "independent_reproduction": "PENDING"
+  },
+  "permitted_language": [
+    "TRACE detected genomic signals consistent with introgression from previously uncharacterized archaic lineages.",
+    "The authors infer that ghost ancestry entered ancestors of sampled modern humans before the major Out-of-Africa expansion.",
+    "The authors infer a deeper contribution associated with Denisovan ancestry in Oceanian genomes.",
+    "The source populations remain taxonomically unidentified.",
+    "Functional enrichment is suggestive and does not establish adaptive causality."
+  ],
+  "forbidden_language": [
+    "Scientists found DNA or fossils from two previously unknown human species.",
+    "Every person has the same ghost DNA.",
+    "The super-archaic ancestor was definitely Homo erectus.",
+    "The archaic fragments made humans immune or metabolically superior.",
+    "TRACE proves the unique demographic history without alternative explanations.",
+    "The study authorizes ancestry identity conclusions, experiments, or clinical action."
+  ],
+  "next_actions": [
+    "retrieve and digest exact public source bytes",
+    "audit supplementary materials and final Science changes relative to the preprint",
+    "inventory exact raw and processed data availability",
+    "reproduce simulations and known archaic positive controls",
+    "run threshold, map, mask, sample, and ARG-method sensitivity analyses",
+    "compare with independent archaic-introgression methods",
+    "separate annotation enrichment from variant-level functional validation"
+  ],
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "candidate_window_authorization": false,
+    "experiment_authorization": false,
+    "clinical_authorization": false,
+    "ancestry_identity_authorization": false,
+    "merge_authorization": false
+  }
+}

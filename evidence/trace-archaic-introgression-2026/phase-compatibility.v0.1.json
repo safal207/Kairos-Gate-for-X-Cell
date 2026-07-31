@@ -1,0 +1,41 @@
+{
+  "schema": "kairos.trace-archaic-phase-compatibility.v0.1",
+  "case_id": "trace-archaic-introgression-2026",
+  "generated_at": "2026-07-31T04:10:00Z",
+  "assessment": {
+    "status": "KAIROS_EXTERNAL_METHOD_CASE_NO_CELLULAR_PHASE",
+    "provisional": true,
+    "basis": "TRACE reconstructs historical genealogical intervals and candidate introgression tracts. The study does not measure a supported pre-intervention cellular phase variable and is outside the primary phase-conditioned cellular-transition benchmark.",
+    "phase_variable": null,
+    "phase_measurement_time": null,
+    "phase_confidence": null,
+    "phase_source": null,
+    "candidate_window_unlocked": false,
+    "unlock_condition": "Not applicable to the reported historical-population analysis. A separate prospective cellular study would require a versioned pre-intervention phase measurement, sample linkage, and leakage-resistant held-out comparison."
+  },
+  "admissible_kairos_contributions": [
+    "source provenance and exact-version pinning",
+    "temporal ordering of divergence, admixture, and transmission hypotheses",
+    "separation of observed genomes from inferred latent source populations",
+    "model-assumption and confounder visibility",
+    "reproducibility and independent-verification gates",
+    "fail-closed claim classification"
+  ],
+  "inadmissible_phase_substitutions": [
+    "divergence time relabelled as cellular phase",
+    "admixture date relabelled as pre-intervention phase",
+    "ARG branch depth relabelled as biological readiness",
+    "population label relabelled as phase",
+    "posterior introgression state relabelled as causal biological state"
+  ],
+  "phase_conditioned_preregistration": {
+    "unlocked": false,
+    "reason": "OUTSIDE_CELLULAR_PHASE_DOMAIN_AND_NO_PREINTERVENTION_PHASE"
+  },
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "candidate_window_authorization": false,
+    "experiment_authorization": false,
+    "clinical_authorization": false
+  }
+}

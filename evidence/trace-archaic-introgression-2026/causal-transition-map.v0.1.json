@@ -1,0 +1,130 @@
+{
+  "schema": "kairos.trace-archaic-causal-transition-map.v0.1",
+  "case_id": "trace-archaic-introgression-2026",
+  "generated_at": "2026-07-31T04:10:00Z",
+  "map_type": "COMPUTATIONAL_INFERENCE_GRAPH_NOT_BIOLOGICAL_CAUSAL_PROOF",
+  "nodes": [
+    {
+      "id": "N1",
+      "type": "observed_input",
+      "label": "Present-day phased whole-genome sequences"
+    },
+    {
+      "id": "N2",
+      "type": "conditioning_input",
+      "label": "Sample composition, genomic masks, ancestral allele calls, mutation rate, generation time, and recombination maps"
+    },
+    {
+      "id": "N3",
+      "type": "model_output",
+      "label": "Ancestral recombination graphs inferred with tools such as Relate or SINGER"
+    },
+    {
+      "id": "N4",
+      "type": "feature_extraction",
+      "label": "Focal branch length, non-focal coalescent events, and haplotype length at a user-defined timescale"
+    },
+    {
+      "id": "N5",
+      "type": "statistical_inference",
+      "label": "TRACE hidden Markov model posterior for candidate introgressed state"
+    },
+    {
+      "id": "N6",
+      "type": "decision_rule",
+      "label": "Posterior, physical-length, and genetic-distance thresholds produce candidate segment calls"
+    },
+    {
+      "id": "N7",
+      "type": "validation_control",
+      "label": "Simulation truth sets and recovery of known Neanderthal and Denisovan ancestry"
+    },
+    {
+      "id": "N8",
+      "type": "comparative_analysis",
+      "label": "Population distribution and overlap with known archaic regions, ancestry deserts, and Denisovan-enriched regions"
+    },
+    {
+      "id": "N9",
+      "type": "latent_source_hypothesis",
+      "label": "Ghost introgression before the major Out-of-Africa expansion"
+    },
+    {
+      "id": "N10",
+      "type": "latent_source_hypothesis",
+      "label": "Super-archaic contribution entering modern humans through Denisovan ancestry"
+    },
+    {
+      "id": "N11",
+      "type": "annotation_association",
+      "label": "Enrichment near immunity and metabolic annotations"
+    },
+    {
+      "id": "N12",
+      "type": "unresolved_identity",
+      "label": "Taxonomic identity of the source populations"
+    },
+    {
+      "id": "N13",
+      "type": "unresolved_function",
+      "label": "Variant-level adaptive or phenotypic effect"
+    }
+  ],
+  "edges": [
+    {"from": "N1", "to": "N3", "relation": "INPUT_TO_ARG_INFERENCE"},
+    {"from": "N2", "to": "N3", "relation": "CONDITIONS_ARG_INFERENCE"},
+    {"from": "N3", "to": "N4", "relation": "PROVIDES_LOCAL_GENEALOGY_FEATURES"},
+    {"from": "N4", "to": "N5", "relation": "EMISSION_INPUT_TO_HMM"},
+    {"from": "N5", "to": "N6", "relation": "POSTERIOR_THRESHOLDING"},
+    {"from": "N7", "to": "N5", "relation": "CALIBRATES_METHOD_UNDER_TESTED_SETTINGS"},
+    {"from": "N6", "to": "N8", "relation": "SEGMENTS_ENTER_COMPARATIVE_ANALYSIS"},
+    {"from": "N8", "to": "N9", "relation": "SUPPORTS_MODEL_BASED_GHOST_HYPOTHESIS"},
+    {"from": "N8", "to": "N10", "relation": "SUPPORTS_MODEL_BASED_SUPER_ARCHAIC_HYPOTHESIS"},
+    {"from": "N6", "to": "N11", "relation": "SEGMENTS_ARE_FUNCTIONALLY_ANNOTATED"},
+    {"from": "N9", "to": "N12", "relation": "DOES_NOT_IDENTIFY_SPECIES"},
+    {"from": "N10", "to": "N12", "relation": "DOES_NOT_IDENTIFY_SPECIES"},
+    {"from": "N11", "to": "N13", "relation": "DOES_NOT_ESTABLISH_ADAPTIVE_CAUSALITY"}
+  ],
+  "alternative_explanations_and_sensitivities": [
+    "ARG topology or branch-length error",
+    "phasing and genotype error",
+    "ancestral allele misidentification",
+    "recombination-map misspecification",
+    "mutation-rate and generation-time assumptions",
+    "demographic-model misspecification",
+    "incomplete lineage sorting",
+    "background selection or linked selection",
+    "sample-composition and population-representation bias",
+    "mask and missingness choices",
+    "focal-time parameter choice",
+    "posterior, physical-length, and genetic-distance thresholds",
+    "reference-archaic genome quality and region annotation",
+    "non-unique latent-source histories producing similar genealogical signatures"
+  ],
+  "required_robustness_checks": [
+    "phase and genotype uncertainty propagation",
+    "Relate-versus-SINGER comparison",
+    "alternative demographic simulations",
+    "negative controls without introgression",
+    "known Neanderthal and Denisovan positive controls",
+    "mask and recombination-map perturbation",
+    "threshold sensitivity curves",
+    "leave-population-out analysis",
+    "segment stability across posterior ARG samples",
+    "comparison with independent introgression methods",
+    "independent rerun from pinned raw inputs and environment"
+  ],
+  "forbidden_causal_shortcuts": [
+    "deep genealogy implies a directly observed ancient individual",
+    "time overlap implies a named species",
+    "annotation enrichment implies adaptive benefit",
+    "positive-control recovery implies unique identification of every new source",
+    "population-wide signal implies identical ancestry in every person"
+  ],
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "biological_causal_claim_authorized": false,
+    "experiment_authorization": false,
+    "clinical_authorization": false
+  }
+}

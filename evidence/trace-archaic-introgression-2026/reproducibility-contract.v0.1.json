@@ -1,0 +1,80 @@
+{
+  "schema": "kairos.trace-archaic-reproducibility-contract.v0.1",
+  "case_id": "trace-archaic-introgression-2026",
+  "generated_at": "2026-07-31T04:10:00Z",
+  "status": "REPRODUCTION_PENDING",
+  "pinned_sources": {
+    "paper_doi": "10.1126/science.aef8874",
+    "preprint_doi": "10.64898/2026.03.03.709416",
+    "trace_commit": "98314806e15e8851b6a1d400bbd95ec501af3d55",
+    "trace_paper_commit": "8f2687f15befec203eb2826ecc2e018c691c33c4"
+  },
+  "publicly_visible_components": [
+    "TRACE package source code",
+    "manuscript analysis-pipeline repository",
+    "CLI documentation and simulated example",
+    "preprint methods, figures, and supplementary-material references"
+  ],
+  "blocking_components": [
+    {
+      "id": "B1",
+      "requirement": "Exact raw input dataset identifiers, versions, consent-access constraints, and checksums",
+      "status": "NOT_AUDITED"
+    },
+    {
+      "id": "B2",
+      "requirement": "Exact phased inputs, masks, ancestral-genome resources, genetic maps, and lifted coordinates",
+      "status": "NOT_AUDITED"
+    },
+    {
+      "id": "B3",
+      "requirement": "Exact Relate and SINGER versions, parameters, seeds, posterior samples, and converted tree-sequence checksums",
+      "status": "NOT_AUDITED"
+    },
+    {
+      "id": "B4",
+      "requirement": "Complete TRACE parameter matrix including focal times, posterior thresholds, physical-length thresholds, and genetic-distance thresholds",
+      "status": "NOT_AUDITED"
+    },
+    {
+      "id": "B5",
+      "requirement": "Processed segment calls and intermediate outputs with expected checksums",
+      "status": "PENDING_PROCESSED_DATA_RELEASE"
+    },
+    {
+      "id": "B6",
+      "requirement": "Environment lock covering Python, compiled dependencies, numerical libraries, and operating-system assumptions",
+      "status": "NOT_AUDITED"
+    },
+    {
+      "id": "B7",
+      "requirement": "Independent execution logs and comparison against reported figures, tables, ancestry proportions, and error metrics",
+      "status": "NOT_RUN"
+    }
+  ],
+  "minimum_independent_verification": [
+    "rebuild or obtain pinned ARG inputs without silently changing masks or maps",
+    "run the published TRACE implementation at the pinned commit",
+    "reproduce known Neanderthal and Denisovan positive controls",
+    "reproduce negative controls and false-discovery estimates",
+    "reproduce ghost and super-archaic segment summaries",
+    "perturb focal-time and calling thresholds",
+    "compare Relate and SINGER-derived results",
+    "run at least one independent introgression method",
+    "record all outputs and SHA-256 digests",
+    "classify discrepancies rather than averaging them away"
+  ],
+  "acceptance_rules": {
+    "full_reproduction_requires_all_blockers_resolved": true,
+    "partial_reproduction_may_support_method_execution_only": true,
+    "positive_control_success_does_not_authorize_new_source_identity": true,
+    "functional_enrichment_requires_separate_validation": true,
+    "failed_or_missing_outputs_remain_visible": true
+  },
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "independent_replication_claim_authorized": false,
+    "experiment_authorization": false,
+    "clinical_authorization": false
+  }
+}

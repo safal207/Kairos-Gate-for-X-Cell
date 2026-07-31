@@ -1,0 +1,106 @@
+{
+  "schema": "kairos.trace-archaic-claim-map.v0.1",
+  "case_id": "trace-archaic-introgression-2026",
+  "generated_at": "2026-07-31T04:10:00Z",
+  "claims": [
+    {
+      "id": "C1",
+      "claim": "TRACE identifies candidate archaic ancestry using features of ancestral recombination graphs inferred from contemporary genomes, without requiring a sequenced archaic reference genome or an unadmixed outgroup population.",
+      "source_basis": ["science_article", "biorxiv_preprint", "trace_code"],
+      "status": "SUPPORTED_METHOD_DESCRIPTION",
+      "verification_level": "PRIMARY_REPORT_AND_PUBLIC_CODE"
+    },
+    {
+      "id": "C2",
+      "claim": "Under the authors' tested simulations and datasets, TRACE recovered known Neanderthal and Denisovan introgression signals with low reported false-discovery behavior.",
+      "source_basis": ["biorxiv_preprint", "trace_paper_pipelines"],
+      "status": "SUPPORTED_BY_AUTHOR_VALIDATION",
+      "verification_level": "NOT_INDEPENDENTLY_REPRODUCED_BY_KAIROS"
+    },
+    {
+      "id": "C3",
+      "claim": "The authors infer ghost archaic ancestry in both African and non-African sampled populations, consistent with gene flow before the major Out-of-Africa expansion.",
+      "source_basis": ["science_article", "biorxiv_preprint", "berkeley_news_release"],
+      "status": "SUPPORTED_MODEL_BASED_INFERENCE",
+      "verification_level": "LATENT_SOURCE_NOT_DIRECTLY_OBSERVED"
+    },
+    {
+      "id": "C4",
+      "claim": "The authors report approximately 0.5 to 1 percent ghost ancestry per individual in the analyzed modern-human data.",
+      "source_basis": ["berkeley_news_release", "science_article"],
+      "status": "SUPPORTED_AS_AUTHOR_REPORTED_ESTIMATE",
+      "verification_level": "NOT_A_UNIVERSAL_CONSTANT_OR_IDENTICAL_SEGMENT_SET"
+    },
+    {
+      "id": "C5",
+      "claim": "The inferred ghost source lineage diverged near the broad time depth at which the modern-human and Neanderthal-Denisovan lineages were separating, around 800,000 years ago.",
+      "source_basis": ["science_article", "berkeley_news_release"],
+      "status": "SUPPORTED_MODEL_DEPENDENT_TIME_ESTIMATE",
+      "verification_level": "SENSITIVE_TO_ARG_AND_DEMOGRAPHIC_ASSUMPTIONS"
+    },
+    {
+      "id": "C6",
+      "claim": "The authors infer a super-archaic contribution associated with Denisovan ancestry in Oceanians, consistent with gene flow from a lineage rooted roughly 1.8 million years ago into Denisovans more than 200,000 years ago.",
+      "source_basis": ["science_article", "biorxiv_preprint", "berkeley_news_release"],
+      "status": "SUPPORTED_MODEL_BASED_INFERENCE",
+      "verification_level": "INDIRECT_THROUGH_DENISOVAN_ASSOCIATED_REGIONS"
+    },
+    {
+      "id": "C7",
+      "claim": "Scientists recovered direct DNA, fossils, or sequenced genomes from the ghost and super-archaic source populations.",
+      "source_basis": ["science_article", "biorxiv_preprint"],
+      "status": "REJECTED_DIRECT_OBSERVATION_CLAIM",
+      "verification_level": "SOURCES_EXPLICITLY_DESCRIBE_UNKNOWN_UNSEQUENCED_LINEAGES"
+    },
+    {
+      "id": "C8",
+      "claim": "The ghost ancestor was a specific named species, and the super-archaic source was definitively Homo erectus.",
+      "source_basis": ["berkeley_news_release", "biorxiv_preprint"],
+      "status": "UNRESOLVED_TAXONOMIC_IDENTITY",
+      "verification_level": "TIME_OVERLAP_IS_NOT_SPECIES_IDENTIFICATION"
+    },
+    {
+      "id": "C9",
+      "claim": "Every living person carries the same ghost-derived DNA segments and the same ancestry proportion.",
+      "source_basis": ["science_article", "berkeley_news_release"],
+      "status": "REJECTED_UNIVERSAL_SEGMENT_CLAIM",
+      "verification_level": "POPULATION_LEVEL_DETECTION_DOES_NOT_IMPLY_IDENTICAL_INDIVIDUAL_SEGMENTS"
+    },
+    {
+      "id": "C10",
+      "claim": "Enrichment of inferred archaic segments near immunity and metabolic annotations proves that those segments conferred adaptive benefits.",
+      "source_basis": ["science_article", "berkeley_news_release"],
+      "status": "REJECTED_CAUSAL_ADAPTATION_OVERCLAIM",
+      "verification_level": "FUNCTIONAL_ENRICHMENT_IS_ASSOCIATIONAL"
+    },
+    {
+      "id": "C11",
+      "claim": "The complete processed dataset and all intermediate ARG products required for turnkey independent reproduction are currently available from the TRACE package.",
+      "source_basis": ["trace_code", "trace_paper_pipelines"],
+      "status": "NOT_ESTABLISHED",
+      "verification_level": "TRACE_README_MARKS_PROCESSED_DATA_UNDER_DEVELOPMENT"
+    },
+    {
+      "id": "C12",
+      "claim": "The new ghost and super-archaic source models are uniquely identified and cannot be explained by alternative demographic histories, ARG error, incomplete lineage sorting, selection, or threshold choices.",
+      "source_basis": ["biorxiv_preprint", "trace_paper_pipelines"],
+      "status": "NOT_ESTABLISHED_UNIQUE_IDENTIFICATION",
+      "verification_level": "REQUIRES_INDEPENDENT_ROBUSTNESS_AND_ALTERNATIVE_MODEL_TESTING"
+    }
+  ],
+  "rules": [
+    "Use infer, estimate, support, or detect a signal; do not use discovered fossils or sequenced the ancestor.",
+    "Do not assign a named hominin species from divergence-time overlap alone.",
+    "Do not convert population-level detection into identical ancestry for every individual.",
+    "Do not report 0.5 to 1 percent as an immutable universal value.",
+    "Do not convert genomic functional enrichment into adaptive causality.",
+    "Do not treat positive-control recovery as proof of unique identification for every latent source.",
+    "Do not declare full reproduction while processed data and exact intermediate products remain unavailable or unaudited."
+  ],
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "experiment_authorization": false,
+    "clinical_authorization": false,
+    "ancestry_identity_authorization": false
+  }
+}
