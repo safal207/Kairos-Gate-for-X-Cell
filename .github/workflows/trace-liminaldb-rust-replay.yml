@@ -163,7 +163,11 @@ jobs:
               raise SystemExit('replayed semantic references are not SHA-256 bound')
           for key in ('snapshot_digest', 'final_event_hash'):
               value = replay.get(key)
-              if not isinstance(value, str) or len(value) != 64:
+              if (
+                  not isinstance(value, str)
+                  or not value.startswith('sha256:')
+                  or len(value) != 71
+              ):
                   raise SystemExit(f'invalid {key}')
           checked_out = subprocess.check_output(
               ['git', 'rev-parse', 'HEAD'], text=True
