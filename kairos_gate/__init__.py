@@ -1,6 +1,13 @@
 """Public API for Kairos Gate research-only validators."""
 
 from .handoff import validate_handoff_path, validate_handoff_record
+from .rinse_reinterpretation_bridge import (
+    RinseReinterpretationError,
+    build_rinse_revalidation_graph,
+    revalidate_rinse_candidate,
+    validate_pinned_rinse_manifest,
+    validate_rinse_loop,
+)
 from .trace_evidence_bridge import (
     TraceEvidenceBridgeError,
     build_trace_ecosystem_receipt,
@@ -23,17 +30,20 @@ from .transition_graph import (
 from .validator import ValidationError, recommend_decision, validate_path, validate_record
 
 __all__ = [
+    "RinseReinterpretationError",
     "TraceEvidenceBridgeError",
     "TransitionGraphError",
     "TransitionScore",
     "ValidationError",
     "analyze_transition_network",
+    "build_rinse_revalidation_graph",
     "build_trace_ecosystem_receipt",
     "causal_gaps",
     "claim_firewall",
     "derive_trace_transition_graph",
     "rank_transitions",
     "recommend_decision",
+    "revalidate_rinse_candidate",
     "support_profile",
     "temporal_conflicts",
     "validate_ecosystem_receipt",
@@ -42,6 +52,8 @@ __all__ = [
     "validate_handoff_record",
     "validate_path",
     "validate_pinned_manifest",
+    "validate_pinned_rinse_manifest",
     "validate_record",
+    "validate_rinse_loop",
     "validate_trace_package",
 ]
