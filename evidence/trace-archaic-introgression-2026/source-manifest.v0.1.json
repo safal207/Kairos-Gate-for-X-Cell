@@ -1,0 +1,105 @@
+{
+  "schema": "kairos.trace-archaic-source-manifest.v0.1",
+  "case_id": "trace-archaic-introgression-2026",
+  "generated_at": "2026-07-31T04:10:00Z",
+  "primary_citation": {
+    "title": "Recovering signatures of archaic introgression using ancestral recombination graphs",
+    "authors_short": "Zhang, Biddanda, Johnson, O'Dushlaine and Moorjani",
+    "journal": "Science",
+    "doi": "10.1126/science.aef8874",
+    "published_online_at": "2026-07-30",
+    "preprint_doi": "10.64898/2026.03.03.709416",
+    "preprint_posted_at": "2026-03-04"
+  },
+  "retrieval": {
+    "retrieved_at": "2026-07-31T04:10:00Z",
+    "retrieval_mode": "METADATA_AND_PUBLIC_TEXT_REVIEW",
+    "bytes_downloaded": false,
+    "reason": "The audit reviewed public HTML, repository metadata, and text-visible source content. Immutable local source bytes and cryptographic digests have not yet been recorded.",
+    "next_action": "Run scripts/audit_trace_sources.py in a network-enabled environment, record redirects and SHA-256 digests, then review licence and version changes before committing derived digest metadata."
+  },
+  "code_pins": {
+    "trace_repository": {
+      "repository": "YulinZhang9806/trace",
+      "default_branch": "main",
+      "audited_commit": "98314806e15e8851b6a1d400bbd95ec501af3d55",
+      "commit_date": "2026-07-27T20:28:48Z"
+    },
+    "trace_paper_repository": {
+      "repository": "YulinZhang9806/trace_paper",
+      "default_branch": "main",
+      "audited_commit": "8f2687f15befec203eb2826ecc2e018c691c33c4",
+      "commit_date": "2026-06-15T21:17:15Z"
+    }
+  },
+  "sources": [
+    {
+      "id": "science_article",
+      "role": "peer_reviewed_primary_article",
+      "url": "https://www.science.org/doi/10.1126/science.aef8874",
+      "media_type": "text/html",
+      "published_at": "2026-07-30",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "biorxiv_preprint",
+      "role": "full_preprint_and_methods",
+      "url": "https://www.biorxiv.org/content/10.64898/2026.03.03.709416v1",
+      "media_type": "text/html",
+      "published_at": "2026-03-04",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "pmc_preprint_record",
+      "role": "indexed_preprint_full_text",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12991142/",
+      "media_type": "text/html",
+      "pmid": "41846974",
+      "pmcid": "PMC12991142",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "berkeley_news_release",
+      "role": "author_institution_explanation_and_reported_estimates",
+      "url": "https://news.berkeley.edu/2026/07/30/new-technique-pinpoints-human-dna-inherited-from-ghost-ancestors/",
+      "media_type": "text/html",
+      "published_at": "2026-07-30",
+      "sha256": null,
+      "digest_status": "PENDING_BYTE_RETRIEVAL"
+    },
+    {
+      "id": "trace_code",
+      "role": "method_implementation",
+      "url": "https://github.com/YulinZhang9806/trace/tree/98314806e15e8851b6a1d400bbd95ec501af3d55",
+      "media_type": "text/html",
+      "git_commit": "98314806e15e8851b6a1d400bbd95ec501af3d55",
+      "sha256": null,
+      "digest_status": "PINNED_GIT_COMMIT_NOT_ARCHIVE_HASHED"
+    },
+    {
+      "id": "trace_paper_pipelines",
+      "role": "manuscript_analysis_pipelines",
+      "url": "https://github.com/YulinZhang9806/trace_paper/tree/8f2687f15befec203eb2826ecc2e018c691c33c4",
+      "media_type": "text/html",
+      "git_commit": "8f2687f15befec203eb2826ecc2e018c691c33c4",
+      "sha256": null,
+      "digest_status": "PINNED_GIT_COMMIT_NOT_ARCHIVE_HASHED"
+    }
+  ],
+  "availability_boundary": {
+    "trace_readme_processed_data_status": "UNDER_DEVELOPMENT",
+    "full_independent_reproduction": "PENDING",
+    "direct_unknown_archaic_genome": false,
+    "direct_unknown_archaic_fossil_assignment": false
+  },
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "experiment_authorization": false,
+    "clinical_authorization": false,
+    "ancestry_identity_authorization": false,
+    "merge_authorization": false
+  }
+}
