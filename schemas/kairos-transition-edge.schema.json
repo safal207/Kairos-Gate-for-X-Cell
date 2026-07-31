@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/kairos-transition-edge.schema.json",
+  "title": "Kairos Transition Edge v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "from_state",
+    "to_state",
+    "mechanism",
+    "time_window",
+    "status",
+    "confidence",
+    "evidence_refs",
+    "required_intermediates",
+    "observed_intermediates",
+    "competing_explanations",
+    "claim",
+    "authority"
+  ],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "from_state": {"type": "string", "minLength": 1},
+    "to_state": {"type": "string", "minLength": 1},
+    "mechanism": {"type": "string", "minLength": 1},
+    "time_window": {"$ref": "#/$defs/time_window"},
+    "status": {
+      "enum": [
+        "missing_evidence",
+        "contradicted",
+        "computational_inference",
+        "author_reported",
+        "direct_observation",
+        "independently_replicated"
+      ]
+    },
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "evidence_refs": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "required_intermediates": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "observed_intermediates": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "competing_explanations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "status"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "description": {"type": "string", "minLength": 1},
+          "status": {
+            "enum": ["untested", "supported", "weakened", "excluded"]
+          }
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "level"],
+      "properties": {
+        "text": {"type": "string", "minLength": 1},
+        "level": {
+          "enum": ["hypothesis", "association", "mechanism", "causal", "authorization"]
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "action_authorized"],
+      "properties": {
+        "classification": {"const": "RESEARCH_ONLY"},
+        "action_authorized": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "time_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end", "unit"],
+      "properties": {
+        "start": {"type": "number"},
+        "end": {"type": "number"},
+        "unit": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
