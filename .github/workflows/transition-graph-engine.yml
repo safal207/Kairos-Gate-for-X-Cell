@@ -60,9 +60,7 @@ jobs:
         run: python -m pip install -e .
 
       - name: Run transition engine regressions
-        run: |
-          python -m unittest tests.test_transition_graph_engine -v
-          python -m unittest tests.test_transition_graph_schemas -v
+        run: python -m unittest discover -s tests -p 'test_transition_graph_*.py' -v
 
       - name: Analyze canonical TRACE network
         run: |
