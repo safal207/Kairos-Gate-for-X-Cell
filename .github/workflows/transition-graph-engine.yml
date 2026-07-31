@@ -1,0 +1,126 @@
+name: Kairos Transition Graph Engine
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/kairos-transition-graph-engine-v0.1
+    paths:
+      - .github/workflows/transition-graph-engine.yml
+      - kairos_gate/transition_graph.py
+      - kairos_gate/causal_gap_detector.py
+      - kairos_gate/temporal_validator.py
+      - kairos_gate/confidence_ranker.py
+      - kairos_gate/schemas/kairos-*.schema.json
+      - schemas/kairos-*.schema.json
+      - scripts/analyze_transition_network.py
+      - examples/trace-transition-network.v0.1.json
+      - tests/test_transition_graph_*.py
+      - docs/TRANSITION_GRAPH_ENGINE.md
+  pull_request:
+    paths:
+      - .github/workflows/transition-graph-engine.yml
+      - kairos_gate/transition_graph.py
+      - kairos_gate/causal_gap_detector.py
+      - kairos_gate/temporal_validator.py
+      - kairos_gate/confidence_ranker.py
+      - kairos_gate/schemas/kairos-*.schema.json
+      - schemas/kairos-*.schema.json
+      - scripts/analyze_transition_network.py
+      - examples/trace-transition-network.v0.1.json
+      - tests/test_transition_graph_*.py
+      - docs/TRANSITION_GRAPH_ENGINE.md
+
+permissions:
+  contents: read
+
+concurrency:
+  group: transition-graph-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: python -m pip install -e .
+
+      - name: Run transition engine regressions
+        run: |
+          python -m unittest tests.test_transition_graph_engine -v
+          python -m unittest tests.test_transition_graph_schemas -v
+
+      - name: Analyze canonical TRACE network
+        run: |
+          set -euo pipefail
+          mkdir -p .artifacts/transition-graph
+          python scripts/analyze_transition_network.py \
+            examples/trace-transition-network.v0.1.json \
+            --enforce \
+            > .artifacts/transition-graph/trace-analysis.json
+          cat .artifacts/transition-graph/trace-analysis.json
+
+      - name: Enforce bounded canonical result
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          report = json.loads(
+              Path('.artifacts/transition-graph/trace-analysis.json').read_text(
+                  encoding='utf-8'
+              )
+          )
+          if report.get('verdict') != 'ACCEPT_WITH_LIMITS':
+              raise SystemExit('canonical TRACE graph must be ACCEPT_WITH_LIMITS')
+          if report.get('temporal_conflicts') != []:
+              raise SystemExit('canonical TRACE graph contains temporal conflicts')
+          if report.get('claim_firewall') != []:
+              raise SystemExit('canonical TRACE graph exceeds claim boundaries')
+          gaps = {item['transition_id'] for item in report.get('causal_gaps', [])}
+          if 'modern_to_functional_signal' not in gaps:
+              raise SystemExit('adaptive causal gap must remain explicit')
+          authority = report.get('authority', {})
+          forbidden = (
+              'truth_probability',
+              'causal_authorization',
+              'experiment_authorization',
+              'clinical_authorization',
+              'merge_authorization',
+          )
+          if any(authority.get(field) is not False for field in forbidden):
+              raise SystemExit('research-only authority boundary changed')
+          checked_out = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD'], text=True
+          ).strip()
+          if checked_out != os.environ['EXACT_HEAD']:
+              raise SystemExit('workflow did not validate exact requested head')
+          print('TRANSITION_GRAPH_ENGINE_PASS')
+          print('TRACE_ASSOCIATION_BOUNDARY_PASS')
+          print('EXACT_HEAD_PASS')
+          PY
+
+      - name: Upload exact-head evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: transition-graph-${{ env.EXACT_HEAD }}
+          path: .artifacts/transition-graph/trace-analysis.json
+          if-no-files-found: error
+          retention-days: 30
