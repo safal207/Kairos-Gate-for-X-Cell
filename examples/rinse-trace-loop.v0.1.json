@@ -1,0 +1,121 @@
+{
+  "active_reflection_id": "rinse-reflection-dce0089f56d6f7cc",
+  "authority": {
+    "causal_authorization": false,
+    "classification": "REFLECTION_ONLY",
+    "deployment_authorized": false,
+    "execution_authorized": false,
+    "merge_authorized": false,
+    "scientific_truth_authorized": false,
+    "source_mutation_authorized": false
+  },
+  "case_id": "trace-archaic-introgression-2026",
+  "digest": "sha256:6b0b8050a62275eafd8f2260cf6099fd1b65567101894b955ee5928d55eca6ad",
+  "kairos_handoff": {
+    "execution_allowed": false,
+    "kind": "REINTERPRETATION_CANDIDATE",
+    "reflection_id": "rinse-reflection-dce0089f56d6f7cc",
+    "status": "CANDIDATE",
+    "target_state": "trace-functional-association-with-unresolved-adaptive-causality"
+  },
+  "reflection_graph": {
+    "active_interpretation_ids": [
+      "rinse-reflection-dce0089f56d6f7cc"
+    ],
+    "authority": {
+      "classification": "REFLECTION_ONLY",
+      "evidence_mutation_authorized": false,
+      "execution_authorized": false,
+      "source_trace_mutation_authorized": false,
+      "truth_authorized": false
+    },
+    "candidate_handoffs": [
+      {
+        "execution_allowed": false,
+        "kind": "REINTERPRETATION_CANDIDATE",
+        "reflection_id": "rinse-reflection-dce0089f56d6f7cc",
+        "status": "CANDIDATE",
+        "target_state": "trace-functional-association-with-unresolved-adaptive-causality"
+      }
+    ],
+    "digest": "sha256:6cde4e6e08e7fb802b7ad3361af899f885512642f634fd0151f3c40d5ff7b776",
+    "edges": [
+      {
+        "from": "rinse-reflection-72915faaef896862",
+        "to": "kairos:claim:C10",
+        "type": "CONTRADICTED_BY"
+      },
+      {
+        "from": "rinse-reflection-dce0089f56d6f7cc",
+        "to": "rinse-reflection-72915faaef896862",
+        "type": "SUPERSEDES"
+      },
+      {
+        "from": "rinse-reflection-dce0089f56d6f7cc",
+        "to": "kairos:trace-ecosystem-receipt",
+        "type": "SUPPORTED_BY"
+      },
+      {
+        "from": "rinse-reflection-dce0089f56d6f7cc",
+        "to": "liminaldb:final-event",
+        "type": "SUPPORTED_BY"
+      },
+      {
+        "from": "rinse-reflection-dce0089f56d6f7cc",
+        "to": "liminaldb:rust-replay-receipt",
+        "type": "SUPPORTED_BY"
+      },
+      {
+        "from": "rinse-reflection-dce0089f56d6f7cc",
+        "to": "liminaldb:semantic-snapshot",
+        "type": "SUPPORTED_BY"
+      }
+    ],
+    "forked_predecessor_ids": [],
+    "nodes": [
+      {
+        "confidence": 0.35,
+        "declared_status": "CONTESTED",
+        "digest": "sha256:810088173690cb16c5580ed936f4424fe16a366352ce600306760182fee3d37a",
+        "effective_status": "SUPERSEDED",
+        "id": "rinse-reflection-72915faaef896862",
+        "statement": "Functional enrichment near immune-related loci establishes an adaptive benefit from archaic introgression.",
+        "subject_id": "trace:functional-adaptation-claim",
+        "superseded_by": [
+          "rinse-reflection-dce0089f56d6f7cc"
+        ]
+      },
+      {
+        "confidence": 0.78,
+        "declared_status": "SUPPORTED_WITH_LIMITS",
+        "digest": "sha256:bf34bbae3c6476a7d52ab573ef3fe9e6165394e403d6cd7aaacda21704d6e883",
+        "effective_status": "SUPPORTED_WITH_LIMITS",
+        "id": "rinse-reflection-dce0089f56d6f7cc",
+        "statement": "Functional enrichment is an association; adaptive causality remains unresolved.",
+        "subject_id": "trace:functional-adaptation-claim",
+        "superseded_by": []
+      }
+    ],
+    "schema": "rinse.reflection-graph.v0.2",
+    "verdict": "ACCEPT_WITH_LIMITS"
+  },
+  "schema": "rinse.kairos-reflection-loop.v0.1",
+  "source_receipt_digest": "sha256:d3650aa3061514c41433cff930eed02fa9350d0c888114d23c414656d0ed0fd6",
+  "upstream": {
+    "kairos_commit": "03dbc036513be236cd30e7542145a35b27d41fe7",
+    "kairos_pull_request": 60,
+    "kairos_repository": "safal207/Kairos-Gate-for-X-Cell",
+    "liminaldb_commit": "b8cf0528187c6d3fac3b28dbb9e90f1a2fb740e7",
+    "liminaldb_repository": "safal207/LiminalDB",
+    "trace_package_commit": "31959a573724d0fd7ef1ac620a47d46355797b2f"
+  },
+  "upstream_evidence_digests": {
+    "final_event": "sha256:e0b7a48ebd49d1b232b8ce0030b66f495f5cedfd5edea1c8100ff65f7d49a8a5",
+    "rust_replay_receipt": "sha256:412b378cabc62b08978bd38ff9b1b7a674f6eb3a6842ae076c358db4c0070a16",
+    "semantic_snapshot": "sha256:c73d9594c1553c4b85040ba8ba87e5afba937a2040d89ea151864b318e7b80aa",
+    "snapshot_file": "sha256:39cf07f1b18151a75573a43d72fab4ab3ad2b2d2bbc83fc66b2418ca71376a9b",
+    "source_ecosystem_receipt": "sha256:24fda69778ce488180e28ece2e6a893400092fbf872b0cc7850a87378dd98386",
+    "wal": "sha256:74167e0af526925859587cd6cb9cdb34b76f959d11935ecb0c57ba788318d6ed",
+    "workflow_artifact": "sha256:96b48012c754df81b28134e15e3049740576a36536608d1a1e658acc217f80b3"
+  }
+}
