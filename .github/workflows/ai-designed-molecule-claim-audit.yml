@@ -6,6 +6,7 @@ on:
       - "schemas/ai-designed-molecule-claim-audit.schema.json"
       - "examples/*.ai-designed-molecule-claim-audit.json"
       - "scripts/validate_ai_designed_molecule_claim_audit.py"
+      - "scripts/_validate_ai_designed_molecule_claim_audit_core.py"
       - "scripts/run_ai_designed_molecule_regressions.py"
       - "scripts/validate_bioevidence_contract.py"
       - "reports/syntnpb-2026-ai-designed-nuclease-claim-audit.md"
@@ -18,6 +19,7 @@ on:
       - "schemas/ai-designed-molecule-claim-audit.schema.json"
       - "examples/*.ai-designed-molecule-claim-audit.json"
       - "scripts/validate_ai_designed_molecule_claim_audit.py"
+      - "scripts/_validate_ai_designed_molecule_claim_audit_core.py"
       - "scripts/run_ai_designed_molecule_regressions.py"
       - "scripts/validate_bioevidence_contract.py"
       - "reports/syntnpb-2026-ai-designed-nuclease-claim-audit.md"
@@ -63,6 +65,7 @@ jobs:
           python -m compileall -q \
             scripts/validate_bioevidence_contract.py \
             scripts/validate_ai_designed_molecule_claim_audit.py \
+            scripts/_validate_ai_designed_molecule_claim_audit_core.py \
             scripts/run_ai_designed_molecule_regressions.py
 
       - name: Validate every AI-designed molecule audit
@@ -99,12 +102,37 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
+
+          expected = [
+              "protected-supported",
+              "comparator-mismatch",
+              "structured-predicate-mismatch",
+              "publication-mislabeled-f3",
+              "replication-below-f5",
+              "invented-replication-reference",
+              "platform-insufficient-coverage",
+              "unreconciled-denominator",
+              "risk-wrong-endpoint",
+              "zero-selected-candidates",
+              "structural-assay-relabelled-as-delivery",
+              "partial-impossible-counts",
+              "f5-artifact-kind-mismatch",
+              "positive-nonexact-after-zero-upstream",
+              "retained-activity-with-superiority-endpoint",
+              "f3-specificity-risk-evidence-accepted",
+              "f4-delivery-risk-evidence-accepted",
+          ]
           results = json.loads(
               Path("ai-designed-molecule-regressions/results.json").read_text(encoding="utf-8")
           )
-          assert results
+          assert [item["case"] for item in results] == expected
+          assert len({item["case"] for item in results}) == len(expected)
           assert all(item["passed"] for item in results)
-          print(f"regression_cases={len(results)}")
+          assert sum(item["expected"] == "BLOCK" for item in results) == 15
+          assert sum(item["expected"] == "ACCEPT" for item in results) == 2
+          print("regression_cases=17")
+          print("regression_block_cases=15")
+          print("regression_accept_cases=2")
           PY
           ! grep -R -q 'Traceback' ai-designed-molecule-regressions regression-summary.txt
 
@@ -127,11 +155,17 @@ jobs:
             echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
             echo "audit_count=${#audits[@]}"
             echo "regression_suite=complete"
+            echo "regression_cases=17"
+            echo "regression_block_cases=15"
+            echo "regression_accept_cases=2"
             echo "publication_reporting_max_level=F2"
-            echo "f3_requires_digested_executable_artifact=true"
+            echo "f3_requires_digested_executable_or_risk_artifact=true"
+            echo "f4_allows_typed_laboratory_risk_confirmation=true"
             echo "replication_requires_external_f5=true"
             echo "platform_generalization_requires_dimension_coverage=true"
             echo "candidate_denominator_reconciliation=required"
+            echo "positive_nonexact_rejects_known_zero_upstream=true"
+            echo "functional_direction_endpoint_binding=required"
             echo "risk_endpoint_binding=required"
             echo "acceptance_receipt=true"
             echo "physical_biology_authorized=false"
@@ -140,11 +174,13 @@ jobs:
             sha256sum \
               schemas/ai-designed-molecule-claim-audit.schema.json \
               scripts/validate_ai_designed_molecule_claim_audit.py \
+              scripts/_validate_ai_designed_molecule_claim_audit_core.py \
               scripts/run_ai_designed_molecule_regressions.py \
               scripts/validate_bioevidence_contract.py \
               reports/syntnpb-2026-ai-designed-nuclease-claim-audit.md \
               README.md \
-              docs/architecture.md
+              docs/architecture.md \
+              ai-designed-molecule-regressions/results.json
             echo "-- audit digests --"
             sha256sum "${audits[@]}"
           } > syntnpb-claim-audit-acceptance-receipt.txt
