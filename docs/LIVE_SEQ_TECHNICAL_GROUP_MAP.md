@@ -13,24 +13,42 @@ It reports:
 
 ## Critical distinction
 
-These are **technical group candidates**, not verified biological replicates.
+These fields are **technical group candidates**. Public metadata alone do not establish biological replicate semantics.
 
 ```text
 technical difference != independent experiment
 plate label != independent culture
 well label != biological replicate
 index pair != replicate
-cell != independent experimental unit by default
 ```
 
-The output is intentionally fixed to:
+The metadata-only output intentionally remains:
 
 ```text
 EXPLORATORY_ONLY_TECHNICAL_GROUPING
 BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED
 ```
 
-until a pinned publication section, supplementary method, upstream code location, or author clarification establishes the experimental-unit semantics.
+because the CSV itself does not encode the missing experimental-unit semantics.
+
+## External semantics overlay
+
+On 2026-08-12, private researcher correspondence supplied contextual clarification for the narrow **cell-heterogeneity** question. That information is recorded separately in:
+
+- [`LIVE_SEQ_REPLICATE_SEMANTICS.md`](LIVE_SEQ_REPLICATE_SEMANTICS.md)
+- [`../evidence/live-seq-gse141064/replicate-semantics.external.v0.1.json`](../evidence/live-seq-gse141064/replicate-semantics.external.v0.1.json)
+
+The clarified working semantics are:
+
+```text
+for cell heterogeneity:
+  cell = biological replicate
+  plate = sub-batch
+```
+
+This does **not** make plate an independent biological replicate and does not establish a held-out biological generalization unit.
+
+Keeping this clarification separate from the metadata summary is intentional: correspondence-derived semantics must not be rewritten as if they were derivable from the CSV.
 
 ## Run
 
@@ -40,18 +58,18 @@ python scripts/summarize_live_seq_technical_groups.py /path/to/meta.final.csv
 
 The script uses the same response-independent cohort rule as the feasibility auditor and does not read `mCherry.log.slope`.
 
-## What can unlock confirmation
+## What remains blocked
 
-A source-backed statement must establish:
+The external clarification resolves the cell-level heterogeneity replicate question, but it does not establish:
 
-1. what physical or experimental unit was independently prepared;
-2. which cells share that unit;
-3. whether plates or imaging sessions correspond to independent source cultures;
-4. whether repeated cells or extractions exist;
-5. which unit can be held out without leakage.
+1. an independent culture/day/donor/animal or equivalent held-out biological unit;
+2. plate as an independent biological replicate;
+3. a leakage-safe unit for claims of biological generalization.
 
-Until then, technical groups may support sensitivity analysis only. They may not be presented as evidence of biological generalization.
+Therefore plate-based holdout may be used only as a technical/sensitivity analysis unless further source-backed evidence establishes stronger semantics.
+
+The next discriminating step is to quantify whether plate-associated variation is negligible. If it is material, plate must be modeled, stratified, or sensitivity-checked explicitly; if it is negligible, it can be treated as a minor sub-batch nuisance factor for the cell-heterogeneity analysis.
 
 ## Authority
 
-The summary is `RESEARCH_ONLY`. It authorizes no model fitting, biological experiment, clinical use, deployment, or merge.
+The summary and semantics overlay are `RESEARCH_ONLY`. They authorize no biological experiment, clinical use, deployment, causal claim, or automatic merge.
