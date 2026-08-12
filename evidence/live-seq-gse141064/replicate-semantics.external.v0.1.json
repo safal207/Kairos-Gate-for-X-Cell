@@ -1,0 +1,37 @@
+{
+  "schema": "kairos.live-seq-replicate-semantics.external.v0.1",
+  "dataset_id": "GSE141064",
+  "recorded_at": "2026-08-12",
+  "source": {
+    "type": "private_researcher_correspondence",
+    "direct_quote_included": false,
+    "public_attribution_included": false,
+    "independently_verifiable_from_public_sources": false
+  },
+  "scope": {
+    "analysis_target": "cell_heterogeneity",
+    "cell_type": "Raw264.7_G9",
+    "batch": "8_8",
+    "selected_cells": 17
+  },
+  "semantics": {
+    "cell_unit": "BIOLOGICAL_REPLICATE_FOR_CELL_HETEROGENEITY",
+    "plate_unit": "SUB_BATCH",
+    "plate_effect_default_handling": "IGNORE_UNLESS_NON_NEGLIGIBLE_EFFECT_EVIDENCE",
+    "held_out_generalization_unit": "UNRESOLVED"
+  },
+  "decision": {
+    "classification": "CONTEXTUAL_REPLICATE_SEMANTICS_CLARIFIED",
+    "cell_heterogeneity_replicate_semantics_resolved": true,
+    "plate_is_independent_biological_replicate": false,
+    "plate_holdout_generalization_authorized": false,
+    "confirmatory_preregistration_unlocked": false,
+    "next_action": "Quantify whether plate-associated variation is negligible before treating plate as ignorable; keep held-out biological generalization claims blocked until an independent generalization unit is established."
+  },
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "experiment_authorization": false,
+    "clinical_authorization": false,
+    "merge_authorization": false
+  }
+}
