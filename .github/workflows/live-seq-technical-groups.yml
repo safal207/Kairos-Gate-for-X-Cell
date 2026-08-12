@@ -1,0 +1,195 @@
+name: Live-seq technical group map
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/live-seq-replicate-recovery-v0.1
+    paths:
+      - .github/workflows/live-seq-technical-groups.yml
+      - scripts/summarize_live_seq_technical_groups.py
+      - docs/LIVE_SEQ_TECHNICAL_GROUP_MAP.md
+      - docs/LIVE_SEQ_REPLICATE_SEMANTICS.md
+      - evidence/live-seq-gse141064/replicate-semantics.external.v0.1.json
+  pull_request:
+    paths:
+      - .github/workflows/live-seq-technical-groups.yml
+      - scripts/summarize_live_seq_technical_groups.py
+      - docs/LIVE_SEQ_TECHNICAL_GROUP_MAP.md
+      - docs/LIVE_SEQ_REPLICATE_SEMANTICS.md
+      - evidence/live-seq-gse141064/replicate-semantics.external.v0.1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-seq-technical-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  summarize:
+    name: Research-only technical grouping
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      META_URL: https://raw.githubusercontent.com/DeplanckeLab/Live-seq/6633d4d468f56031ea197474e09921088d878512/data/meta.final.csv
+      META_SHA256: dcce9bea9444857a6a042fc64be3a5c7b31a00095a21eabc1488e516abd689c8
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download and verify pinned metadata
+        run: |
+          set -euo pipefail
+          mkdir -p .artifacts/live-seq-groups
+          curl --location --fail --silent --show-error --retry 4 \
+            --output .artifacts/live-seq-groups/meta.final.csv \
+            "$META_URL"
+          printf '%s  %s\n' "$META_SHA256" \
+            .artifacts/live-seq-groups/meta.final.csv \
+            > .artifacts/live-seq-groups/input-sha256.txt
+          sha256sum --check .artifacts/live-seq-groups/input-sha256.txt
+
+      - name: Build technical group summary
+        run: |
+          python scripts/summarize_live_seq_technical_groups.py \
+            .artifacts/live-seq-groups/meta.final.csv \
+            > .artifacts/live-seq-groups/summary.json
+          cat .artifacts/live-seq-groups/summary.json
+
+      - name: Validate external replicate semantics overlay
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('evidence/live-seq-gse141064/replicate-semantics.external.v0.1.json')
+          overlay = json.loads(path.read_text(encoding='utf-8'))
+
+          if overlay.get('schema') != 'kairos.live-seq-replicate-semantics.external.v0.1':
+              raise SystemExit('unexpected external semantics schema')
+          if overlay.get('dataset_id') != 'GSE141064':
+              raise SystemExit('external semantics dataset mismatch')
+          source = overlay.get('source', {})
+          if source.get('type') != 'private_researcher_correspondence':
+              raise SystemExit('unexpected semantics provenance')
+          if source.get('direct_quote_included') is not False:
+              raise SystemExit('private correspondence must not be directly quoted')
+          if source.get('public_attribution_included') is not False:
+              raise SystemExit('private correspondence must not be publicly attributed')
+          semantics = overlay.get('semantics', {})
+          if semantics.get('cell_unit') != 'BIOLOGICAL_REPLICATE_FOR_CELL_HETEROGENEITY':
+              raise SystemExit('cell heterogeneity semantics changed')
+          if semantics.get('plate_unit') != 'SUB_BATCH':
+              raise SystemExit('plate must remain a sub-batch')
+          if semantics.get('held_out_generalization_unit') != 'UNRESOLVED':
+              raise SystemExit('held-out generalization must remain unresolved')
+          decision = overlay.get('decision', {})
+          if decision.get('plate_is_independent_biological_replicate') is not False:
+              raise SystemExit('plate must not be promoted to biological replicate')
+          if decision.get('plate_holdout_generalization_authorized') is not False:
+              raise SystemExit('plate holdout must not be promoted to biological generalization')
+          if decision.get('confirmatory_preregistration_unlocked') is not False:
+              raise SystemExit('external clarification alone must not unlock confirmation')
+          print('EXTERNAL_REPLICATE_SEMANTICS_OVERLAY_PASS')
+          PY
+
+      - name: Build exact-head tree attestation
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          attestation = {
+              'schema': 'kairos.technical-groups-exact-head-attestation.v0.1',
+              'dataset_id': 'GSE141064',
+              'exact_head': os.environ['EXACT_HEAD'],
+              'tree_sha': subprocess.check_output(
+                  ['git', 'rev-parse', 'HEAD^{tree}'], text=True
+              ).strip(),
+              'stack_base_head': 'bdc3aac6dbe22a56d0cfdefc47e44104fdc45e91',
+              'stack_merge_ancestor_required': True,
+              'authority': {
+                  'classification': 'RESEARCH_ONLY',
+                  'experiment_authorization': False,
+                  'clinical_authorization': False,
+                  'merge_authorization': False,
+              },
+          }
+          output = Path('.artifacts/live-seq-groups/attestation.json')
+          output.write_text(
+              json.dumps(attestation, indent=2, sort_keys=True, allow_nan=False)
+              + '\n',
+              encoding='utf-8',
+          )
+          print(output.read_text(encoding='utf-8'))
+          PY
+
+      - name: Enforce metadata-only boundary
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          result = json.loads(
+              Path('.artifacts/live-seq-groups/summary.json').read_text(encoding='utf-8')
+          )
+          attestation = json.loads(
+              Path('.artifacts/live-seq-groups/attestation.json').read_text(
+                  encoding='utf-8'
+              )
+          )
+          if result.get('cohort', {}).get('selected_cells') != 17:
+              raise SystemExit('unexpected selected cohort size')
+          if result.get('cohort', {}).get('selection_uses_response_label') is not False:
+              raise SystemExit('cohort selection must not use response labels')
+          decision = result.get('decision', {})
+          if decision.get('classification') != 'EXPLORATORY_ONLY_TECHNICAL_GROUPING':
+              raise SystemExit('technical grouping classification changed')
+          if decision.get('status') != 'BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED':
+              raise SystemExit('metadata-only semantics must remain unresolved')
+          if decision.get('replicate_semantics_verified') is not False:
+              raise SystemExit('technical metadata must not verify replicate semantics')
+          if decision.get('confirmatory_preregistration_unlocked') is not False:
+              raise SystemExit('technical grouping must not unlock confirmation')
+          if result.get('authority', {}).get('classification') != 'RESEARCH_ONLY':
+              raise SystemExit('authority boundary is not RESEARCH_ONLY')
+          if attestation.get('exact_head') != os.environ['EXACT_HEAD']:
+              raise SystemExit('attestation is not bound to the checked-out exact head')
+          current_tree = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD^{tree}'], text=True
+          ).strip()
+          if attestation.get('tree_sha') != current_tree:
+              raise SystemExit('attestation tree SHA mismatch')
+          if attestation.get('stack_base_head') != 'bdc3aac6dbe22a56d0cfdefc47e44104fdc45e91':
+              raise SystemExit('attestation stack base head mismatch')
+          if attestation.get('stack_merge_ancestor_required') is not True:
+              raise SystemExit('stack merge ancestry policy is not enforced')
+          print('TECHNICAL_GROUPS_METADATA_ONLY_BOUNDARY_PASS')
+          print('EXACT_HEAD_TREE_ATTESTATION_PASS')
+          PY
+
+      - name: Upload derived summary only
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-seq-technical-groups-${{ env.EXACT_HEAD }}
+          path: |
+            .artifacts/live-seq-groups/summary.json
+            .artifacts/live-seq-groups/input-sha256.txt
+            .artifacts/live-seq-groups/attestation.json
+          if-no-files-found: error
+          retention-days: 30

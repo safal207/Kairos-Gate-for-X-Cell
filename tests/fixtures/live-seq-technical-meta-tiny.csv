@@ -1,0 +1,6 @@
+sample_ID,sample_name,original_sample_name,Batch,Cell_type,sampling_type,treatment,mCherry.log.intercept,Sequencing_run,i5_index,i7_index,Date,Probe
+sampleA,plate1_A1,exp8_1,8_8,Raw264.7_G9,Live_seq,not_treated,1.0,NXT0590,S501,Ad2.1,,
+sampleB,plate1_B1,exp8_2,8_8,Raw264.7_G9,Live_seq,not_treated,1.1,NXT0590,S502,Ad2.2,,
+sampleC,plate2_A1,exp8_3,8_8,Raw264.7_G9,Live_seq,not_treated,1.2,NXT0590,S501,Ad2.3,,
+sampleD,plate2_B1,exp8_4,8_8,Raw264.7_G9,Live_seq,not_treated,1.3,NXT0590,S502,Ad2.4,,
+sampleE,plate3_A1,exp8_5,8_8,Raw264.7_G9,Live_seq,LPS_treated,1.4,NXT0590,S503,Ad2.5,,
