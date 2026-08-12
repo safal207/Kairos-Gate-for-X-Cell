@@ -8,10 +8,16 @@ on:
     paths:
       - .github/workflows/live-seq-technical-groups.yml
       - scripts/summarize_live_seq_technical_groups.py
+      - docs/LIVE_SEQ_TECHNICAL_GROUP_MAP.md
+      - docs/LIVE_SEQ_REPLICATE_SEMANTICS.md
+      - evidence/live-seq-gse141064/replicate-semantics.external.v0.1.json
   pull_request:
     paths:
       - .github/workflows/live-seq-technical-groups.yml
       - scripts/summarize_live_seq_technical_groups.py
+      - docs/LIVE_SEQ_TECHNICAL_GROUP_MAP.md
+      - docs/LIVE_SEQ_REPLICATE_SEMANTICS.md
+      - evidence/live-seq-gse141064/replicate-semantics.external.v0.1.json
 
 permissions:
   contents: read
@@ -60,6 +66,43 @@ jobs:
             > .artifacts/live-seq-groups/summary.json
           cat .artifacts/live-seq-groups/summary.json
 
+      - name: Validate external replicate semantics overlay
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('evidence/live-seq-gse141064/replicate-semantics.external.v0.1.json')
+          overlay = json.loads(path.read_text(encoding='utf-8'))
+
+          if overlay.get('schema') != 'kairos.live-seq-replicate-semantics.external.v0.1':
+              raise SystemExit('unexpected external semantics schema')
+          if overlay.get('dataset_id') != 'GSE141064':
+              raise SystemExit('external semantics dataset mismatch')
+          source = overlay.get('source', {})
+          if source.get('type') != 'private_researcher_correspondence':
+              raise SystemExit('unexpected semantics provenance')
+          if source.get('direct_quote_included') is not False:
+              raise SystemExit('private correspondence must not be directly quoted')
+          if source.get('public_attribution_included') is not False:
+              raise SystemExit('private correspondence must not be publicly attributed')
+          semantics = overlay.get('semantics', {})
+          if semantics.get('cell_unit') != 'BIOLOGICAL_REPLICATE_FOR_CELL_HETEROGENEITY':
+              raise SystemExit('cell heterogeneity semantics changed')
+          if semantics.get('plate_unit') != 'SUB_BATCH':
+              raise SystemExit('plate must remain a sub-batch')
+          if semantics.get('held_out_generalization_unit') != 'UNRESOLVED':
+              raise SystemExit('held-out generalization must remain unresolved')
+          decision = overlay.get('decision', {})
+          if decision.get('plate_is_independent_biological_replicate') is not False:
+              raise SystemExit('plate must not be promoted to biological replicate')
+          if decision.get('plate_holdout_generalization_authorized') is not False:
+              raise SystemExit('plate holdout must not be promoted to biological generalization')
+          if decision.get('confirmatory_preregistration_unlocked') is not False:
+              raise SystemExit('external clarification alone must not unlock confirmation')
+          print('EXTERNAL_REPLICATE_SEMANTICS_OVERLAY_PASS')
+          PY
+
       - name: Build exact-head tree attestation
         run: |
           python - <<'PY'
@@ -93,7 +136,7 @@ jobs:
           print(output.read_text(encoding='utf-8'))
           PY
 
-      - name: Enforce non-replicate boundary
+      - name: Enforce metadata-only boundary
         run: |
           python - <<'PY'
           import json
@@ -117,7 +160,7 @@ jobs:
           if decision.get('classification') != 'EXPLORATORY_ONLY_TECHNICAL_GROUPING':
               raise SystemExit('technical grouping classification changed')
           if decision.get('status') != 'BLOCKED_REPLICATE_SEMANTICS_UNRESOLVED':
-              raise SystemExit('replicate semantics must remain blocked')
+              raise SystemExit('metadata-only semantics must remain unresolved')
           if decision.get('replicate_semantics_verified') is not False:
               raise SystemExit('technical metadata must not verify replicate semantics')
           if decision.get('confirmatory_preregistration_unlocked') is not False:
@@ -135,7 +178,7 @@ jobs:
               raise SystemExit('attestation stack base head mismatch')
           if attestation.get('stack_merge_ancestor_required') is not True:
               raise SystemExit('stack merge ancestry policy is not enforced')
-          print('TECHNICAL_GROUPS_MAPPED_REPLICATE_SEMANTICS_BLOCKED')
+          print('TECHNICAL_GROUPS_METADATA_ONLY_BOUNDARY_PASS')
           print('EXACT_HEAD_TREE_ATTESTATION_PASS')
           PY
 
