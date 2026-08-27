@@ -18,7 +18,7 @@ def _reject_constant(value: str) -> None:
 def load_graph(path: Path) -> dict[str, Any]:
     try:
         graph = json.loads(path.read_text(encoding="utf-8"), parse_constant=_reject_constant)
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise TransitionGraphError(f"unable to load graph: {exc}") from exc
     if not isinstance(graph, dict):
         raise TransitionGraphError("graph root must be an object")
