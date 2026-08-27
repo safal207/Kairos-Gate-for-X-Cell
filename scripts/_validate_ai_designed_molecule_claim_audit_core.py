@@ -596,12 +596,12 @@ def validate(
                     assay
                     for assay in claim_assays
                     if assay.get("system") in FUNCTIONAL_SYSTEMS
-                    and assay.get("tested_subject") in DESIGNED_TEST_SUBJECTS
+                    and assay.get("tested_subject") == "selected_variants"
                     and "bounded_comparator_superiority" in assay.get("endpoint_types", [])
                     and assay.get("result_direction") == "exceeded_reference_activity"
                     and evidence_level(assay.get("evidence_level")) >= EVIDENCE_ORDER["F2"]
                 ]
-                require(publication_peer_reviewed and bool(exceeded), f"claim {claim_id}: peer-reviewed referenced F2+ superiority evidence required", errors)
+                require(publication_peer_reviewed and bool(exceeded), f"claim {claim_id}: peer-reviewed referenced F2+ selected-variant superiority evidence required", errors)
 
             if claim_type == "structural_characterization" and status == "supported_with_limits":
                 selected_candidate_support = True

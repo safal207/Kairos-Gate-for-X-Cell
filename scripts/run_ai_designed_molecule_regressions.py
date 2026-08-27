@@ -347,6 +347,12 @@ def mutate_retained_activity_with_superiority_endpoint(record: dict[str, Any]) -
     assay["endpoint_types"] = ["molecular_activity", "bounded_comparator_superiority"]
 
 
+def mutate_superiority_uses_unselected_candidates(record: dict[str, Any]) -> None:
+    for assay in record["assays"]:
+        if "bounded_comparator_superiority" in assay["endpoint_types"]:
+            assay["tested_subject"] = "designed_candidates"
+
+
 def mutate_f3_specificity_risk_accepted(record: dict[str, Any]) -> None:
     evidence = risk_external_item(
         evidence_id="specificity-f3-risk-artifact",
@@ -514,6 +520,12 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
         ("retained_reference_activity cannot assert comparator superiority",),
     ),
     (
+        "superiority-without-selected-variants",
+        mutate_superiority_uses_unselected_candidates,
+        "BLOCK",
+        ("selected-variant superiority evidence required",),
+    ),
+    (
         "f4-computed-confirmation",
         mutate_f4_computed_confirmation,
         "BLOCK",
@@ -556,6 +568,7 @@ EXPECTED_CASE_NAMES = (
     "f5-artifact-kind-mismatch",
     "positive-nonexact-after-zero-upstream",
     "retained-activity-with-superiority-endpoint",
+    "superiority-without-selected-variants",
     "f4-computed-confirmation",
     "f3-specificity-risk-evidence-accepted",
     "f4-delivery-risk-evidence-accepted",

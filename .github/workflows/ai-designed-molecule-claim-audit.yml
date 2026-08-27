@@ -126,6 +126,7 @@ jobs:
               "f5-artifact-kind-mismatch",
               "positive-nonexact-after-zero-upstream",
               "retained-activity-with-superiority-endpoint",
+              "superiority-without-selected-variants",
               "f4-computed-confirmation",
               "f3-specificity-risk-evidence-accepted",
               "f4-delivery-risk-evidence-accepted",
@@ -136,10 +137,10 @@ jobs:
           assert [item["case"] for item in results] == expected
           assert len({item["case"] for item in results}) == len(expected)
           assert all(item["passed"] for item in results)
-          assert sum(item["expected"] == "BLOCK" for item in results) == 23
+          assert sum(item["expected"] == "BLOCK" for item in results) == 24
           assert sum(item["expected"] == "ACCEPT" for item in results) == 2
-          print("regression_cases=25")
-          print("regression_block_cases=23")
+          print("regression_cases=26")
+          print("regression_block_cases=24")
           print("regression_accept_cases=2")
           PY
           ! grep -R -q 'Traceback' ai-designed-molecule-regressions regression-summary.txt
