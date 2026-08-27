@@ -73,6 +73,20 @@ def _load_package(
     return package, receipts
 
 
+def _enforce_receipt(result: Mapping[str, Any]) -> None:
+    analysis = result["kairos_analysis"]
+    if analysis["verdict"] != "ACCEPT_WITH_LIMITS":
+        raise TraceEvidenceBridgeError("unexpected Kairos verdict")
+    if analysis["temporal_conflicts"]:
+        raise TraceEvidenceBridgeError("temporal conflicts present")
+    if analysis["claim_firewall"]:
+        raise TraceEvidenceBridgeError("claim firewall violation present")
+    if result["proofpath_projection"]["decision"] != "HOLD":
+        raise TraceEvidenceBridgeError("ProofPath must remain HOLD")
+    if result["liminaldb_projection"]["projection"]["adds_scientific_verdict"] is not False:
+        raise TraceEvidenceBridgeError("LiminalDB added a verdict")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", type=Path, required=True)
@@ -86,34 +100,26 @@ def main() -> int:
         validate_pinned_manifest(manifest)
         package, receipts = _load_package(manifest, args.source_dir)
         result = build_trace_ecosystem_receipt(manifest, package, receipts)
-    except TraceEvidenceBridgeError as exc:
+        if args.enforce:
+            _enforce_receipt(result)
+        rendered = (
+            json.dumps(
+                result,
+                indent=2,
+                sort_keys=True,
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            + "\n"
+        )
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+        else:
+            print(rendered, end="")
+    except (OSError, TraceEvidenceBridgeError) as exc:
         print(f"BLOCK {exc}")
         return 2
-
-    rendered = json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n"
-    if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(rendered, encoding="utf-8")
-    else:
-        print(rendered, end="")
-
-    if args.enforce:
-        analysis = result["kairos_analysis"]
-        if analysis["verdict"] != "ACCEPT_WITH_LIMITS":
-            print("BLOCK unexpected Kairos verdict")
-            return 2
-        if analysis["temporal_conflicts"]:
-            print("BLOCK temporal conflicts present")
-            return 2
-        if analysis["claim_firewall"]:
-            print("BLOCK claim firewall violation present")
-            return 2
-        if result["proofpath_projection"]["decision"] != "HOLD":
-            print("BLOCK ProofPath must remain HOLD")
-            return 2
-        if result["liminaldb_projection"]["projection"]["adds_scientific_verdict"] is not False:
-            print("BLOCK LiminalDB added a verdict")
-            return 2
     return 0
 
 

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import copy
+import sys
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from kairos_gate.trace_evidence_bridge import (
     TraceEvidenceBridgeError,
@@ -9,6 +13,7 @@ from kairos_gate.trace_evidence_bridge import (
     validate_ecosystem_receipt,
     validate_trace_package,
 )
+from scripts import derive_trace_ecosystem_receipt as receipt_cli
 
 
 class TraceEvidenceBridgeTests(unittest.TestCase):
@@ -250,6 +255,108 @@ class TraceEvidenceBridgeTests(unittest.TestCase):
         package["disposition"]["case_id"] = "different-case"
         with self.assertRaises(TraceEvidenceBridgeError):
             validate_trace_package(self._manifest(), package)
+
+    def test_manifest_requires_package_and_pull_request_identity(self):
+        for key, value, message in (
+            ("package_id", None, "package_id"),
+            ("pull_request", "59", "positive integer"),
+            ("pull_request", True, "positive integer"),
+        ):
+            with self.subTest(key=key, value=value):
+                manifest = self._manifest()
+                if value is None:
+                    manifest.pop(key)
+                else:
+                    manifest[key] = value
+                with self.assertRaisesRegex(TraceEvidenceBridgeError, message):
+                    validate_trace_package(manifest, self._package())
+
+    def test_nested_package_fields_fail_with_bridge_error(self):
+        mutations = (
+            lambda package: package["source_manifest"].pop("primary_citation"),
+            lambda package: package["source_manifest"].pop("retrieval"),
+            lambda package: package["source_manifest"]["code_pins"].pop(
+                "trace_repository"
+            ),
+            lambda package: package["claim_map"]["claims"][0].pop(
+                "verification_level"
+            ),
+            lambda package: package["disposition"].update(
+                {"permitted_language": []}
+            ),
+        )
+        for mutate in mutations:
+            with self.subTest(mutation=mutate):
+                package = self._package()
+                mutate(package)
+                with self.assertRaises(TraceEvidenceBridgeError):
+                    validate_trace_package(self._manifest(), package)
+
+    def test_alternative_explanation_boundary_requires_ten_entries(self):
+        package = self._package()
+        package["causal_transition_map"][
+            "alternative_explanations_and_sensitivities"
+        ] = ["one"] * 9
+        with self.assertRaisesRegex(TraceEvidenceBridgeError, "at least 10"):
+            validate_trace_package(self._manifest(), package)
+
+    def test_file_receipt_path_is_validated_before_comparison(self):
+        receipts = self._receipts(self._manifest())
+        receipts[0]["path"] = None
+        with self.assertRaisesRegex(TraceEvidenceBridgeError, "claim_map.path"):
+            build_trace_ecosystem_receipt(
+                self._manifest(), self._package(), receipts
+            )
+
+    def test_receipt_requires_source_package_object(self):
+        receipt = build_trace_ecosystem_receipt(
+            self._manifest(), self._package(), self._receipts(self._manifest())
+        )
+        receipt.pop("source_package")
+        receipt["receipt_id"] = self._recompute_receipt_id(receipt)
+        with self.assertRaisesRegex(TraceEvidenceBridgeError, "source_package"):
+            validate_ecosystem_receipt(receipt)
+
+    def test_enforcement_failure_does_not_write_receipt(self):
+        result = {
+            "kairos_analysis": {
+                "verdict": "BLOCK",
+                "temporal_conflicts": [],
+                "claim_firewall": [],
+            },
+            "proofpath_projection": {"decision": "HOLD"},
+            "liminaldb_projection": {
+                "projection": {"adds_scientific_verdict": False}
+            },
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "receipt.json"
+            with (
+                patch.object(receipt_cli, "_load_json", return_value=self._manifest()),
+                patch.object(receipt_cli, "validate_pinned_manifest"),
+                patch.object(receipt_cli, "_load_package", return_value=({}, [])),
+                patch.object(
+                    receipt_cli,
+                    "build_trace_ecosystem_receipt",
+                    return_value=result,
+                ),
+                patch.object(
+                    sys,
+                    "argv",
+                    [
+                        "derive_trace_ecosystem_receipt.py",
+                        "--manifest",
+                        "manifest.json",
+                        "--source-dir",
+                        "source",
+                        "--output",
+                        str(output),
+                        "--enforce",
+                    ],
+                ),
+            ):
+                self.assertEqual(receipt_cli.main(), 2)
+            self.assertFalse(output.exists())
 
     def test_rejects_blob_identity_substitution(self):
         manifest = self._manifest()

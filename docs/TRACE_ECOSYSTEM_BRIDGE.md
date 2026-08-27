@@ -43,7 +43,7 @@ Required package invariants include:
 - C1–C12 remain present with their reviewed statuses;
 - C7 remains a rejected direct-observation claim;
 - C8 remains taxonomically unresolved;
-- C9 remains a rejected universal-individual claim;
+- C9 remains a rejected universal-segment claim;
 - C10 remains a rejected adaptive-causality overclaim;
 - C11 and C12 remain not established;
 - B1–B7 remain visible reproduction blockers;

@@ -142,7 +142,18 @@ def validate_graph(graph: Mapping[str, Any]) -> None:
         _require_text(state.get("label"), f"state {state_id}.label")
         _time_window(state.get("time_window"), f"state {state_id}.time_window")
         _finite_score(state.get("uncertainty"), f"state {state_id}.uncertainty")
-        for ref in _require_sequence(state.get("evidence_refs", []), "evidence_refs"):
+        state_refs = _require_sequence(
+            state.get("evidence_refs", []), f"state {state_id}.evidence_refs"
+        )
+        normalized_state_refs = [
+            _require_text(ref, f"state {state_id}.evidence_refs[{position}]")
+            for position, ref in enumerate(state_refs)
+        ]
+        if len(normalized_state_refs) != len(set(normalized_state_refs)):
+            raise TransitionGraphError(
+                f"state {state_id}.evidence_refs must not contain duplicates"
+            )
+        for ref in normalized_state_refs:
             if ref not in evidence:
                 raise TransitionGraphError(
                     f"state {state_id} references missing evidence: {ref}"
@@ -165,6 +176,27 @@ def validate_graph(graph: Mapping[str, Any]) -> None:
             raise TransitionGraphError(
                 f"evidence {evidence_id}.causal_design must be boolean"
             )
+        for relation in ("supports", "contradicts"):
+            raw_targets = _require_sequence(
+                item.get(relation, []), f"evidence {evidence_id}.{relation}"
+            )
+            targets = [
+                _require_text(
+                    target,
+                    f"evidence {evidence_id}.{relation}[{position}]",
+                )
+                for position, target in enumerate(raw_targets)
+            ]
+            if len(targets) != len(set(targets)):
+                raise TransitionGraphError(
+                    f"evidence {evidence_id}.{relation} must not contain duplicates"
+                )
+            for target in targets:
+                if target not in transitions:
+                    raise TransitionGraphError(
+                        f"evidence {evidence_id}.{relation} references missing "
+                        f"transition: {target}"
+                    )
 
     for transition_id, transition in transitions.items():
         source_id = _require_text(
@@ -188,9 +220,22 @@ def validate_graph(graph: Mapping[str, Any]) -> None:
         _require_text(
             transition.get("mechanism"), f"transition {transition_id}.mechanism"
         )
-        _time_window(
+        transition_window = _time_window(
             transition.get("time_window"), f"transition {transition_id}.time_window"
         )
+        source_window = _time_window(
+            states[source_id].get("time_window"), f"state {source_id}.time_window"
+        )
+        target_window = _time_window(
+            states[target_id].get("time_window"), f"state {target_id}.time_window"
+        )
+        if (
+            transition_window[2] != source_window[2]
+            or transition_window[2] != target_window[2]
+        ):
+            raise TransitionGraphError(
+                f"transition {transition_id} and endpoint states must use the same time unit"
+            )
         _finite_score(
             transition.get("confidence"), f"transition {transition_id}.confidence"
         )
@@ -205,7 +250,17 @@ def validate_graph(graph: Mapping[str, Any]) -> None:
             transition.get("evidence_refs", []),
             f"transition {transition_id}.evidence_refs",
         )
-        for ref in refs:
+        normalized_refs = [
+            _require_text(
+                ref, f"transition {transition_id}.evidence_refs[{position}]"
+            )
+            for position, ref in enumerate(refs)
+        ]
+        if len(normalized_refs) != len(set(normalized_refs)):
+            raise TransitionGraphError(
+                f"transition {transition_id}.evidence_refs must not contain duplicates"
+            )
+        for ref in normalized_refs:
             if ref not in evidence:
                 raise TransitionGraphError(
                     f"transition {transition_id} references missing evidence: {ref}"
@@ -293,6 +348,8 @@ def _allowed_claim_level(
     )
     if causal_support:
         allowed = max(allowed, CLAIM_LEVEL["causal"])
+    if any(evidence_index[ref]["status"] == "contradicted" for ref in refs):
+        allowed = min(allowed, CLAIM_LEVEL["association"])
     return min(allowed, CLAIM_LEVEL["causal"])
 
 
