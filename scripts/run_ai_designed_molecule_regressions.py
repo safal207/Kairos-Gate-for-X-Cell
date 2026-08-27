@@ -210,7 +210,8 @@ def mutate_f5_risk_without_independence(record: dict[str, Any]) -> None:
         kind="risk_assessment",
         endpoints=["ecological_safety"],
     )
-    evidence["independence"] = None
+    evidence["independence"]["unrelated_laboratory_identity"] = "   "
+    evidence["independence"]["replication_unit"] = "\t"
     record["external_evidence"] = [evidence]
     record["risk_assessment"]["ecological_safety"] = {
         "status": "established",
@@ -231,6 +232,13 @@ def mutate_observed_mechanism_without_structure(record: dict[str, Any]) -> None:
     structural_claim = claim(record, "structural_characterization")
     structural_claim["status"] = "not_established"
     structural_claim["evidence_refs"] = ["publication"]
+
+
+def mutate_supported_structure_without_observed_mechanism(
+    record: dict[str, Any],
+) -> None:
+    record["mechanism_evidence"]["cryo_em_characterized"] = False
+    record["mechanism_evidence"]["status"] = "not_established"
 
 
 def mutate_zero_selected(record: dict[str, Any]) -> None:
@@ -415,7 +423,7 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
         "f5-risk-without-independence",
         mutate_f5_risk_without_independence,
         "BLOCK",
-        ("F5 risk_assessment requires complete independence metadata",),
+        ("external_evidence[0].independence", "not valid under any"),
     ),
     (
         "mandatory-risks-not-applicable",
@@ -428,6 +436,12 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
         mutate_observed_mechanism_without_structure,
         "BLOCK",
         ("observed structure requires a supported structural_characterization claim",),
+    ),
+    (
+        "supported-structure-without-observed-mechanism",
+        mutate_supported_structure_without_observed_mechanism,
+        "BLOCK",
+        ("supported structural_characterization requires observed cryo-EM mechanism state",),
     ),
     (
         "zero-selected-candidates",
@@ -500,6 +514,7 @@ EXPECTED_CASE_NAMES = (
     "f5-risk-without-independence",
     "mandatory-risks-not-applicable",
     "observed-mechanism-without-structure",
+    "supported-structure-without-observed-mechanism",
     "zero-selected-candidates",
     "structural-assay-relabelled-as-delivery",
     "partial-impossible-counts",

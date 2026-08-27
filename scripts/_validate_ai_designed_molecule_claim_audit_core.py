@@ -141,11 +141,15 @@ def is_int(value: Any) -> bool:
 
 
 def complete_independence(value: Any) -> bool:
+    def nonblank_text(field: str) -> bool:
+        item = value.get(field)
+        return isinstance(item, str) and bool(item.strip())
+
     return (
         isinstance(value, dict)
-        and bool(value.get("unrelated_laboratory_identity"))
+        and nonblank_text("unrelated_laboratory_identity")
         and value.get("independent_materials") is True
-        and bool(value.get("replication_unit"))
+        and nonblank_text("replication_unit")
     )
 
 
@@ -730,6 +734,15 @@ def validate(
                 structural_claim.get("status") == "supported_with_limits"
                 and bool(referenced_structures),
                 "mechanism_evidence: observed structure requires a supported structural_characterization claim with referenced F4 structural evidence",
+                errors,
+            )
+        if (
+            structural_claim.get("status") == "supported_with_limits"
+            and bool(referenced_structures)
+        ):
+            require(
+                mechanism_observed and cryo_em_characterized,
+                "mechanism_evidence: supported structural_characterization requires observed cryo-EM mechanism state",
                 errors,
             )
 

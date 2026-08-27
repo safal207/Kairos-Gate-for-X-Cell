@@ -216,7 +216,7 @@ A cryo-EM structure cannot establish delivery or toxicity. A molecular-activity 
 
 ## Executable regression boundary
 
-The exact-head workflow generates mutation cases from the accepted reference record rather than relying on a manually maintained fixture list. It currently proves fail-closed behavior for 18 negative paths:
+The exact-head workflow generates mutation cases from the accepted reference record rather than relying on a manually maintained fixture list. Its frozen 24-case manifest currently proves fail-closed behavior for 22 negative paths:
 
 1. protected claim promoted to supported;
 2. mismatched comparator;
@@ -229,13 +229,17 @@ The exact-head workflow generates mutation cases from the accepted reference rec
 9. platform evidence with insufficient dimensional coverage;
 10. unreconciled complete candidate denominator;
 11. risk status supported by the wrong evidence endpoint;
-12. supported selected-candidate claims with zero selected candidates;
-13. a structural assay relabeled as delivery evidence;
-14. impossible known counts inside a partial denominator;
-15. an F5 artifact kind that contradicts the declared external evidence kind;
-16. a nonexact positive selection after a known zero upstream count;
-17. retained activity mislabeled with a superiority endpoint;
-18. a computed F4 artifact self-labeled as laboratory confirmation.
+12. F5 risk evidence with whitespace-only laboratory and replication-unit identity;
+13. mandatory risk dimensions marked not applicable;
+14. positive mechanism state without its supported F4 structural evidence;
+15. supported F4 structural evidence paired with a negative mechanism state;
+16. supported selected-candidate claims with zero selected candidates;
+17. a structural assay relabeled as delivery evidence;
+18. impossible known counts inside a partial denominator;
+19. an F5 artifact kind that contradicts the declared external evidence kind;
+20. a nonexact positive selection after a known zero upstream count;
+21. retained activity mislabeled with a superiority endpoint;
+22. a computed F4 artifact self-labeled as laboratory confirmation.
 
 Two positive compatibility cases separately prove acceptance of a digested F3
 specificity-risk artifact and a directly reported F4 delivery-risk confirmation.

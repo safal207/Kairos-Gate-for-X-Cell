@@ -205,9 +205,9 @@
                 "additionalProperties": false,
                 "required": ["unrelated_laboratory_identity", "independent_materials", "replication_unit"],
                 "properties": {
-                  "unrelated_laboratory_identity": {"type": "string", "minLength": 1},
+                  "unrelated_laboratory_identity": {"type": "string", "minLength": 1, "pattern": "\\S"},
                   "independent_materials": {"const": true},
-                  "replication_unit": {"type": "string", "minLength": 1}
+                  "replication_unit": {"type": "string", "minLength": 1, "pattern": "\\S"}
                 }
               }
             ]
@@ -310,9 +310,9 @@
               "additionalProperties": false,
               "required": ["unrelated_laboratory_identity", "independent_materials", "replication_unit", "evidence_refs", "evidence_level"],
               "properties": {
-                "unrelated_laboratory_identity": {"type": "string", "minLength": 1},
+                "unrelated_laboratory_identity": {"type": "string", "minLength": 1, "pattern": "\\S"},
                 "independent_materials": {"const": true},
-                "replication_unit": {"type": "string", "minLength": 1},
+                "replication_unit": {"type": "string", "minLength": 1, "pattern": "\\S"},
                 "evidence_refs": {"$ref": "#/$defs/evidence_refs"},
                 "evidence_level": {"const": "F5"}
               }
