@@ -168,11 +168,12 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["assay_id", "system", "assay_scope", "comparator", "biological_unit_status", "independent_biological_n", "result_direction", "evidence_level", "endpoint_types", "provenance", "limitations"],
+        "required": ["assay_id", "system", "assay_scope", "tested_subject", "comparator", "biological_unit_status", "independent_biological_n", "result_direction", "evidence_level", "endpoint_types", "provenance", "limitations"],
         "properties": {
           "assay_id": {"type": "string", "minLength": 1},
           "system": {"enum": ["bacterial_cells", "plant_cells", "human_cells", "cryo_em_structure", "other"]},
           "assay_scope": {"type": "string", "minLength": 1},
+          "tested_subject": {"enum": ["designed_candidates", "selected_variants", "reference_comparator_only", "selected_variant_structure"]},
           "comparator": {"type": "string", "minLength": 1},
           "biological_unit_status": {"enum": ["established", "unresolved", "not_applicable"]},
           "independent_biological_n": {"type": ["integer", "null"], "minimum": 0},
@@ -213,7 +214,29 @@
           },
           "coverage": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/coverage"}]},
           "limitations": {"$ref": "#/$defs/limitations"}
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": ["evidence_kind"],
+              "properties": {"evidence_kind": {"const": "platform_generalization"}}
+            },
+            "then": {
+              "properties": {
+                "coverage": {
+                  "type": "object",
+                  "properties": {
+                    "target_classes": {"minItems": 2},
+                    "laboratories": {"minItems": 2},
+                    "delivery_systems": {"minItems": 2},
+                    "organisms": {"minItems": 2},
+                    "populations": {"minItems": 2}
+                  }
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "claim_audit": {
@@ -234,17 +257,17 @@
           "limitations": {"$ref": "#/$defs/limitations"}
         },
         "allOf": [
-          {"if": {"properties": {"claim_type": {"const": "molecular_activity"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "has_bounded_molecular_activity"}}}},
-          {"if": {"properties": {"claim_type": {"const": "bounded_comparator_superiority"}}}, "then": {"properties": {"claim_subject": {"const": "selected_variants"}, "claim_predicate": {"const": "exceeds_named_comparator_in_test_context"}}}},
-          {"if": {"properties": {"claim_type": {"const": "structural_characterization"}}}, "then": {"properties": {"claim_subject": {"const": "selected_variant_structure"}, "claim_predicate": {"const": "has_selected_variant_structural_contacts"}}}},
-          {"if": {"properties": {"claim_type": {"const": "platform_generalization"}}}, "then": {"properties": {"claim_subject": {"const": "design_platform"}, "claim_predicate": {"const": "generalizes_across_targets_labs_delivery_populations"}}}},
-          {"if": {"properties": {"claim_type": {"const": "universal_superiority"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "outperforms_cas9_cas12_or_all_natural_editors"}}}},
-          {"if": {"properties": {"claim_type": {"const": "clinical_safety"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "is_clinically_safe"}}}},
-          {"if": {"properties": {"claim_type": {"const": "therapeutic_efficacy"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "has_therapeutic_efficacy"}}}},
-          {"if": {"properties": {"claim_type": {"const": "agricultural_readiness"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "is_ready_for_agricultural_deployment"}}}},
-          {"if": {"properties": {"claim_type": {"const": "independent_replication"}}}, "then": {"properties": {"claim_subject": {"const": "study_findings"}, "claim_predicate": {"const": "has_unrelated_laboratory_replication"}}}},
-          {"if": {"properties": {"claim_type": {"const": "ai_autonomy"}}}, "then": {"properties": {"claim_subject": {"const": "ai_system"}, "claim_predicate": {"const": "was_created_and_validated_autonomously_by_ai"}}}},
-          {"if": {"properties": {"claim_type": {"const": "physical_authorization"}}}, "then": {"properties": {"claim_subject": {"const": "audit_record"}, "claim_predicate": {"const": "authorizes_physical_biology"}}}}
+          {"if": {"properties": {"claim_type": {"const": "molecular_activity"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "has_bounded_molecular_activity"}, "comparator_scope": {"const": "specific_test_context"}}}},
+          {"if": {"properties": {"claim_type": {"const": "bounded_comparator_superiority"}}}, "then": {"properties": {"claim_subject": {"const": "selected_variants"}, "claim_predicate": {"const": "exceeds_named_comparator_in_test_context"}, "comparator_scope": {"const": "wild_type_same_family"}}}},
+          {"if": {"properties": {"claim_type": {"const": "structural_characterization"}}}, "then": {"properties": {"claim_subject": {"const": "selected_variant_structure"}, "claim_predicate": {"const": "has_selected_variant_structural_contacts"}, "comparator_scope": {"const": "specific_test_context"}}}},
+          {"if": {"properties": {"claim_type": {"const": "platform_generalization"}}}, "then": {"properties": {"claim_subject": {"const": "design_platform"}, "claim_predicate": {"const": "generalizes_across_targets_labs_delivery_populations"}, "comparator_scope": {"const": "not_applicable"}}}},
+          {"if": {"properties": {"claim_type": {"const": "universal_superiority"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "outperforms_cas9_cas12_or_all_natural_editors"}, "comparator_scope": {"enum": ["cas9_or_cas12", "all_natural_editors"]}}}},
+          {"if": {"properties": {"claim_type": {"const": "clinical_safety"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "is_clinically_safe"}, "comparator_scope": {"const": "not_applicable"}}}},
+          {"if": {"properties": {"claim_type": {"const": "therapeutic_efficacy"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "has_therapeutic_efficacy"}, "comparator_scope": {"const": "not_applicable"}}}},
+          {"if": {"properties": {"claim_type": {"const": "agricultural_readiness"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "is_ready_for_agricultural_deployment"}, "comparator_scope": {"const": "not_applicable"}}}},
+          {"if": {"properties": {"claim_type": {"const": "independent_replication"}}}, "then": {"properties": {"claim_subject": {"const": "study_findings"}, "claim_predicate": {"const": "has_unrelated_laboratory_replication"}, "comparator_scope": {"const": "not_applicable"}}}},
+          {"if": {"properties": {"claim_type": {"const": "ai_autonomy"}}}, "then": {"properties": {"claim_subject": {"const": "ai_system"}, "claim_predicate": {"const": "was_created_and_validated_autonomously_by_ai"}, "comparator_scope": {"const": "not_applicable"}}}},
+          {"if": {"properties": {"claim_type": {"const": "physical_authorization"}}}, "then": {"properties": {"claim_subject": {"const": "audit_record"}, "claim_predicate": {"const": "authorizes_physical_biology"}, "comparator_scope": {"const": "not_applicable"}}}}
         ]
       }
     },

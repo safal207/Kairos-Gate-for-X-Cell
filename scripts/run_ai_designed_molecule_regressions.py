@@ -123,6 +123,16 @@ def mutate_comparator_mismatch(record: dict[str, Any]) -> None:
     record["assays"][1]["comparator"] = "Cas9"
 
 
+def mutate_comparator_scope_mismatch(record: dict[str, Any]) -> None:
+    claim(record, "bounded_comparator_superiority")["comparator_scope"] = "all_natural_editors"
+
+
+def mutate_comparator_only_activity(record: dict[str, Any]) -> None:
+    for assay in record["assays"]:
+        if "molecular_activity" in assay["endpoint_types"]:
+            assay["tested_subject"] = "reference_comparator_only"
+
+
 def mutate_structured_predicate(record: dict[str, Any]) -> None:
     claim(record, "molecular_activity")["claim_predicate"] = "is_clinically_safe"
 
@@ -300,6 +310,11 @@ def mutate_f4_delivery_risk_accepted(record: dict[str, Any]) -> None:
     }
 
 
+def mutate_f4_computed_confirmation(record: dict[str, Any]) -> None:
+    mutate_f4_delivery_risk_accepted(record)
+    record["external_evidence"][0]["provenance"]["derivation"] = "computed"
+
+
 CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
     (
         "protected-supported",
@@ -312,6 +327,18 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
         mutate_comparator_mismatch,
         "BLOCK",
         ("every referenced assay must use named comparator",),
+    ),
+    (
+        "comparator-scope-mismatch",
+        mutate_comparator_scope_mismatch,
+        "BLOCK",
+        ("comparator_scope", "wild_type_same_family", "was expected"),
+    ),
+    (
+        "comparator-only-activity",
+        mutate_comparator_only_activity,
+        "BLOCK",
+        ("peer-reviewed referenced F2+ molecular-activity evidence required",),
     ),
     (
         "structured-predicate-mismatch",
@@ -341,7 +368,7 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
         "platform-insufficient-coverage",
         mutate_platform_insufficient_coverage,
         "BLOCK",
-        ("at least two target_classes",),
+        ("target_classes", "is too short"),
     ),
     (
         "unreconciled-denominator",
@@ -392,6 +419,12 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
         ("retained_reference_activity cannot assert comparator superiority",),
     ),
     (
+        "f4-computed-confirmation",
+        mutate_f4_computed_confirmation,
+        "BLOCK",
+        ("F4 requires repository, laboratory, or risk-assessment confirmation",),
+    ),
+    (
         "f3-specificity-risk-evidence-accepted",
         mutate_f3_specificity_risk_accepted,
         "ACCEPT",
@@ -408,6 +441,8 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
 EXPECTED_CASE_NAMES = (
     "protected-supported",
     "comparator-mismatch",
+    "comparator-scope-mismatch",
+    "comparator-only-activity",
     "structured-predicate-mismatch",
     "publication-mislabeled-f3",
     "replication-below-f5",
@@ -421,6 +456,7 @@ EXPECTED_CASE_NAMES = (
     "f5-artifact-kind-mismatch",
     "positive-nonexact-after-zero-upstream",
     "retained-activity-with-superiority-endpoint",
+    "f4-computed-confirmation",
     "f3-specificity-risk-evidence-accepted",
     "f4-delivery-risk-evidence-accepted",
 )
@@ -474,11 +510,18 @@ def main() -> int:
         else:
             raise RuntimeError(f"unknown expected verdict: {expected}")
 
+        if f"BLOCK {fixture}" in completed.stdout:
+            observed = "BLOCK"
+        elif f"ACCEPT {fixture}" in completed.stdout:
+            observed = "ACCEPT"
+        else:
+            observed = "NO_VERDICT"
+
         results.append(
             {
                 "case": name,
                 "expected": expected,
-                "verdict_observed": expected if ok else "MISMATCH",
+                "verdict_observed": observed,
                 "markers": list(markers),
                 "passed": ok,
             }

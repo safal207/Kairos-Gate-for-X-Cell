@@ -2,8 +2,8 @@
 """Canonical AI-designed molecule validator with preview.4 semantic hardening.
 
 The large baseline implementation is kept in the adjacent private core module.
-This public entrypoint overrides level-aware provenance semantics and adds
-cross-field invariants discovered during exact-head adversarial review.
+This public entrypoint supplies the single level-aware provenance policy and
+adds cross-field invariants discovered during exact-head adversarial review.
 """
 
 from __future__ import annotations
@@ -95,11 +95,13 @@ def provenance_valid_for_level(
     if level == "F4":
         structure_confirmation = (
             role == "structure_record"
+            and derivation == "directly_reported"
             and artifact_kind == "deposited_structure"
             and confirmation == "repository_record"
         )
         laboratory_confirmation = (
             role == "laboratory_confirmation"
+            and derivation == "directly_reported"
             and artifact_kind == "author_confirmation"
             and confirmation == "author_or_laboratory_confirmation"
             and _valid_digest(digest)
@@ -107,6 +109,7 @@ def provenance_valid_for_level(
         risk_confirmation = (
             external
             and role == "laboratory_confirmation"
+            and derivation == "directly_reported"
             and artifact_kind == "risk_assessment_record"
             and confirmation == "author_or_laboratory_confirmation"
             and _valid_digest(digest)
@@ -179,8 +182,10 @@ def _additional_semantic_checks(record: dict[str, Any]) -> list[str]:
 
 
 def validate(record: dict[str, Any]) -> list[str]:
-    core.provenance_valid_for_level = provenance_valid_for_level
-    return core.validate(record) + _additional_semantic_checks(record)
+    return core.validate(
+        record,
+        provenance_rule=provenance_valid_for_level,
+    ) + _additional_semantic_checks(record)
 
 
 def load_json(path: Path) -> dict[str, Any]:

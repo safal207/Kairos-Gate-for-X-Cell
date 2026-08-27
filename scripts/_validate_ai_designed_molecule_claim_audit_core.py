@@ -5,9 +5,8 @@ from __future__ import annotations
 
 import json
 import re
-import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 SCHEMA_VERSION = "0.2.0-preview.4"
 REQUIRED_TOP_LEVEL = {
@@ -29,6 +28,7 @@ REQUIRED_TOP_LEVEL = {
 EVIDENCE_ORDER = {"F0": 0, "F1": 1, "F2": 2, "F3": 3, "F4": 4, "F5": 5}
 FUNCTIONAL_SYSTEMS = {"bacterial_cells", "plant_cells", "human_cells", "other"}
 FUNCTIONAL_ENDPOINTS = {"molecular_activity", "bounded_comparator_superiority"}
+DESIGNED_TEST_SUBJECTS = {"designed_candidates", "selected_variants"}
 POSITIVE_SELECTION_STATES = {"positive_exact", "positive_nonexact"}
 SUPPORTED_TYPES = {
     "molecular_activity",
@@ -78,6 +78,19 @@ CLAIM_SEMANTICS: dict[str, tuple[str, str]] = {
         "was_created_and_validated_autonomously_by_ai",
     ),
     "physical_authorization": ("audit_record", "authorizes_physical_biology"),
+}
+CLAIM_COMPARATOR_SCOPES: dict[str, set[str]] = {
+    "molecular_activity": {"specific_test_context"},
+    "bounded_comparator_superiority": {"wild_type_same_family"},
+    "structural_characterization": {"specific_test_context"},
+    "platform_generalization": {"not_applicable"},
+    "universal_superiority": {"cas9_or_cas12", "all_natural_editors"},
+    "clinical_safety": {"not_applicable"},
+    "therapeutic_efficacy": {"not_applicable"},
+    "agricultural_readiness": {"not_applicable"},
+    "independent_replication": {"not_applicable"},
+    "ai_autonomy": {"not_applicable"},
+    "physical_authorization": {"not_applicable"},
 }
 REQUIRED_CLAIM_TYPES = set(CLAIM_SEMANTICS)
 RISK_DIMENSIONS = {
@@ -136,98 +149,11 @@ def complete_independence(value: Any) -> bool:
     )
 
 
-def provenance_valid_for_level(
+def validate(
+    record: dict[str, Any],
     *,
-    level: str,
-    provenance: Any,
-    publication_urls: set[str],
-    context: str,
-    errors: list[str],
-    external: bool,
-) -> None:
-    require(isinstance(provenance, dict), f"{context}: provenance required", errors)
-    if not isinstance(provenance, dict):
-        return
-
-    role = provenance.get("source_role")
-    url = provenance.get("source_url")
-    locator = provenance.get("source_locator")
-    derivation = provenance.get("derivation")
-    artifact_kind = provenance.get("artifact_kind")
-    confirmation = provenance.get("confirmation_type")
-    digest = provenance.get("artifact_sha256")
-
-    require(bool(locator), f"{context}: source_locator required", errors)
-    if role in {"primary_publication", "supplementary_material", "structure_record"}:
-        require(
-            url in publication_urls,
-            f"{context}: provenance URL must be listed by source_publication",
-            errors,
-        )
-
-    if derivation in {"reconstructed", "computed"}:
-        require(
-            isinstance(digest, str) and SHA256_RE.fullmatch(digest) is not None,
-            f"{context}: reconstructed/computed evidence requires artifact SHA-256",
-            errors,
-        )
-
-    if level in {"F0", "F1", "F2"}:
-        require(
-            role in {"primary_publication", "supplementary_material", "structure_record"},
-            f"{context}: F0-F2 must remain publication or repository reporting",
-            errors,
-        )
-        require(
-            derivation == "directly_reported",
-            f"{context}: F0-F2 must be directly reported",
-            errors,
-        )
-
-    if level == "F3":
-        require(
-            role == "derived_artifact"
-            and derivation in {"reconstructed", "computed"}
-            and artifact_kind in {"executable_analysis", "reproducibility_bundle"}
-            and isinstance(digest, str)
-            and SHA256_RE.fullmatch(digest) is not None,
-            f"{context}: F3 requires a digested executable or reproducibility artifact",
-            errors,
-        )
-
-    if level == "F4":
-        structure_confirmation = (
-            role == "structure_record"
-            and artifact_kind == "deposited_structure"
-            and confirmation == "repository_record"
-        )
-        laboratory_confirmation = (
-            role == "laboratory_confirmation"
-            and artifact_kind == "author_confirmation"
-            and confirmation == "author_or_laboratory_confirmation"
-            and isinstance(digest, str)
-            and SHA256_RE.fullmatch(digest) is not None
-        )
-        require(
-            structure_confirmation or laboratory_confirmation,
-            f"{context}: F4 requires repository or author/laboratory confirmation",
-            errors,
-        )
-
-    if level == "F5":
-        require(external, f"{context}: F5 is reserved for external evidence objects", errors)
-        require(
-            role == "laboratory_confirmation"
-            and artifact_kind in {"independent_replication_record", "risk_assessment_record"}
-            and confirmation == "independent_laboratory_replication"
-            and isinstance(digest, str)
-            and SHA256_RE.fullmatch(digest) is not None,
-            f"{context}: F5 requires a frozen independent-laboratory evidence artifact",
-            errors,
-        )
-
-
-def validate(record: dict[str, Any]) -> list[str]:
+    provenance_rule: Callable[..., None],
+) -> list[str]:
     errors: list[str] = []
     missing = sorted(REQUIRED_TOP_LEVEL - record.keys())
     require(not missing, f"missing required fields: {missing}", errors)
@@ -388,6 +314,7 @@ def validate(record: dict[str, Any]) -> list[str]:
             endpoint_set = {str(endpoint) for endpoint in endpoints} if isinstance(endpoints, list) else set()
             system = assay.get("system")
             direction = assay.get("result_direction")
+            tested_subject = assay.get("tested_subject")
             if system == "cryo_em_structure" or direction == "structural_observation":
                 require(
                     system == "cryo_em_structure"
@@ -396,8 +323,18 @@ def validate(record: dict[str, Any]) -> list[str]:
                     f"assay {assay_id}: structural assay endpoints must be exactly structural_characterization",
                     errors,
                 )
+                require(
+                    tested_subject == "selected_variant_structure",
+                    f"assay {assay_id}: structural evidence must bind the selected variant structure",
+                    errors,
+                )
             else:
                 require(system in FUNCTIONAL_SYSTEMS, f"assay {assay_id}: unsupported functional assay system", errors)
+                require(
+                    tested_subject in DESIGNED_TEST_SUBJECTS | {"reference_comparator_only"},
+                    f"assay {assay_id}: functional evidence requires a controlled tested_subject",
+                    errors,
+                )
                 require(
                     endpoint_set.issubset(FUNCTIONAL_ENDPOINTS),
                     f"assay {assay_id}: cellular activity assays cannot assert risk or structural endpoints",
@@ -409,7 +346,7 @@ def validate(record: dict[str, Any]) -> list[str]:
                     errors,
                 )
 
-            provenance_valid_for_level(
+            provenance_rule(
                 level=level,
                 provenance=assay.get("provenance"),
                 publication_urls=publication_urls,
@@ -433,7 +370,7 @@ def validate(record: dict[str, Any]) -> list[str]:
                 external_by_id[evidence_id] = item
             level = str(item.get("evidence_level") or "")
             require(level in {"F3", "F4", "F5"}, f"external evidence {evidence_id}: invalid evidence_level", errors)
-            provenance_valid_for_level(
+            provenance_rule(
                 level=level,
                 provenance=item.get("provenance"),
                 publication_urls=publication_urls,
@@ -577,6 +514,13 @@ def validate(record: dict[str, Any]) -> list[str]:
                     f"claim {claim_id}: structured subject/predicate mismatch",
                     errors,
                 )
+            expected_scopes = CLAIM_COMPARATOR_SCOPES.get(claim_type)
+            if expected_scopes is not None:
+                require(
+                    claim.get("comparator_scope") in expected_scopes,
+                    f"claim {claim_id}: comparator_scope is incompatible with {claim_type}",
+                    errors,
+                )
 
             require(isinstance(refs, list) and bool(refs), f"claim {claim_id}: evidence_refs required", errors)
             ref_set = {str(ref) for ref in refs} if isinstance(refs, list) else set()
@@ -600,6 +544,7 @@ def validate(record: dict[str, Any]) -> list[str]:
                     assay
                     for assay in claim_assays
                     if assay.get("system") in FUNCTIONAL_SYSTEMS
+                    and assay.get("tested_subject") in DESIGNED_TEST_SUBJECTS
                     and "molecular_activity" in assay.get("endpoint_types", [])
                     and assay.get("result_direction") in {"retained_reference_activity", "exceeded_reference_activity", "mixed"}
                     and evidence_level(assay.get("evidence_level")) >= EVIDENCE_ORDER["F2"]
@@ -615,6 +560,11 @@ def validate(record: dict[str, Any]) -> list[str]:
                     errors,
                 )
                 require(
+                    claim.get("comparator_scope") == comparator.get("comparator_class"),
+                    f"claim {claim_id}: comparator_scope must match the named comparator class",
+                    errors,
+                )
+                require(
                     screening.get("selection_bias_status") != "BLOCK" if isinstance(screening, dict) else False,
                     f"claim {claim_id}: blocked selection bias cannot support superiority",
                     errors,
@@ -626,6 +576,7 @@ def validate(record: dict[str, Any]) -> list[str]:
                     assay
                     for assay in claim_assays
                     if assay.get("system") in FUNCTIONAL_SYSTEMS
+                    and assay.get("tested_subject") in DESIGNED_TEST_SUBJECTS
                     and "bounded_comparator_superiority" in assay.get("endpoint_types", [])
                     and assay.get("result_direction") == "exceeded_reference_activity"
                     and evidence_level(assay.get("evidence_level")) >= EVIDENCE_ORDER["F2"]
@@ -751,28 +702,3 @@ def validate(record: dict[str, Any]) -> list[str]:
         require(safety.get("clinical_or_field_use_authorized") is False, "clinical/field use must remain unauthorized", errors)
 
     return errors
-
-
-def main(argv: list[str]) -> int:
-    if len(argv) < 2:
-        print("usage: validate_ai_designed_molecule_claim_audit.py AUDIT.json [...]", file=sys.stderr)
-        return 2
-    failed = False
-    for raw_path in argv[1:]:
-        path = Path(raw_path)
-        try:
-            errors = validate(load_json(path))
-        except (OSError, json.JSONDecodeError, ValueError) as exc:
-            errors = [str(exc)]
-        if errors:
-            failed = True
-            print(f"BLOCK {path}")
-            for error in errors:
-                print(f"  - {error}")
-        else:
-            print(f"ACCEPT {path}")
-    return 1 if failed else 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main(sys.argv))

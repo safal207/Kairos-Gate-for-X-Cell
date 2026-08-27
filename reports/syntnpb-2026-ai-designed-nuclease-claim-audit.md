@@ -24,7 +24,7 @@ The paper reports a hybrid design pipeline combining structure-guided inverse pr
 The bounded evidence supports the following statements:
 
 1. The peer-reviewed publication reports divergent TnpB candidates with functional RNA-guided nuclease activity after laboratory construction and screening.
-2. It reports that some selected SynTnpB variants retained or exceeded the activity of the study's named wild-type TnpB reference in bacterial, plant-cell, and human-cell test contexts.
+2. It reports mixed comparator results for selected SynTnpB variants in bacterial-cell test contexts, and that some selected variants retained or exceeded the activity of the study's named wild-type TnpB reference in plant-cell and human-cell test contexts.
 3. The deposited RCSB structure `9YYG` supports structural characterization of a selected active divergent variant.
 
 ```text
@@ -216,21 +216,29 @@ A cryo-EM structure cannot establish delivery or toxicity. A molecular-activity 
 
 ## Executable regression boundary
 
-The exact-head workflow generates mutation cases from the accepted reference record rather than relying on a manually maintained fixture list. It currently proves fail-closed behavior for 13 paths:
+The exact-head workflow generates mutation cases from the accepted reference record rather than relying on a manually maintained fixture list. It currently proves fail-closed behavior for 18 negative paths:
 
 1. protected claim promoted to supported;
 2. mismatched comparator;
-3. structured predicate relabeling;
-4. ordinary publication reporting mislabeled F3;
-5. replication below F5;
-6. invented replication reference;
-7. platform evidence with insufficient dimensional coverage;
-8. unreconciled complete candidate denominator;
-9. risk status supported by the wrong evidence endpoint;
-10. supported selected-candidate claims with zero selected candidates;
-11. a structural assay relabeled as delivery evidence;
-12. impossible known counts inside a partial denominator;
-13. an F5 artifact kind that contradicts the declared external evidence kind.
+3. claim comparator scope widened beyond the named comparator class;
+4. comparator-only activity relabeled as designed-candidate evidence;
+5. structured predicate relabeling;
+6. ordinary publication reporting mislabeled F3;
+7. replication below F5;
+8. invented replication reference;
+9. platform evidence with insufficient dimensional coverage;
+10. unreconciled complete candidate denominator;
+11. risk status supported by the wrong evidence endpoint;
+12. supported selected-candidate claims with zero selected candidates;
+13. a structural assay relabeled as delivery evidence;
+14. impossible known counts inside a partial denominator;
+15. an F5 artifact kind that contradicts the declared external evidence kind;
+16. a nonexact positive selection after a known zero upstream count;
+17. retained activity mislabeled with a superiority endpoint;
+18. a computed F4 artifact self-labeled as laboratory confirmation.
+
+Two positive compatibility cases separately prove acceptance of a digested F3
+specificity-risk artifact and a directly reported F4 delivery-risk confirmation.
 
 The acceptance receipt is created only after the positive audit and the complete mutation suite succeed. It hashes every audit record included in the positive result.
 

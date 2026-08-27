@@ -106,6 +106,8 @@ jobs:
           expected = [
               "protected-supported",
               "comparator-mismatch",
+              "comparator-scope-mismatch",
+              "comparator-only-activity",
               "structured-predicate-mismatch",
               "publication-mislabeled-f3",
               "replication-below-f5",
@@ -119,6 +121,7 @@ jobs:
               "f5-artifact-kind-mismatch",
               "positive-nonexact-after-zero-upstream",
               "retained-activity-with-superiority-endpoint",
+              "f4-computed-confirmation",
               "f3-specificity-risk-evidence-accepted",
               "f4-delivery-risk-evidence-accepted",
           ]
@@ -128,10 +131,10 @@ jobs:
           assert [item["case"] for item in results] == expected
           assert len({item["case"] for item in results}) == len(expected)
           assert all(item["passed"] for item in results)
-          assert sum(item["expected"] == "BLOCK" for item in results) == 15
+          assert sum(item["expected"] == "BLOCK" for item in results) == 18
           assert sum(item["expected"] == "ACCEPT" for item in results) == 2
-          print("regression_cases=17")
-          print("regression_block_cases=15")
+          print("regression_cases=20")
+          print("regression_block_cases=18")
           print("regression_accept_cases=2")
           PY
           ! grep -R -q 'Traceback' ai-designed-molecule-regressions regression-summary.txt
@@ -146,17 +149,35 @@ jobs:
           test '${{ steps.regressions.outcome }}' = success
           mapfile -t audits < ai-designed-molecule-audit-files.txt
           test "${#audits[@]}" -gt 0
+          schema_version="$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          schema = json.loads(
+              Path("schemas/ai-designed-molecule-claim-audit.schema.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          print(schema["properties"]["schema_version"]["const"])
+          PY
+          )"
+          validator_schema_version="$(
+            PYTHONPATH=scripts python -c \
+              'import validate_ai_designed_molecule_claim_audit as validator; print(validator.SCHEMA_VERSION)'
+          )"
+          test -n "$schema_version"
+          test "$schema_version" = "$validator_schema_version"
           {
             echo "contract=ai-designed-molecule"
-            echo "schema_version=0.2.0-preview.4"
+            echo "schema_version=$schema_version"
             echo "head_sha=$BIOEVIDENCE_HEAD_SHA"
             echo "checked_out_sha=$(git rev-parse HEAD)"
             echo "workflow_run_id=${GITHUB_RUN_ID}"
             echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
             echo "audit_count=${#audits[@]}"
             echo "regression_suite=complete"
-            echo "regression_cases=17"
-            echo "regression_block_cases=15"
+            echo "regression_cases=20"
+            echo "regression_block_cases=18"
             echo "regression_accept_cases=2"
             echo "publication_reporting_max_level=F2"
             echo "f3_requires_digested_executable_or_risk_artifact=true"
