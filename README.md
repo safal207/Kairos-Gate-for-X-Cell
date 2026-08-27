@@ -184,7 +184,7 @@ The public functional statements in the SynTnpB reference record are classified 
 - cellular activity assays cannot silently become safety or structural evidence;
 - F5 artifact kinds must agree with their declared external evidence kinds;
 - established risk dimensions require external risk-assessment evidence with matching endpoints and defined minimum levels;
-- one generated mutation suite currently exercises 13 normative negative paths;
+- one generated mutation suite currently exercises 25 normative negative paths and 2 positive compatibility paths;
 - the exact-head receipt hashes every audit included in the positive result.
 
 This preview is stacked on the hardened schema-first authority and is not part of the v0.1 release claim. It contains no sequences, physical procedures, delivery instructions, or experimental authorization.
