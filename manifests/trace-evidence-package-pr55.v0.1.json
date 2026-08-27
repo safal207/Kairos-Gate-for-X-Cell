@@ -1,0 +1,57 @@
+{
+  "schema": "kairos.pinned-evidence-package.v0.1",
+  "package_id": "trace-archaic-introgression-2026-pr55",
+  "case_id": "trace-archaic-introgression-2026",
+  "repository": "safal207/Kairos-Gate-for-X-Cell",
+  "pull_request": 55,
+  "commit": "31959a573724d0fd7ef1ac620a47d46355797b2f",
+  "base_engine_pull_request": 57,
+  "files": [
+    {
+      "role": "claim_map",
+      "path": "evidence/trace-archaic-introgression-2026/claim-map.v0.1.json",
+      "git_blob_sha": "589a1501af228237764878b30759424e0e1055b1",
+      "expected_schema": "kairos.trace-archaic-claim-map.v0.1"
+    },
+    {
+      "role": "causal_transition_map",
+      "path": "evidence/trace-archaic-introgression-2026/causal-transition-map.v0.1.json",
+      "git_blob_sha": "8a9221580483a3b2ce09a7d9e4046171bbbcf5e1",
+      "expected_schema": "kairos.trace-archaic-causal-transition-map.v0.1"
+    },
+    {
+      "role": "disposition",
+      "path": "evidence/trace-archaic-introgression-2026/disposition.v0.1.json",
+      "git_blob_sha": "a19e1f50238d3598833045fbbd4bb6e4e423f889",
+      "expected_schema": "kairos.trace-archaic-disposition.v0.1"
+    },
+    {
+      "role": "source_manifest",
+      "path": "evidence/trace-archaic-introgression-2026/source-manifest.v0.1.json",
+      "git_blob_sha": "a0de89d556dfb9dbca80a02844068206264338ff",
+      "expected_schema": "kairos.trace-archaic-source-manifest.v0.1"
+    },
+    {
+      "role": "reproducibility_contract",
+      "path": "evidence/trace-archaic-introgression-2026/reproducibility-contract.v0.1.json",
+      "git_blob_sha": "1827d24bfcf4d85c9420ef75ba1a1032bea96155",
+      "expected_schema": "kairos.trace-archaic-reproducibility-contract.v0.1"
+    },
+    {
+      "role": "phase_compatibility",
+      "path": "evidence/trace-archaic-introgression-2026/phase-compatibility.v0.1.json",
+      "git_blob_sha": "45ffc0a36f935bfce2ecc0646c191edb8c1733bc",
+      "expected_schema": "kairos.trace-archaic-phase-compatibility.v0.1"
+    }
+  ],
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "scientific_truth_authorized": false,
+    "causal_authorization": false,
+    "experiment_authorization": false,
+    "clinical_authorization": false,
+    "ancestry_identity_authorization": false,
+    "deployment_authorization": false,
+    "merge_authorization": false
+  }
+}

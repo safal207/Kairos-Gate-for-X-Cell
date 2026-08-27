@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/kairos-trace-ecosystem-receipt.schema.json",
+  "title": "Kairos TRACE ecosystem receipt v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "source_package",
+    "transition_graph",
+    "kairos_analysis",
+    "cml_projection",
+    "proofpath_projection",
+    "liminaldb_projection",
+    "authority",
+    "receipt_id"
+  ],
+  "properties": {
+    "schema": {"const": "kairos.trace-ecosystem-receipt.v0.1"},
+    "receipt_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_package": {
+      "type": "object",
+      "required": ["package_id", "case_id", "repository", "pull_request", "commit", "files", "package_digest"],
+      "properties": {
+        "package_id": {"type": "string", "minLength": 1},
+        "case_id": {"const": "trace-archaic-introgression-2026"},
+        "repository": {"type": "string", "minLength": 1},
+        "pull_request": {"const": 55},
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "package_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "files": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "path", "git_blob_sha", "sha256", "bytes"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "path": {"type": "string", "minLength": 1},
+              "git_blob_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "bytes": {"type": "integer", "minimum": 1}
+            }
+          }
+        }
+      }
+    },
+    "transition_graph": {"type": "object"},
+    "kairos_analysis": {
+      "type": "object",
+      "required": ["verdict", "causal_gaps", "temporal_conflicts", "claim_firewall", "authority"],
+      "properties": {
+        "verdict": {"const": "ACCEPT_WITH_LIMITS"},
+        "causal_gaps": {"type": "array", "minItems": 1},
+        "temporal_conflicts": {"type": "array", "maxItems": 0},
+        "claim_firewall": {"type": "array", "maxItems": 0},
+        "authority": {"type": "object"}
+      }
+    },
+    "cml_projection": {
+      "type": "object",
+      "required": ["schema_version", "pack_id", "manifest", "graph", "evidence"],
+      "properties": {
+        "schema_version": {"const": "cml-memory-pack-v1"},
+        "pack_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "proofpath_projection": {
+      "type": "object",
+      "required": ["schema_version", "bundle_id", "decision", "execution_allowed", "proof_paths", "audit_chain", "policy"],
+      "properties": {
+        "schema_version": {"const": "proofpath-portable-evidence-projection-v0.1"},
+        "bundle_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "decision": {"const": "HOLD"},
+        "execution_allowed": {"const": false}
+      }
+    },
+    "liminaldb_projection": {
+      "type": "object",
+      "required": ["profile", "conformance", "transition_id", "records", "projection", "local_projection_replay_equal", "replay_digest"],
+      "properties": {
+        "profile": {"const": "org.liminaldb.trustworthy-transition-ledger.v0.1"},
+        "conformance": {"const": "DOCUMENTARY_PROJECTION_NOT_RUST_REPLAY"},
+        "local_projection_replay_equal": {"const": true},
+        "replay_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "projection": {
+          "type": "object",
+          "required": ["continuity_posture", "side_effect_committed", "source_verdict", "adds_scientific_verdict"],
+          "properties": {
+            "continuity_posture": {"const": "REPORT_ONLY"},
+            "side_effect_committed": {"const": false},
+            "source_verdict": {"const": "ACCEPT_WITH_LIMITS"},
+            "adds_scientific_verdict": {"const": false}
+          }
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification",
+        "scientific_truth_authorized",
+        "causal_authorization",
+        "experiment_authorization",
+        "clinical_authorization",
+        "ancestry_identity_authorization",
+        "deployment_authorization",
+        "merge_authorization"
+      ],
+      "properties": {
+        "classification": {"const": "RESEARCH_ONLY"},
+        "scientific_truth_authorized": {"const": false},
+        "causal_authorization": {"const": false},
+        "experiment_authorization": {"const": false},
+        "clinical_authorization": {"const": false},
+        "ancestry_identity_authorization": {"const": false},
+        "deployment_authorization": {"const": false},
+        "merge_authorization": {"const": false}
+      }
+    }
+  }
+}
