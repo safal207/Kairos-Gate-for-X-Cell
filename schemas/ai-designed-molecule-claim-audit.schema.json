@@ -80,11 +80,11 @@
       "additionalProperties": false,
       "required": ["target_classes", "laboratories", "delivery_systems", "organisms", "populations"],
       "properties": {
-        "target_classes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-        "laboratories": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-        "delivery_systems": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-        "organisms": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-        "populations": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+        "target_classes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "pattern": "\\S"}},
+        "laboratories": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "pattern": "\\S"}},
+        "delivery_systems": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "pattern": "\\S"}},
+        "organisms": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "pattern": "\\S"}},
+        "populations": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "pattern": "\\S"}}
       }
     },
     "risk_item": {

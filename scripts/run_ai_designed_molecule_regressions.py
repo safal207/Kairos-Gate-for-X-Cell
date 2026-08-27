@@ -5,10 +5,15 @@ from __future__ import annotations
 
 import copy
 import json
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Callable
+
+import validate_bioevidence_contract as gateway
+import validate_ai_designed_molecule_claim_audit as semantic_validator
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "examples" / "syntnpb-2026.ai-designed-molecule-claim-audit.json"
@@ -176,6 +181,29 @@ def mutate_platform_insufficient_coverage(record: dict[str, Any]) -> None:
     platform = claim(record, "platform_generalization")
     platform["status"] = "supported_with_limits"
     platform["evidence_refs"] = ["publication", "platform-one-context"]
+
+
+def mutate_platform_whitespace_coverage(record: dict[str, Any]) -> None:
+    coverage = {
+        dimension: [f"{dimension}-a", " \t"]
+        for dimension in (
+            "target_classes",
+            "laboratories",
+            "delivery_systems",
+            "organisms",
+            "populations",
+        )
+    }
+    evidence = external_item(
+        evidence_id="platform-whitespace-context",
+        kind="platform_generalization",
+        endpoints=["platform_generalization"],
+        coverage=coverage,
+    )
+    record["external_evidence"] = [evidence]
+    platform = claim(record, "platform_generalization")
+    platform["status"] = "supported_with_limits"
+    platform["evidence_refs"] = ["publication", "platform-whitespace-context"]
 
 
 def mutate_unreconciled_denominator(record: dict[str, Any]) -> None:
@@ -408,6 +436,12 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
         ("target_classes", "is too short"),
     ),
     (
+        "platform-whitespace-coverage",
+        mutate_platform_whitespace_coverage,
+        "BLOCK",
+        ("coverage", "is not valid under any of the given schemas"),
+    ),
+    (
         "unreconciled-denominator",
         mutate_unreconciled_denominator,
         "BLOCK",
@@ -509,6 +543,7 @@ EXPECTED_CASE_NAMES = (
     "replication-below-f5",
     "invented-replication-reference",
     "platform-insufficient-coverage",
+    "platform-whitespace-coverage",
     "unreconciled-denominator",
     "risk-wrong-endpoint",
     "f5-risk-without-independence",
@@ -527,12 +562,52 @@ EXPECTED_CASE_NAMES = (
 )
 
 
+def assert_semantic_bundle_digest_tracks_core() -> None:
+    """Prove that delegated semantic code changes the published bundle digest."""
+    relative_paths = (
+        "schemas/ai-designed-molecule-claim-audit.schema.json",
+        *gateway.semantic_bundle_paths("ai-designed-molecule"),
+    )
+    original_root = gateway.ROOT
+    with tempfile.TemporaryDirectory() as raw_directory:
+        temporary_root = Path(raw_directory)
+        for relative_path in relative_paths:
+            destination = temporary_root / relative_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / relative_path, destination)
+        try:
+            gateway.ROOT = temporary_root
+            before = gateway.contract_digests("ai-designed-molecule")[3]
+            core_path = temporary_root / "scripts/_validate_ai_designed_molecule_claim_audit_core.py"
+            core_path.write_bytes(core_path.read_bytes() + b"\n# semantic digest regression\n")
+            after = gateway.contract_digests("ai-designed-molecule")[3]
+        finally:
+            gateway.ROOT = original_root
+    if before == after:
+        raise RuntimeError("semantic bundle digest ignored delegated core")
+    print("PASS semantic-bundle-digest-tracks-core")
+
+
+def assert_semantic_validator_rejects_blank_coverage(source: dict[str, Any]) -> None:
+    """Keep the private semantic layer fail-closed if schema dispatch is bypassed."""
+    record = copy.deepcopy(source)
+    mutate_platform_whitespace_coverage(record)
+    errors = semantic_validator.validate(record)
+    if not any("values must be non-blank strings" in error for error in errors):
+        raise RuntimeError("semantic validator accepted whitespace-only coverage")
+    if not any("requires at least two target_classes" in error for error in errors):
+        raise RuntimeError("semantic coverage count included whitespace-only values")
+    print("PASS semantic-validator-rejects-blank-coverage")
+
+
 def main() -> int:
     actual_names = tuple(name for name, _mutate, _expected, _markers in CASES)
     if actual_names != EXPECTED_CASE_NAMES or len(set(actual_names)) != len(actual_names):
         raise RuntimeError("regression case manifest drift")
 
+    assert_semantic_bundle_digest_tracks_core()
     source = json.loads(SOURCE.read_text(encoding="utf-8"))
+    assert_semantic_validator_rejects_blank_coverage(source)
     OUT.mkdir(exist_ok=True)
     results: list[dict[str, Any]] = []
 

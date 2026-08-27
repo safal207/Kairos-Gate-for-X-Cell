@@ -408,7 +408,17 @@ def validate(
                     f"external evidence {evidence_id}: platform_generalization requires matching F5 replication artifact",
                     errors,
                 )
-                require(isinstance(item.get("coverage"), dict), f"external evidence {evidence_id}: platform coverage required", errors)
+                coverage = item.get("coverage")
+                require(isinstance(coverage, dict), f"external evidence {evidence_id}: platform coverage required", errors)
+                if isinstance(coverage, dict):
+                    for dimension in COVERAGE_DIMENSIONS:
+                        values = coverage.get(dimension)
+                        require(
+                            isinstance(values, list)
+                            and all(isinstance(value, str) and bool(value.strip()) for value in values),
+                            f"external evidence {evidence_id}: coverage {dimension} values must be non-blank strings",
+                            errors,
+                        )
             elif kind == "risk_assessment":
                 require(
                     bool(endpoint_set) and endpoint_set.issubset(RISK_DIMENSIONS),
@@ -640,7 +650,11 @@ def validate(
                             for dimension in COVERAGE_DIMENSIONS:
                                 values = coverage.get(dimension, [])
                                 if isinstance(values, list):
-                                    coverage_union[dimension].update(str(value) for value in values)
+                                    coverage_union[dimension].update(
+                                        value.strip()
+                                        for value in values
+                                        if isinstance(value, str) and value.strip()
+                                    )
                     for dimension, values in coverage_union.items():
                         require(len(values) >= 2, f"claim {claim_id}: platform generalization requires at least two {dimension}", errors)
                 else:
