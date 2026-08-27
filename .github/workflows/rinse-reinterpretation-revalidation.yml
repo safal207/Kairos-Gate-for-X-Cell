@@ -146,6 +146,24 @@ jobs:
             --loop .artifacts/rinse-loop-generated.json \
             --output .artifacts/revalidation-second.json
           cmp .artifacts/revalidation-first.json .artifacts/revalidation-second.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from jsonschema import Draft202012Validator
+
+          schema = json.loads(
+              Path('schemas/kairos-rinse-revalidation-receipt.schema.json').read_text(
+                  encoding='utf-8'
+              )
+          )
+          receipt = json.loads(
+              Path('.artifacts/revalidation-first.json').read_text(encoding='utf-8')
+          )
+          Draft202012Validator.check_schema(schema)
+          Draft202012Validator(schema).validate(receipt)
+          print('RINSE_REVALIDATION_SCHEMA_PASS')
+          PY
 
       - name: Enforce dual transition boundary
         run: |

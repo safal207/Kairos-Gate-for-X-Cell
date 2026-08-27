@@ -11,6 +11,8 @@ import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
 
+from jsonschema import Draft202012Validator
+
 from kairos_gate.rinse_reinterpretation_bridge import (
     EXPECTED_OUTPUT,
     EXPECTED_WORKFLOW,
@@ -28,6 +30,7 @@ from kairos_gate.transition_graph import analyze_transition_network
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "manifests/rinse-trace-loop-pr23.v0.1.json"
 LOOP_PATH = ROOT / "examples/rinse-trace-loop.v0.1.json"
+RECEIPT_SCHEMA_PATH = ROOT / "schemas/kairos-rinse-revalidation-receipt.schema.json"
 
 
 class RinseReinterpretationBridgeTests(unittest.TestCase):
@@ -64,6 +67,27 @@ class RinseReinterpretationBridgeTests(unittest.TestCase):
         self.assertEqual(
             json.dumps(first, sort_keys=True, separators=(",", ":")),
             json.dumps(second, sort_keys=True, separators=(",", ":")),
+        )
+
+    def test_revalidation_receipt_matches_public_schema(self) -> None:
+        """The complete stable receipt must conform to its published schema."""
+
+        schema = json.loads(RECEIPT_SCHEMA_PATH.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        Draft202012Validator(schema).validate(
+            revalidate_rinse_candidate(self.loop, self.manifest)
+        )
+
+    def test_returned_graph_does_not_alias_missing_intermediate_pin(self) -> None:
+        """Mutating one graph must not change the module pin or later graphs."""
+
+        first = build_rinse_revalidation_graph(self.loop, self.manifest)
+        first["transitions"][1]["required_intermediates"].append("tampered")
+        second = build_rinse_revalidation_graph(self.loop, self.manifest)
+
+        self.assertEqual(
+            second["transitions"][1]["required_intermediates"],
+            list(MISSING_CAUSAL_INTERMEDIATES),
         )
 
     def test_kairos_accepts_reinterpretation_but_holds_causality(self) -> None:
@@ -202,6 +226,29 @@ class RinseReinterpretationBridgeTests(unittest.TestCase):
                 )
         self.assertEqual(exit_code, 2)
         self.assertTrue(output.getvalue().startswith("BLOCK: "))
+        self.assertNotIn("Traceback", output.getvalue())
+
+    def test_cli_output_failure_returns_two_without_traceback(self) -> None:
+        """Filesystem failures must remain on the bounded BLOCK path."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            blocked_parent = Path(directory) / "not-a-directory"
+            blocked_parent.write_text("file\n", encoding="utf-8")
+            output = io.StringIO()
+            with redirect_stdout(output):
+                exit_code = main(
+                    [
+                        "--manifest",
+                        str(MANIFEST_PATH),
+                        "--loop",
+                        str(LOOP_PATH),
+                        "--output",
+                        str(blocked_parent / "receipt.json"),
+                    ]
+                )
+
+        self.assertEqual(exit_code, 2)
+        self.assertTrue(output.getvalue().startswith("BLOCK: cannot write receipt:"))
         self.assertNotIn("Traceback", output.getvalue())
 
 

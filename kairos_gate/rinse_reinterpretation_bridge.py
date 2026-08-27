@@ -105,12 +105,12 @@ EXPECTED_GRAPH_AUTHORITY = {
     "source_trace_mutation_authorized": False,
     "truth_authorized": False,
 }
-MISSING_CAUSAL_INTERMEDIATES = [
+MISSING_CAUSAL_INTERMEDIATES = (
     "cellular effect",
     "expression change",
     "fitness advantage",
     "organism phenotype",
-]
+)
 
 
 class RinseReinterpretationError(ValueError):
@@ -484,7 +484,7 @@ def build_rinse_revalidation_graph(loop_value: Any, manifest_value: Any) -> dict
                     "missing_organism_phenotype",
                     "missing_fitness_advantage",
                 ],
-                "required_intermediates": MISSING_CAUSAL_INTERMEDIATES,
+                "required_intermediates": list(MISSING_CAUSAL_INTERMEDIATES),
                 "observed_intermediates": [],
                 "claim": {
                     "text": (
@@ -585,11 +585,15 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     rendered = json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
-    if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(rendered, encoding="utf-8")
-    else:
-        print(rendered, end="")
+    try:
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+        else:
+            print(rendered, end="")
+    except OSError as exc:
+        print(f"BLOCK: cannot write receipt: {exc}")
+        return 2
     return 0
 
 

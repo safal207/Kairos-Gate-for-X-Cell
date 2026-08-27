@@ -140,6 +140,14 @@ def validate_pinned_manifest(manifest: Mapping[str, Any]) -> None:
     if manifest.get("case_id") != EXPECTED_CASE_ID:
         raise TraceEvidenceBridgeError("pinned package case_id mismatch")
     _text(manifest.get("repository"), "repository")
+    _text(manifest.get("package_id"), "package_id")
+    pull_request = manifest.get("pull_request")
+    if (
+        isinstance(pull_request, bool)
+        or not isinstance(pull_request, int)
+        or pull_request <= 0
+    ):
+        raise TraceEvidenceBridgeError("pull_request must be a positive integer")
     commit = _text(manifest.get("commit"), "commit")
     if not HEX40.fullmatch(commit):
         raise TraceEvidenceBridgeError("commit must be a lowercase 40-character SHA")
@@ -192,17 +200,28 @@ def validate_trace_package(
 
     source_manifest = _mapping(package["source_manifest"], "source_manifest")
     sources = _unique_index(_array(source_manifest.get("sources"), "sources"), "sources")
-    if source_manifest.get("availability_boundary", {}).get(
-        "full_independent_reproduction"
-    ) != "PENDING":
+    availability = _mapping(
+        source_manifest.get("availability_boundary"),
+        "source_manifest.availability_boundary",
+    )
+    if availability.get("full_independent_reproduction") != "PENDING":
         raise TraceEvidenceBridgeError("independent reproduction must remain pending")
-    if source_manifest.get("availability_boundary", {}).get(
-        "direct_unknown_archaic_genome"
-    ) is not False:
+    if availability.get("direct_unknown_archaic_genome") is not False:
         raise TraceEvidenceBridgeError("direct unknown-source genome must remain false")
+    citation = _mapping(
+        source_manifest.get("primary_citation"), "source_manifest.primary_citation"
+    )
+    _text(citation.get("doi"), "source_manifest.primary_citation.doi")
+    retrieval = _mapping(
+        source_manifest.get("retrieval"), "source_manifest.retrieval"
+    )
+    _text(retrieval.get("retrieved_at"), "source_manifest.retrieval.retrieved_at")
     code_pins = _mapping(source_manifest.get("code_pins"), "code_pins")
     for name in ("trace_repository", "trace_paper_repository"):
-        commit = _text(code_pins[name].get("audited_commit"), f"code_pins.{name}")
+        pin = _mapping(code_pins.get(name), f"code_pins.{name}")
+        commit = _text(
+            pin.get("audited_commit"), f"code_pins.{name}.audited_commit"
+        )
         if not HEX40.fullmatch(commit):
             raise TraceEvidenceBridgeError(f"invalid audited commit for {name}")
 
@@ -217,6 +236,10 @@ def validate_trace_package(
                 f"{claim_id} status changed: {claim.get('status')!r}"
             )
         _text(claim.get("claim"), f"claims.{claim_id}.claim")
+        _text(
+            claim.get("verification_level"),
+            f"claims.{claim_id}.verification_level",
+        )
         for source_id in _array(claim.get("source_basis"), f"claims.{claim_id}.source_basis"):
             if source_id not in sources:
                 raise TraceEvidenceBridgeError(
@@ -235,6 +258,20 @@ def validate_trace_package(
         edge = _mapping(raw, f"edges[{position}]")
         if edge.get("from") not in nodes or edge.get("to") not in nodes:
             raise TraceEvidenceBridgeError("causal map edge references missing node")
+    alternatives = _array(
+        causal_map.get("alternative_explanations_and_sensitivities"),
+        "causal_transition_map.alternative_explanations_and_sensitivities",
+    )
+    if len(alternatives) < 10:
+        raise TraceEvidenceBridgeError(
+            "causal map must declare at least 10 alternative explanations"
+        )
+    for position, alternative in enumerate(alternatives):
+        _text(
+            alternative,
+            "causal_transition_map.alternative_explanations_and_sensitivities"
+            f"[{position}]",
+        )
     shortcuts = "\n".join(
         str(value).lower()
         for value in _array(
@@ -262,6 +299,13 @@ def validate_trace_package(
         raise TraceEvidenceBridgeError("TRACE negative boundary statuses are incomplete")
     if not disposition.get("forbidden_language"):
         raise TraceEvidenceBridgeError("forbidden-language firewall must not be empty")
+    permitted_language = _array(
+        disposition.get("permitted_language"), "disposition.permitted_language"
+    )
+    if not permitted_language:
+        raise TraceEvidenceBridgeError("permitted-language list must not be empty")
+    for position, language in enumerate(permitted_language):
+        _text(language, f"disposition.permitted_language[{position}]")
 
     reproducibility = _mapping(
         package["reproducibility_contract"], "reproducibility_contract"
@@ -290,6 +334,7 @@ def _file_receipt_index(file_receipts: Sequence[Mapping[str, Any]]) -> dict[str,
     if set(index) != EXPECTED_ROLES:
         raise TraceEvidenceBridgeError("file receipt roles are incomplete")
     for role, receipt in index.items():
+        _text(receipt.get("path"), f"{role}.path")
         if not HEX40.fullmatch(_text(receipt.get("git_blob_sha"), f"{role}.git_blob_sha")):
             raise TraceEvidenceBridgeError(f"invalid Git blob SHA in receipt {role}")
         sha256 = _text(receipt.get("sha256"), f"{role}.sha256")
@@ -305,12 +350,47 @@ def derive_trace_transition_graph(
 ) -> dict[str, Any]:
     """Derive a bounded graph from validated TRACE package semantics."""
     receipts = _file_receipt_index(file_receipts)
-    claims = _unique_index(package["claim_map"]["claims"], "claims")
-    causal = package["causal_transition_map"]
-    alternatives = list(causal["alternative_explanations_and_sensitivities"])
-    source_manifest = package["source_manifest"]
-    doi = source_manifest["primary_citation"]["doi"]
-    retrieved_at = source_manifest["retrieval"]["retrieved_at"]
+    claim_map = _mapping(package.get("claim_map"), "claim_map")
+    claims = _unique_index(_array(claim_map.get("claims"), "claims"), "claims")
+    if not set(EXPECTED_CLAIM_STATUSES).issubset(claims):
+        raise TraceEvidenceBridgeError("TRACE derivation requires claims C1-C12")
+    causal = _mapping(package.get("causal_transition_map"), "causal_transition_map")
+    raw_alternatives = _array(
+        causal.get("alternative_explanations_and_sensitivities"),
+        "causal_transition_map.alternative_explanations_and_sensitivities",
+    )
+    if len(raw_alternatives) < 10:
+        raise TraceEvidenceBridgeError(
+            "causal map must declare at least 10 alternative explanations"
+        )
+    alternatives = [
+        _text(
+            value,
+            "causal_transition_map.alternative_explanations_and_sensitivities"
+            f"[{position}]",
+        )
+        for position, value in enumerate(raw_alternatives)
+    ]
+    source_manifest = _mapping(package.get("source_manifest"), "source_manifest")
+    citation = _mapping(
+        source_manifest.get("primary_citation"), "source_manifest.primary_citation"
+    )
+    doi = _text(citation.get("doi"), "source_manifest.primary_citation.doi")
+    retrieval = _mapping(
+        source_manifest.get("retrieval"), "source_manifest.retrieval"
+    )
+    retrieved_at = _text(
+        retrieval.get("retrieved_at"), "source_manifest.retrieval.retrieved_at"
+    )
+    disposition = _mapping(package.get("disposition"), "disposition")
+    permitted_language = _array(
+        disposition.get("permitted_language"), "disposition.permitted_language"
+    )
+    if not permitted_language:
+        raise TraceEvidenceBridgeError("permitted-language list must not be empty")
+    bounded_claim = _text(
+        permitted_language[-1], "disposition.permitted_language[-1]"
+    )
 
     def provenance(role: str, locator: str) -> dict[str, Any]:
         return {
@@ -383,7 +463,7 @@ def derive_trace_transition_graph(
             "causal_design": False,
             "claim_scope": "independent reproduction is not established",
             "supports": [],
-            "contradicts": ["independent_reproduction_claim"],
+            "contradicts": [],
             "provenance": provenance("reproducibility_contract", "PR55:B1-B7"),
         },
     ]
@@ -535,7 +615,7 @@ def derive_trace_transition_graph(
             "observed_intermediates": [],
             "competing_explanations": competing(alternatives[7:10]),
             "claim": {
-                "text": package["disposition"]["permitted_language"][-1],
+                "text": bounded_claim,
                 "level": "association",
             },
             "authority": {"classification": "RESEARCH_ONLY", "action_authorized": False},
@@ -985,5 +1065,6 @@ def validate_ecosystem_receipt(receipt: Mapping[str, Any]) -> None:
         previous_event = event_hash
         parent_ref = record.get("record_ref")
 
-    if receipt["source_package"]["case_id"] != EXPECTED_CASE_ID:
+    source_package = _mapping(receipt.get("source_package"), "source_package")
+    if source_package.get("case_id") != EXPECTED_CASE_ID:
         raise TraceEvidenceBridgeError("receipt source case mismatch")
