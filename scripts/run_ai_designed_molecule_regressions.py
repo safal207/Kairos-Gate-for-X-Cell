@@ -206,6 +206,29 @@ def mutate_platform_whitespace_coverage(record: dict[str, Any]) -> None:
     platform["evidence_refs"] = ["publication", "platform-whitespace-context"]
 
 
+def mutate_platform_without_replication_state(record: dict[str, Any]) -> None:
+    coverage = {
+        dimension: [f"{dimension}-a", f"{dimension}-b"]
+        for dimension in (
+            "target_classes",
+            "laboratories",
+            "delivery_systems",
+            "organisms",
+            "populations",
+        )
+    }
+    evidence = external_item(
+        evidence_id="platform-independent-contexts",
+        kind="platform_generalization",
+        endpoints=["platform_generalization"],
+        coverage=coverage,
+    )
+    record["external_evidence"] = [evidence]
+    platform = claim(record, "platform_generalization")
+    platform["status"] = "supported_with_limits"
+    platform["evidence_refs"] = ["publication", evidence["evidence_id"]]
+
+
 def mutate_unreconciled_denominator(record: dict[str, Any]) -> None:
     record["screening_context"].update(
         {
@@ -448,6 +471,12 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
         ("coverage", "is not valid under any of the given schemas"),
     ),
     (
+        "platform-without-replication-state",
+        mutate_platform_without_replication_state,
+        "BLOCK",
+        ("supported platform_generalization requires established independent replication",),
+    ),
+    (
         "unreconciled-denominator",
         mutate_unreconciled_denominator,
         "BLOCK",
@@ -556,6 +585,7 @@ EXPECTED_CASE_NAMES = (
     "invented-replication-reference",
     "platform-insufficient-coverage",
     "platform-whitespace-coverage",
+    "platform-without-replication-state",
     "unreconciled-denominator",
     "risk-wrong-endpoint",
     "f5-risk-without-independence",

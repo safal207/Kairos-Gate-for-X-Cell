@@ -114,6 +114,7 @@ jobs:
               "invented-replication-reference",
               "platform-insufficient-coverage",
               "platform-whitespace-coverage",
+              "platform-without-replication-state",
               "unreconciled-denominator",
               "risk-wrong-endpoint",
               "f5-risk-without-independence",
@@ -137,10 +138,10 @@ jobs:
           assert [item["case"] for item in results] == expected
           assert len({item["case"] for item in results}) == len(expected)
           assert all(item["passed"] for item in results)
-          assert sum(item["expected"] == "BLOCK" for item in results) == 24
+          assert sum(item["expected"] == "BLOCK" for item in results) == 25
           assert sum(item["expected"] == "ACCEPT" for item in results) == 2
-          print("regression_cases=26")
-          print("regression_block_cases=24")
+          print("regression_cases=27")
+          print("regression_block_cases=25")
           print("regression_accept_cases=2")
           PY
           ! grep -R -q 'Traceback' ai-designed-molecule-regressions regression-summary.txt
@@ -155,6 +156,21 @@ jobs:
           test '${{ steps.regressions.outcome }}' = success
           mapfile -t audits < ai-designed-molecule-audit-files.txt
           test "${#audits[@]}" -gt 0
+          mapfile -t regression_counts < <(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          results = json.loads(
+              Path("ai-designed-molecule-regressions/results.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          print(len(results))
+          print(sum(item["expected"] == "BLOCK" for item in results))
+          print(sum(item["expected"] == "ACCEPT" for item in results))
+          PY
+          )
+          test "${#regression_counts[@]}" -eq 3
           schema_version="$(python - <<'PY'
           import json
           from pathlib import Path
@@ -182,9 +198,9 @@ jobs:
             echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
             echo "audit_count=${#audits[@]}"
             echo "regression_suite=complete"
-            echo "regression_cases=25"
-            echo "regression_block_cases=23"
-            echo "regression_accept_cases=2"
+            echo "regression_cases=${regression_counts[0]}"
+            echo "regression_block_cases=${regression_counts[1]}"
+            echo "regression_accept_cases=${regression_counts[2]}"
             echo "publication_reporting_max_level=F2"
             echo "f3_requires_digested_executable_or_risk_artifact=true"
             echo "f4_allows_typed_laboratory_risk_confirmation=true"

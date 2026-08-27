@@ -664,6 +664,15 @@ def validate(
         require(not missing_types, f"claim firewall missing types: {missing_types}", errors)
 
     replication_claim = claim_by_type.get("independent_replication", {})
+    platform_claim = claim_by_type.get("platform_generalization", {})
+    if platform_claim.get("status") == "supported_with_limits":
+        require(
+            independent_replication == "established"
+            and same_collaboration_only is False
+            and replication_claim.get("status") == "supported_with_limits",
+            "supported platform_generalization requires established independent replication",
+            errors,
+        )
     if independent_replication == "established":
         require(replication_claim.get("status") == "supported_with_limits", "established replication requires supported independent_replication claim", errors)
         refs = replication_claim.get("evidence_refs", [])
