@@ -1,0 +1,235 @@
+{
+  "schema_version": "kairos.transition-network.v0.1",
+  "graph_id": "trace-archaic-introgression-v0.1",
+  "domain": "human-evolutionary-genomics",
+  "states": [
+    {
+      "id": "superarchaic_population",
+      "type": "population",
+      "label": "Unresolved super-archaic source population",
+      "time_window": {"start": -2000000, "end": -200000, "unit": "years_relative_to_present"},
+      "uncertainty": 0.8,
+      "evidence_refs": ["trace_inference"],
+      "properties": {"taxonomic_identity": "unresolved"},
+      "authority": {"classification": "RESEARCH_ONLY", "action_authorized": false}
+    },
+    {
+      "id": "ghost_population",
+      "type": "population",
+      "label": "Unresolved ghost source population",
+      "time_window": {"start": -1200000, "end": -200000, "unit": "years_relative_to_present"},
+      "uncertainty": 0.75,
+      "evidence_refs": ["trace_inference"],
+      "properties": {"taxonomic_identity": "unresolved"},
+      "authority": {"classification": "RESEARCH_ONLY", "action_authorized": false}
+    },
+    {
+      "id": "denisovan_population",
+      "type": "population",
+      "label": "Denisovan population",
+      "time_window": {"start": -500000, "end": -40000, "unit": "years_relative_to_present"},
+      "uncertainty": 0.3,
+      "evidence_refs": ["known_archaic_controls"],
+      "properties": {"ancient_genome_available": true},
+      "authority": {"classification": "RESEARCH_ONLY", "action_authorized": false}
+    },
+    {
+      "id": "sapiens_ancestors",
+      "type": "population",
+      "label": "Ancestors of modern Homo sapiens",
+      "time_window": {"start": -800000, "end": 0, "unit": "years_relative_to_present"},
+      "uncertainty": 0.45,
+      "evidence_refs": ["modern_genome_dataset"],
+      "properties": {"population_structure": "heterogeneous"},
+      "authority": {"classification": "RESEARCH_ONLY", "action_authorized": false}
+    },
+    {
+      "id": "modern_human_genomes",
+      "type": "genomic_observation",
+      "label": "Observed modern human genome panel",
+      "time_window": {"start": -100, "end": 0, "unit": "years_relative_to_present"},
+      "uncertainty": 0.15,
+      "evidence_refs": ["modern_genome_dataset"],
+      "properties": {"direct_unknown_source_genome": false},
+      "authority": {"classification": "RESEARCH_ONLY", "action_authorized": false}
+    },
+    {
+      "id": "functional_enrichment_signal",
+      "type": "annotation_result",
+      "label": "Reported immune and metabolic annotation enrichment",
+      "time_window": {"start": -100, "end": 0, "unit": "years_relative_to_present"},
+      "uncertainty": 0.6,
+      "evidence_refs": ["functional_enrichment_report"],
+      "properties": {"adaptive_advantage_established": false},
+      "authority": {"classification": "RESEARCH_ONLY", "action_authorized": false}
+    }
+  ],
+  "evidence": [
+    {
+      "id": "trace_inference",
+      "kind": "arg_hmm_computational_analysis",
+      "status": "computational_inference",
+      "source": "TRACE Science 2026 analysis",
+      "strength": 0.82,
+      "independent": false,
+      "causal_design": false,
+      "claim_scope": "latent source ancestry and introgression path inference",
+      "supports": ["superarchaic_to_denisovan", "ghost_to_sapiens"],
+      "contradicts": [],
+      "provenance": {
+        "locator": "Science DOI 10.1126/science.aef8874",
+        "content_digest": null,
+        "retrieved_at": "2026-07-31T04:00:00Z",
+        "reproducible": false
+      }
+    },
+    {
+      "id": "known_archaic_controls",
+      "kind": "positive_control",
+      "status": "author_reported",
+      "source": "Recovered Neanderthal and Denisovan ancestry controls",
+      "strength": 0.78,
+      "independent": false,
+      "causal_design": false,
+      "claim_scope": "method sensitivity to known archaic signals",
+      "supports": ["denisovan_to_sapiens"],
+      "contradicts": [],
+      "provenance": {
+        "locator": "TRACE supplementary analysis",
+        "content_digest": null,
+        "retrieved_at": "2026-07-31T04:00:00Z",
+        "reproducible": false
+      }
+    },
+    {
+      "id": "modern_genome_dataset",
+      "kind": "modern_genome_observation",
+      "status": "direct_observation",
+      "source": "Modern human genomic samples used by TRACE",
+      "strength": 0.88,
+      "independent": false,
+      "causal_design": false,
+      "claim_scope": "observed modern sequence variation, not direct unknown-source DNA",
+      "supports": ["sapiens_to_modern"],
+      "contradicts": [],
+      "provenance": {
+        "locator": "TRACE data manifest",
+        "content_digest": null,
+        "retrieved_at": "2026-07-31T04:00:00Z",
+        "reproducible": false
+      }
+    },
+    {
+      "id": "functional_enrichment_report",
+      "kind": "functional_annotation_enrichment",
+      "status": "author_reported",
+      "source": "TRACE functional enrichment result",
+      "strength": 0.58,
+      "independent": false,
+      "causal_design": false,
+      "claim_scope": "annotation association only",
+      "supports": ["modern_to_functional_signal"],
+      "contradicts": [],
+      "provenance": {
+        "locator": "TRACE article and supplements",
+        "content_digest": null,
+        "retrieved_at": "2026-07-31T04:00:00Z",
+        "reproducible": false
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "id": "superarchaic_to_denisovan",
+      "from_state": "superarchaic_population",
+      "to_state": "denisovan_population",
+      "mechanism": "introgression",
+      "time_window": {"start": -400000, "end": -200000, "unit": "years_relative_to_present"},
+      "status": "computational_inference",
+      "confidence": 0.66,
+      "evidence_refs": ["trace_inference"],
+      "required_intermediates": ["population_contact", "gene_flow", "segment_persistence"],
+      "observed_intermediates": ["segment_persistence"],
+      "competing_explanations": [
+        {"id": "incomplete_lineage_sorting", "description": "Deep coalescence without introgression", "status": "untested"},
+        {"id": "arg_model_misspecification", "description": "ARG or demographic model misspecification", "status": "untested"}
+      ],
+      "claim": {"text": "Data are consistent with super-archaic contribution to Denisovan ancestry", "level": "association"},
+      "authority": {"classification": "RESEARCH_ONLY", "action_authorized": false}
+    },
+    {
+      "id": "ghost_to_sapiens",
+      "from_state": "ghost_population",
+      "to_state": "sapiens_ancestors",
+      "mechanism": "introgression",
+      "time_window": {"start": -700000, "end": -300000, "unit": "years_relative_to_present"},
+      "status": "computational_inference",
+      "confidence": 0.7,
+      "evidence_refs": ["trace_inference"],
+      "required_intermediates": ["population_contact", "gene_flow", "segment_persistence"],
+      "observed_intermediates": ["segment_persistence"],
+      "competing_explanations": [
+        {"id": "ancestral_structure", "description": "Long-lived ancestral population structure", "status": "untested"},
+        {"id": "arg_model_misspecification", "description": "ARG or demographic model misspecification", "status": "untested"}
+      ],
+      "claim": {"text": "Data are consistent with an unresolved source contribution to sapiens ancestors", "level": "association"},
+      "authority": {"classification": "RESEARCH_ONLY", "action_authorized": false}
+    },
+    {
+      "id": "denisovan_to_sapiens",
+      "from_state": "denisovan_population",
+      "to_state": "sapiens_ancestors",
+      "mechanism": "introgression",
+      "time_window": {"start": -100000, "end": -40000, "unit": "years_relative_to_present"},
+      "status": "author_reported",
+      "confidence": 0.78,
+      "evidence_refs": ["known_archaic_controls"],
+      "required_intermediates": ["population_contact", "gene_flow", "segment_persistence"],
+      "observed_intermediates": ["gene_flow", "segment_persistence"],
+      "competing_explanations": [],
+      "claim": {"text": "Known Denisovan ancestry provides a bounded control path", "level": "association"},
+      "authority": {"classification": "RESEARCH_ONLY", "action_authorized": false}
+    },
+    {
+      "id": "sapiens_to_modern",
+      "from_state": "sapiens_ancestors",
+      "to_state": "modern_human_genomes",
+      "mechanism": "inheritance_and_observation",
+      "time_window": {"start": -100, "end": 0, "unit": "years_relative_to_present"},
+      "status": "direct_observation",
+      "confidence": 0.86,
+      "evidence_refs": ["modern_genome_dataset"],
+      "required_intermediates": ["segment_inheritance", "modern_sampling"],
+      "observed_intermediates": ["segment_inheritance", "modern_sampling"],
+      "competing_explanations": [],
+      "claim": {"text": "Modern sequence variation is directly observed", "level": "mechanism"},
+      "authority": {"classification": "RESEARCH_ONLY", "action_authorized": false}
+    },
+    {
+      "id": "modern_to_functional_signal",
+      "from_state": "modern_human_genomes",
+      "to_state": "functional_enrichment_signal",
+      "mechanism": "functional_annotation_enrichment",
+      "time_window": {"start": -100, "end": 0, "unit": "years_relative_to_present"},
+      "status": "author_reported",
+      "confidence": 0.55,
+      "evidence_refs": ["functional_enrichment_report"],
+      "required_intermediates": ["expression_change", "cellular_effect", "organism_phenotype", "fitness_advantage"],
+      "observed_intermediates": [],
+      "competing_explanations": [
+        {"id": "annotation_density", "description": "Enrichment driven by annotation density or linked regions", "status": "untested"}
+      ],
+      "claim": {"text": "Reported archaic segments are associated with immune and metabolic annotations", "level": "association"},
+      "authority": {"classification": "RESEARCH_ONLY", "action_authorized": false}
+    }
+  ],
+  "policy": {
+    "classification": "RESEARCH_ONLY",
+    "direct_unknown_source_genome_claim": false,
+    "taxonomic_assignment": false,
+    "adaptive_causality_claim": false,
+    "experiment_authorization": false,
+    "clinical_authorization": false,
+    "merge_authorization": false
+  }
+}

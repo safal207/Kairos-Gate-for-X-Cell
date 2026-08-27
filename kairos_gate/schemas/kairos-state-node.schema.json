@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/kairos-state-node.schema.json",
+  "title": "Kairos State Node v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "label", "time_window", "uncertainty", "evidence_refs", "properties", "authority"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "type": {"type": "string", "minLength": 1},
+    "label": {"type": "string", "minLength": 1},
+    "time_window": {"$ref": "#/$defs/time_window"},
+    "uncertainty": {"type": "number", "minimum": 0, "maximum": 1},
+    "evidence_refs": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "properties": {"type": "object"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "action_authorized"],
+      "properties": {
+        "classification": {"const": "RESEARCH_ONLY"},
+        "action_authorized": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "time_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end", "unit"],
+      "properties": {
+        "start": {"type": "number"},
+        "end": {"type": "number"},
+        "unit": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

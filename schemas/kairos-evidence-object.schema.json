@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/kairos-evidence-object.schema.json",
+  "title": "Kairos Evidence Object v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "kind",
+    "status",
+    "source",
+    "strength",
+    "independent",
+    "causal_design",
+    "claim_scope",
+    "provenance"
+  ],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "kind": {"type": "string", "minLength": 1},
+    "status": {
+      "enum": [
+        "missing_evidence",
+        "contradicted",
+        "computational_inference",
+        "author_reported",
+        "direct_observation",
+        "independently_replicated"
+      ]
+    },
+    "source": {"type": "string", "minLength": 1},
+    "strength": {"type": "number", "minimum": 0, "maximum": 1},
+    "independent": {"type": "boolean"},
+    "causal_design": {"type": "boolean"},
+    "claim_scope": {"type": "string", "minLength": 1},
+    "supports": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "contradicts": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["locator", "content_digest", "retrieved_at", "reproducible"],
+      "properties": {
+        "locator": {"type": "string", "minLength": 1},
+        "content_digest": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "retrieved_at": {"type": "string", "format": "date-time"},
+        "reproducible": {"type": "boolean"}
+      }
+    }
+  }
+}
