@@ -416,6 +416,12 @@ def validate(
                     f"external evidence {evidence_id}: risk_assessment requires risk_assessment_record",
                     errors,
                 )
+                if level == "F5":
+                    require(
+                        complete_independence(item.get("independence")),
+                        f"external evidence {evidence_id}: F5 risk_assessment requires complete independence metadata",
+                        errors,
+                    )
                 require(item.get("coverage") is None, f"external evidence {evidence_id}: risk evidence must not claim platform coverage", errors)
             elif kind == "reproducibility_artifact":
                 require(
@@ -671,6 +677,11 @@ def validate(
             ref_set = {str(ref) for ref in refs} if isinstance(refs, list) else set()
             unknown = sorted(ref_set - allowed_refs)
             require(not unknown, f"risk {name}: unknown evidence refs {unknown}", errors)
+            require(
+                item.get("status") != "not_applicable",
+                f"risk {name}: mandatory dimension cannot be not_applicable",
+                errors,
+            )
             if item.get("status") == "established":
                 matching = [
                     evidence
@@ -686,6 +697,41 @@ def validate(
                     f"risk {name}: established status requires risk-specific {RISK_MIN_LEVEL[name]}+ evidence",
                     errors,
                 )
+
+    mechanism = record.get("mechanism_evidence", {})
+    require(isinstance(mechanism, dict), "mechanism_evidence must be an object", errors)
+    if isinstance(mechanism, dict):
+        structural_claim = claim_by_type.get("structural_characterization", {})
+        structural_refs = structural_claim.get("evidence_refs", [])
+        structural_ref_set = (
+            {str(ref) for ref in structural_refs}
+            if isinstance(structural_refs, list)
+            else set()
+        )
+        referenced_structures = [
+            assay_by_id[ref]
+            for ref in structural_ref_set
+            if ref in assay_by_id
+            and assay_by_id[ref].get("system") == "cryo_em_structure"
+            and assay_by_id[ref].get("tested_subject") == "selected_variant_structure"
+            and assay_by_id[ref].get("endpoint_types") == ["structural_characterization"]
+            and assay_by_id[ref].get("result_direction") == "structural_observation"
+            and assay_by_id[ref].get("evidence_level") == "F4"
+        ]
+        mechanism_observed = mechanism.get("status") == "structural_contacts_observed"
+        cryo_em_characterized = mechanism.get("cryo_em_characterized") is True
+        require(
+            mechanism_observed == cryo_em_characterized,
+            "mechanism_evidence: cryo_em_characterized and structural_contacts_observed must agree",
+            errors,
+        )
+        if mechanism_observed or cryo_em_characterized:
+            require(
+                structural_claim.get("status") == "supported_with_limits"
+                and bool(referenced_structures),
+                "mechanism_evidence: observed structure requires a supported structural_characterization claim with referenced F4 structural evidence",
+                errors,
+            )
 
     overall = record.get("overall_verdict")
     require(overall in {"ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"}, "invalid overall_verdict", errors)

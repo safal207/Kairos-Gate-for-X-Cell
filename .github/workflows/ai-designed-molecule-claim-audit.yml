@@ -115,6 +115,9 @@ jobs:
               "platform-insufficient-coverage",
               "unreconciled-denominator",
               "risk-wrong-endpoint",
+              "f5-risk-without-independence",
+              "mandatory-risks-not-applicable",
+              "observed-mechanism-without-structure",
               "zero-selected-candidates",
               "structural-assay-relabelled-as-delivery",
               "partial-impossible-counts",
@@ -131,10 +134,10 @@ jobs:
           assert [item["case"] for item in results] == expected
           assert len({item["case"] for item in results}) == len(expected)
           assert all(item["passed"] for item in results)
-          assert sum(item["expected"] == "BLOCK" for item in results) == 18
+          assert sum(item["expected"] == "BLOCK" for item in results) == 21
           assert sum(item["expected"] == "ACCEPT" for item in results) == 2
-          print("regression_cases=20")
-          print("regression_block_cases=18")
+          print("regression_cases=23")
+          print("regression_block_cases=21")
           print("regression_accept_cases=2")
           PY
           ! grep -R -q 'Traceback' ai-designed-molecule-regressions regression-summary.txt
@@ -176,8 +179,8 @@ jobs:
             echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
             echo "audit_count=${#audits[@]}"
             echo "regression_suite=complete"
-            echo "regression_cases=20"
-            echo "regression_block_cases=18"
+            echo "regression_cases=23"
+            echo "regression_block_cases=21"
             echo "regression_accept_cases=2"
             echo "publication_reporting_max_level=F2"
             echo "f3_requires_digested_executable_or_risk_artifact=true"
@@ -188,6 +191,9 @@ jobs:
             echo "positive_nonexact_rejects_known_zero_upstream=true"
             echo "functional_direction_endpoint_binding=required"
             echo "risk_endpoint_binding=required"
+            echo "f5_risk_independence=required"
+            echo "mandatory_risk_applicability=required"
+            echo "mechanism_structure_binding=required"
             echo "acceptance_receipt=true"
             echo "physical_biology_authorized=false"
             echo "clinical_or_field_use_authorized=false"

@@ -204,6 +204,35 @@ def mutate_risk_wrong_endpoint(record: dict[str, Any]) -> None:
     }
 
 
+def mutate_f5_risk_without_independence(record: dict[str, Any]) -> None:
+    evidence = external_item(
+        evidence_id="ecological-f5-without-independence",
+        kind="risk_assessment",
+        endpoints=["ecological_safety"],
+    )
+    evidence["independence"] = None
+    record["external_evidence"] = [evidence]
+    record["risk_assessment"]["ecological_safety"] = {
+        "status": "established",
+        "evidence_refs": [evidence["evidence_id"]],
+        "limitations": ["Synthetic missing-independence attack."],
+    }
+
+
+def mutate_risks_not_applicable(record: dict[str, Any]) -> None:
+    for item in record["risk_assessment"].values():
+        item["status"] = "not_applicable"
+
+
+def mutate_observed_mechanism_without_structure(record: dict[str, Any]) -> None:
+    record["assays"] = [
+        assay for assay in record["assays"] if assay["system"] != "cryo_em_structure"
+    ]
+    structural_claim = claim(record, "structural_characterization")
+    structural_claim["status"] = "not_established"
+    structural_claim["evidence_refs"] = ["publication"]
+
+
 def mutate_zero_selected(record: dict[str, Any]) -> None:
     record["screening_context"]["selected_count"] = 0
     record["screening_context"]["selected_count_status"] = "zero_exact"
@@ -383,6 +412,24 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
         ("risk delivery: established status requires risk-specific F4+ evidence",),
     ),
     (
+        "f5-risk-without-independence",
+        mutate_f5_risk_without_independence,
+        "BLOCK",
+        ("F5 risk_assessment requires complete independence metadata",),
+    ),
+    (
+        "mandatory-risks-not-applicable",
+        mutate_risks_not_applicable,
+        "BLOCK",
+        ("mandatory dimension cannot be not_applicable",),
+    ),
+    (
+        "observed-mechanism-without-structure",
+        mutate_observed_mechanism_without_structure,
+        "BLOCK",
+        ("observed structure requires a supported structural_characterization claim",),
+    ),
+    (
         "zero-selected-candidates",
         mutate_zero_selected,
         "BLOCK",
@@ -450,6 +497,9 @@ EXPECTED_CASE_NAMES = (
     "platform-insufficient-coverage",
     "unreconciled-denominator",
     "risk-wrong-endpoint",
+    "f5-risk-without-independence",
+    "mandatory-risks-not-applicable",
+    "observed-mechanism-without-structure",
     "zero-selected-candidates",
     "structural-assay-relabelled-as-delivery",
     "partial-impossible-counts",
