@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/kairos-rinse-revalidation-receipt.schema.json",
+  "title": "Kairos RINSE Revalidation Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "case_id",
+    "source",
+    "candidate",
+    "transition_graph",
+    "kairos_analysis",
+    "decision",
+    "authority",
+    "digest"
+  ],
+  "properties": {
+    "schema": { "const": "kairos.rinse-revalidation-receipt.v0.1" },
+    "case_id": { "const": "trace-archaic-introgression-2026" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rinse_repository",
+        "rinse_pull_request",
+        "rinse_commit",
+        "rinse_loop_digest",
+        "rinse_loop_file_sha256",
+        "rinse_artifact_digest"
+      ],
+      "properties": {
+        "rinse_repository": { "type": "string", "minLength": 1 },
+        "rinse_pull_request": { "type": "integer", "minimum": 1 },
+        "rinse_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "rinse_loop_digest": { "$ref": "#/$defs/sha256Ref" },
+        "rinse_loop_file_sha256": { "$ref": "#/$defs/sha256Ref" },
+        "rinse_artifact_digest": { "$ref": "#/$defs/sha256Ref" }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "execution_allowed",
+        "kind",
+        "reflection_id",
+        "status",
+        "target_state"
+      ],
+      "properties": {
+        "execution_allowed": { "const": false },
+        "kind": { "const": "REINTERPRETATION_CANDIDATE" },
+        "reflection_id": {
+          "type": "string",
+          "pattern": "^rinse-reflection-[0-9a-f]{16}$"
+        },
+        "status": { "const": "CANDIDATE" },
+        "target_state": { "type": "string", "minLength": 1 }
+      }
+    },
+    "transition_graph": { "type": "object", "minProperties": 1 },
+    "kairos_analysis": {
+      "type": "object",
+      "required": [
+        "schema",
+        "graph_id",
+        "verdict",
+        "temporal_conflicts",
+        "causal_gaps",
+        "claim_firewall",
+        "authority"
+      ],
+      "properties": {
+        "verdict": { "const": "ACCEPT_WITH_LIMITS" },
+        "temporal_conflicts": { "type": "array", "maxItems": 0 },
+        "causal_gaps": { "type": "array", "minItems": 1 },
+        "claim_firewall": { "type": "array", "maxItems": 0 }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reinterpretation_transition",
+        "active_interpretation",
+        "adaptive_causality",
+        "execution",
+        "deployment",
+        "merge"
+      ],
+      "properties": {
+        "reinterpretation_transition": { "const": "ACCEPT_WITH_LIMITS" },
+        "active_interpretation": {
+          "type": "string",
+          "pattern": "^rinse-reflection-[0-9a-f]{16}$"
+        },
+        "adaptive_causality": { "const": "HOLD_MISSING_EVIDENCE" },
+        "execution": { "const": "HOLD" },
+        "deployment": { "const": "NOT_AUTHORIZED" },
+        "merge": { "const": "NOT_AUTHORIZED" }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification",
+        "scientific_truth_authorized",
+        "causal_authorization",
+        "execution_authorized",
+        "deployment_authorized",
+        "merge_authorized"
+      ],
+      "properties": {
+        "classification": { "const": "RESEARCH_ONLY" },
+        "scientific_truth_authorized": { "const": false },
+        "causal_authorization": { "const": false },
+        "execution_authorized": { "const": false },
+        "deployment_authorized": { "const": false },
+        "merge_authorized": { "const": false }
+      }
+    },
+    "digest": { "$ref": "#/$defs/sha256Ref" }
+  },
+  "$defs": {
+    "sha256Ref": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+  }
+}

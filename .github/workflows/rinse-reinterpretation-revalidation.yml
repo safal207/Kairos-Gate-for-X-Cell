@@ -1,0 +1,289 @@
+name: RINSE Reinterpretation Revalidation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/rinse-reinterpretation-revalidation-v0.1
+    paths:
+      - .github/workflows/rinse-reinterpretation-revalidation.yml
+      - kairos_gate/rinse_reinterpretation_bridge.py
+      - kairos_gate/__init__.py
+      - manifests/rinse-trace-loop-pr23.v0.1.json
+      - examples/rinse-trace-loop.v0.1.json
+      - schemas/kairos-rinse-revalidation-receipt.schema.json
+      - tests/test_rinse_reinterpretation_bridge.py
+      - docs/RINSE_REINTERPRETATION_REVALIDATION_V0_1.md
+  pull_request:
+    paths:
+      - .github/workflows/rinse-reinterpretation-revalidation.yml
+      - kairos_gate/rinse_reinterpretation_bridge.py
+      - kairos_gate/__init__.py
+      - manifests/rinse-trace-loop-pr23.v0.1.json
+      - examples/rinse-trace-loop.v0.1.json
+      - schemas/kairos-rinse-revalidation-receipt.schema.json
+      - tests/test_rinse_reinterpretation_bridge.py
+      - docs/RINSE_REINTERPRETATION_REVALIDATION_V0_1.md
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rinse-revalidation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  revalidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      RINSE_COMMIT: 1ecdf2d704f120d15b8ee458573043bbef4e717b
+      MANIFEST: manifests/rinse-trace-loop-pr23.v0.1.json
+      PINNED_LOOP: examples/rinse-trace-loop.v0.1.json
+    steps:
+      - name: Checkout exact Kairos head
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Install exact Kairos package
+        run: python -m pip install -e .
+
+      - name: Run full Kairos regression suite
+        run: python -m unittest discover -s tests -v
+
+      - name: Validate output schema is JSON
+        run: python -m json.tool schemas/kairos-rinse-revalidation-receipt.schema.json >/dev/null
+
+      - name: Checkout pinned RINSE commit
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          repository: safal207/rinse
+          ref: ${{ env.RINSE_COMMIT }}
+          path: .artifacts/rinse
+          persist-credentials: false
+
+      - name: Verify RINSE commit and Git blobs
+        run: |
+          mkdir -p .artifacts
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          root = Path('.artifacts/rinse')
+          checked_out = subprocess.check_output(
+              ['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True
+          ).strip()
+          if checked_out != os.environ['RINSE_COMMIT']:
+              raise SystemExit(f'RINSE commit mismatch: {checked_out}')
+          manifest = json.loads(Path(os.environ['MANIFEST']).read_text())
+          report = []
+          for item in manifest['files']:
+              path = root / item['path']
+              data = path.read_bytes()
+              actual = hashlib.sha1(
+                  f'blob {len(data)}\0'.encode('ascii') + data
+              ).hexdigest()
+              if actual != item['git_blob_sha']:
+                  raise SystemExit(
+                      f"RINSE Git blob mismatch for {item['role']}: "
+                      f"{actual} != {item['git_blob_sha']}"
+                  )
+              report.append({
+                  'role': item['role'],
+                  'path': item['path'],
+                  'git_blob_sha': actual,
+                  'bytes': len(data),
+              })
+          Path('.artifacts/rinse-pin-verification.json').write_text(
+              json.dumps({'commit': checked_out, 'files': report}, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          print(f'RINSE_GIT_PINS_PASS {len(report)}')
+          PY
+
+      - name: Regenerate exact RINSE loop
+        env:
+          PYTHONPATH: ${{ github.workspace }}/.artifacts/rinse
+        run: |
+          python -m rinse.adapters.kairos_liminal_receipt \
+            .artifacts/rinse/examples/rinse/trace_kairos_liminal_receipt.v0.1.json \
+            --output .artifacts/rinse-loop-generated.json
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = json.loads(Path(os.environ['MANIFEST']).read_text())
+          generated = Path('.artifacts/rinse-loop-generated.json').read_bytes()
+          digest = 'sha256:' + hashlib.sha256(generated).hexdigest()
+          expected = manifest['workflow']['loop_file_sha256']
+          if digest != expected:
+              raise SystemExit(f'generated RINSE loop SHA mismatch: {digest} != {expected}')
+          print('RINSE_LOOP_FILE_SHA_PASS')
+          PY
+          cmp .artifacts/rinse-loop-generated.json "$PINNED_LOOP"
+
+      - name: Prove deterministic Kairos revalidation
+        run: |
+          python -m kairos_gate.rinse_reinterpretation_bridge \
+            --manifest "$MANIFEST" \
+            --loop .artifacts/rinse-loop-generated.json \
+            --output .artifacts/revalidation-first.json
+          python -m kairos_gate.rinse_reinterpretation_bridge \
+            --manifest "$MANIFEST" \
+            --loop .artifacts/rinse-loop-generated.json \
+            --output .artifacts/revalidation-second.json
+          cmp .artifacts/revalidation-first.json .artifacts/revalidation-second.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from jsonschema import Draft202012Validator
+
+          schema = json.loads(
+              Path('schemas/kairos-rinse-revalidation-receipt.schema.json').read_text(
+                  encoding='utf-8'
+              )
+          )
+          receipt = json.loads(
+              Path('.artifacts/revalidation-first.json').read_text(encoding='utf-8')
+          )
+          Draft202012Validator.check_schema(schema)
+          Draft202012Validator(schema).validate(receipt)
+          print('RINSE_REVALIDATION_SCHEMA_PASS')
+          PY
+
+      - name: Enforce dual transition boundary
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          result = json.loads(Path('.artifacts/revalidation-first.json').read_text())
+          if result['schema'] != 'kairos.rinse-revalidation-receipt.v0.1':
+              raise SystemExit('revalidation schema mismatch')
+          if result['kairos_analysis']['verdict'] != 'ACCEPT_WITH_LIMITS':
+              raise SystemExit('bounded reinterpretation was not accepted with limits')
+          if result['decision'] != {
+              'active_interpretation': 'rinse-reflection-dce0089f56d6f7cc',
+              'adaptive_causality': 'HOLD_MISSING_EVIDENCE',
+              'deployment': 'NOT_AUTHORIZED',
+              'execution': 'HOLD',
+              'merge': 'NOT_AUTHORIZED',
+              'reinterpretation_transition': 'ACCEPT_WITH_LIMITS',
+          }:
+              raise SystemExit(f"decision boundary changed: {result['decision']!r}")
+          gaps = result['kairos_analysis']['causal_gaps']
+          expected_gaps = [{
+              'transition_id': 'association_to_adaptive_causality',
+              'missing_intermediates': [
+                  'cellular effect',
+                  'expression change',
+                  'fitness advantage',
+                  'organism phenotype',
+              ],
+              'status': 'CAUSAL_GAP',
+          }]
+          if gaps != expected_gaps:
+              raise SystemExit(f'causal gaps changed: {gaps!r}')
+          if result['kairos_analysis']['claim_firewall']:
+              raise SystemExit('unexpected claim-firewall violation')
+          if result['kairos_analysis']['temporal_conflicts']:
+              raise SystemExit('unexpected temporal conflict')
+          if result['candidate']['execution_allowed'] is not False:
+              raise SystemExit('RINSE candidate became executable')
+          if any(
+              value is not False
+              for key, value in result['authority'].items()
+              if key.endswith('authorized')
+          ):
+              raise SystemExit('Kairos authority escalation detected')
+          checked_out = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD'], text=True
+          ).strip()
+          if checked_out != os.environ['EXACT_HEAD']:
+              raise SystemExit('workflow did not validate exact Kairos head')
+          print('RINSE_REINTERPRETATION_ACCEPT_WITH_LIMITS_PASS')
+          print('ADAPTIVE_CAUSALITY_HOLD_PASS')
+          print('EXACT_HEAD_PASS')
+          PY
+
+      - name: Prove RINSE loop and manifest tampering block
+        run: |
+          python - <<'PY'
+          import copy
+          import json
+          import os
+          from pathlib import Path
+
+          loop = json.loads(Path('.artifacts/rinse-loop-generated.json').read_text())
+          loop['kairos_handoff']['execution_allowed'] = True
+          Path('.artifacts/rinse-loop-tampered.json').write_text(
+              json.dumps(loop, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          manifest = json.loads(Path(os.environ['MANIFEST']).read_text())
+          manifest['commit'] = '0' * 40
+          Path('.artifacts/rinse-manifest-tampered.json').write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          PY
+          set +e
+          python -m kairos_gate.rinse_reinterpretation_bridge \
+            --manifest "$MANIFEST" \
+            --loop .artifacts/rinse-loop-tampered.json \
+            > .artifacts/tampered-loop-result.txt 2>&1
+          loop_code=$?
+          python -m kairos_gate.rinse_reinterpretation_bridge \
+            --manifest .artifacts/rinse-manifest-tampered.json \
+            --loop .artifacts/rinse-loop-generated.json \
+            > .artifacts/tampered-manifest-result.txt 2>&1
+          manifest_code=$?
+          set -e
+          for item in loop manifest; do
+            cat ".artifacts/tampered-$item-result.txt"
+            grep -q '^BLOCK:' ".artifacts/tampered-$item-result.txt"
+            if grep -q 'Traceback' ".artifacts/tampered-$item-result.txt"; then
+              echo "tamper path emitted a traceback"
+              exit 1
+            fi
+          done
+          test "$loop_code" -eq 2
+          test "$manifest_code" -eq 2
+
+      - name: Build exact-head evidence digests
+        run: |
+          sha256sum \
+            "$MANIFEST" \
+            "$PINNED_LOOP" \
+            .artifacts/rinse-loop-generated.json \
+            .artifacts/revalidation-first.json \
+            .artifacts/rinse-pin-verification.json \
+            > .artifacts/sha256.txt
+
+      - name: Upload exact-head revalidation evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: rinse-revalidation-${{ env.EXACT_HEAD }}
+          path: |
+            .artifacts/rinse-loop-generated.json
+            .artifacts/revalidation-first.json
+            .artifacts/rinse-pin-verification.json
+            .artifacts/tampered-loop-result.txt
+            .artifacts/tampered-manifest-result.txt
+            .artifacts/sha256.txt
+          if-no-files-found: error
+          retention-days: 30

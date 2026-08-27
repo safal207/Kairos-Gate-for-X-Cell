@@ -1,0 +1,55 @@
+{
+  "schema": "kairos.pinned-rinse-loop.v0.1",
+  "case_id": "trace-archaic-introgression-2026",
+  "repository": "safal207/rinse",
+  "pull_request": 23,
+  "commit": "1ecdf2d704f120d15b8ee458573043bbef4e717b",
+  "files": [
+    {
+      "role": "adapter",
+      "path": "rinse/adapters/kairos_liminal_receipt.py",
+      "git_blob_sha": "8a139e4dc076df3fa4f868ed41aa25b07fd19259"
+    },
+    {
+      "role": "reflection_graph",
+      "path": "rinse/reflection_graph.py",
+      "git_blob_sha": "2c3ce00e83e7a9b849fc2780d5c26ac74d6ff312"
+    },
+    {
+      "role": "source_receipt",
+      "path": "examples/rinse/trace_kairos_liminal_receipt.v0.1.json",
+      "git_blob_sha": "40226ea7279eb17954560cb53dbe9f3b17581ad2"
+    },
+    {
+      "role": "package",
+      "path": "pyproject.toml",
+      "git_blob_sha": "fab0f8543d44b33c53e4fd90efe0533ffa48440c"
+    }
+  ],
+  "workflow": {
+    "run_id": 30627776819,
+    "artifact_id": 8792066011,
+    "artifact_digest": "sha256:a63027f98c79bbd8ddefc56eb0408a3fd69c3ecfa5a5ae692a7352d293c29b03",
+    "loop_file_sha256": "sha256:b67b1f5977132e925b6c3404a362df04e9206a7fffcb3c40ddd5e297bcf60cc9",
+    "upstream_verification_sha256": "sha256:bfa2ffee1046f3ed39226a5e723e1683db46ceb5993807228cb013a279270b37"
+  },
+  "expected_output": {
+    "loop_digest": "sha256:6b0b8050a62275eafd8f2260cf6099fd1b65567101894b955ee5928d55eca6ad",
+    "source_receipt_digest": "sha256:d3650aa3061514c41433cff930eed02fa9350d0c888114d23c414656d0ed0fd6",
+    "reflection_graph_digest": "sha256:6cde4e6e08e7fb802b7ad3361af899f885512642f634fd0151f3c40d5ff7b776",
+    "prior_reflection_id": "rinse-reflection-72915faaef896862",
+    "prior_reflection_digest": "sha256:810088173690cb16c5580ed936f4424fe16a366352ce600306760182fee3d37a",
+    "active_reflection_id": "rinse-reflection-dce0089f56d6f7cc",
+    "active_reflection_digest": "sha256:bf34bbae3c6476a7d52ab573ef3fe9e6165394e403d6cd7aaacda21704d6e883",
+    "target_state": "trace-functional-association-with-unresolved-adaptive-causality",
+    "verdict": "ACCEPT_WITH_LIMITS"
+  },
+  "authority": {
+    "classification": "RESEARCH_ONLY",
+    "truth_authorized": false,
+    "causal_authorization": false,
+    "execution_authorized": false,
+    "deployment_authorized": false,
+    "merge_authorized": false
+  }
+}
