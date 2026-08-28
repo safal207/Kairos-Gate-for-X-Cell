@@ -128,6 +128,12 @@ def mutate_comparator_mismatch(record: dict[str, Any]) -> None:
     record["assays"][1]["comparator"] = "Cas9"
 
 
+def mutate_blank_named_comparator(record: dict[str, Any]) -> None:
+    record["designed_system"]["reference_comparator"]["name"] = "   "
+    for assay in record["assays"]:
+        assay["comparator"] = "   "
+
+
 def mutate_comparator_scope_mismatch(record: dict[str, Any]) -> None:
     claim(record, "bounded_comparator_superiority")["comparator_scope"] = "all_natural_editors"
 
@@ -423,6 +429,12 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
         ("every referenced assay must use named comparator",),
     ),
     (
+        "blank-named-comparator",
+        mutate_blank_named_comparator,
+        "BLOCK",
+        ("named comparator must contain non-whitespace characters",),
+    ),
+    (
         "comparator-scope-mismatch",
         mutate_comparator_scope_mismatch,
         "BLOCK",
@@ -577,6 +589,7 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
 EXPECTED_CASE_NAMES = (
     "protected-supported",
     "comparator-mismatch",
+    "blank-named-comparator",
     "comparator-scope-mismatch",
     "comparator-only-activity",
     "structured-predicate-mismatch",

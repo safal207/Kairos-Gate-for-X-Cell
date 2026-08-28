@@ -590,6 +590,11 @@ def validate(
                     errors,
                 )
                 named = comparator.get("name")
+                require(
+                    isinstance(named, str) and bool(named.strip()),
+                    f"claim {claim_id}: named comparator must contain non-whitespace characters",
+                    errors,
+                )
                 require(bool(claim_assays), f"claim {claim_id}: referenced assay required", errors)
                 require(all(assay.get("comparator") == named for assay in claim_assays), f"claim {claim_id}: every referenced assay must use named comparator", errors)
                 exceeded = [

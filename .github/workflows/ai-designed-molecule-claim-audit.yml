@@ -106,6 +106,7 @@ jobs:
           expected = [
               "protected-supported",
               "comparator-mismatch",
+              "blank-named-comparator",
               "comparator-scope-mismatch",
               "comparator-only-activity",
               "structured-predicate-mismatch",
@@ -138,10 +139,10 @@ jobs:
           assert [item["case"] for item in results] == expected
           assert len({item["case"] for item in results}) == len(expected)
           assert all(item["passed"] for item in results)
-          assert sum(item["expected"] == "BLOCK" for item in results) == 25
+          assert sum(item["expected"] == "BLOCK" for item in results) == 26
           assert sum(item["expected"] == "ACCEPT" for item in results) == 2
-          print("regression_cases=27")
-          print("regression_block_cases=25")
+          print("regression_cases=28")
+          print("regression_block_cases=26")
           print("regression_accept_cases=2")
           PY
           ! grep -R -q 'Traceback' ai-designed-molecule-regressions regression-summary.txt
