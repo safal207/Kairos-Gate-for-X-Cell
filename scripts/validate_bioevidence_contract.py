@@ -47,6 +47,17 @@ CONTRACTS: dict[str, tuple[str, str]] = {
         "schemas/partner-lab-evidence-handoff.schema.json",
         "scripts/validate_partner_lab_evidence_handoff.py",
     ),
+    "ai-designed-molecule": (
+        "schemas/ai-designed-molecule-claim-audit.schema.json",
+        "scripts/validate_ai_designed_molecule_claim_audit.py",
+    ),
+}
+
+SEMANTIC_BUNDLES: dict[str, tuple[str, ...]] = {
+    "ai-designed-molecule": (
+        "scripts/validate_ai_designed_molecule_claim_audit.py",
+        "scripts/_validate_ai_designed_molecule_claim_audit_core.py",
+    ),
 }
 
 
@@ -57,6 +68,25 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def sha256_semantic_bundle(relative_paths: tuple[str, ...]) -> str:
+    """Hash an ordered semantic bundle, including path and content boundaries."""
+    digest = hashlib.sha256()
+    for relative_path in relative_paths:
+        encoded_path = relative_path.encode("utf-8")
+        content = (ROOT / relative_path).read_bytes()
+        digest.update(len(encoded_path).to_bytes(8, "big"))
+        digest.update(encoded_path)
+        digest.update(len(content).to_bytes(8, "big"))
+        digest.update(content)
+    return digest.hexdigest()
+
+
+def semantic_bundle_paths(contract: str) -> tuple[str, ...]:
+    """Return every file that supplies the contract's semantic verdict."""
+    semantic_relative = CONTRACTS[contract][1]
+    return SEMANTIC_BUNDLES.get(contract, (semantic_relative,))
 
 
 def json_path(parts: Any) -> str:
@@ -160,7 +190,7 @@ def contract_digests(contract: str) -> tuple[str, str, str, str]:
     """Return contract paths and digests or raise before validating records."""
     schema_relative, semantic_relative = CONTRACTS[contract]
     schema_digest = sha256_file(ROOT / schema_relative)
-    semantic_digest = sha256_file(ROOT / semantic_relative)
+    semantic_digest = sha256_semantic_bundle(semantic_bundle_paths(contract))
     return schema_relative, schema_digest, semantic_relative, semantic_digest
 
 
@@ -213,6 +243,7 @@ def main(argv: list[str]) -> int:
             print(f"  schema={schema_relative}")
             print(f"  schema_sha256={schema_digest}")
             print(f"  semantic_validator={semantic_relative}")
+            print(f"  semantic_validator_bundle={';'.join(semantic_bundle_paths(contract))}")
             print(f"  semantic_validator_sha256={semantic_digest}")
 
     return 1 if failed else 0

@@ -131,6 +131,64 @@ AI_DOES_NOT_AUTHORIZE_EXECUTION
 
 Scientific-review readiness does not authorize physical work. Any future validation must be designed and governed by a competent institution under all applicable scientific, ethical, biosafety, legal, quality, consent, containment, and data-governance requirements.
 
+## v0.2 preview.4: AI-designed molecule claim auditor
+
+Issue [#47](https://github.com/safal207/Kairos-Gate-for-X-Cell/issues/47) introduces a separate preview contract for auditing the path from generative molecular design to public claims.
+
+The second flagship case is the 2026 SynTnpB study in *Science* (`10.1126/science.aed6123`):
+
+```text
+AI proposal
+  -> generated candidate space
+  -> candidate-stage reconciliation
+  -> selected variants
+  -> reported cellular activity
+  -> deposited structural record
+  -> safety and application claims
+```
+
+Current bounded verdict:
+
+```text
+SYN_TNPB_ACTIVITY = SUPPORTED_WITH_LIMITS
+WILD_TYPE_TNPB_COMPARATOR_SUPERIORITY = SUPPORTED_WITH_LIMITS
+SELECTED_STRUCTURE = SUPPORTED_WITH_LIMITS
+UNIVERSAL_CRISPR_SUPERIORITY = BLOCKED
+CLINICAL_OR_AGRICULTURAL_READINESS = NOT_ESTABLISHED
+INDEPENDENT_REPLICATION = NOT_ASSESSED
+PHYSICAL_EXECUTION = NOT_AUTHORIZED
+```
+
+### Evidence authority
+
+The preview does not equate publication with executable replication:
+
+```text
+F2 = peer-reviewed or repository-reported observation
+F3 = digested executable analysis or reproducibility bundle
+F4 = deposited repository record or explicit author/laboratory confirmation
+F5 = frozen unrelated-laboratory replication or risk evidence
+```
+
+The public functional statements in the SynTnpB reference record are classified as **F2**, not F3. The deposited RCSB structure `9YYG` is represented as F4 structural evidence. Independent replication remains unestablished because no provenance-bearing F5 unrelated-laboratory evidence object is registered.
+
+### Fail-closed additions in preview.4
+
+- publication reporting cannot be mislabeled as F3 or F4;
+- replication references must resolve to external provenance-bearing evidence objects;
+- established replication requires F5 and matching unrelated-laboratory identity, materials, unit, endpoint, and artifact kind;
+- platform generalization requires matching F5 evidence and broad coverage across targets, laboratories, delivery systems, organisms, and populations;
+- a complete denominator must reconcile generated, excluded, screened, failed, and selected candidates;
+- known partial counts must remain physically possible, including `screened <= generated` and `selected <= screened`;
+- cryo-EM evidence is structurally bound and cannot be relabeled as delivery, toxicity, or another risk endpoint;
+- cellular activity assays cannot silently become safety or structural evidence;
+- F5 artifact kinds must agree with their declared external evidence kinds;
+- established risk dimensions require external risk-assessment evidence with matching endpoints and defined minimum levels;
+- one generated mutation suite currently exercises 28 expected-BLOCK paths and 2 positive compatibility paths;
+- the exact-head receipt hashes every audit included in the positive result.
+
+This preview is stacked on the hardened schema-first authority and is not part of the v0.1 release claim. It contains no sequences, physical procedures, delivery instructions, or experimental authorization.
+
 ## Validation
 
 Foundation checks:
@@ -152,6 +210,8 @@ python scripts/validate_bioevidence_contract.py independent-replication examples
 python scripts/validate_bioevidence_contract.py causal-hypothesis examples/gse141064.nfkbia-causal-hypotheses.json
 python scripts/validate_bioevidence_contract.py temporal-replication examples/gse141064.temporal-replication-gate.json
 python scripts/validate_bioevidence_contract.py partner-handoff examples/gse141064.nfkbia-partner-lab-handoff.json
+python scripts/validate_bioevidence_contract.py ai-designed-molecule examples/syntnpb-2026.ai-designed-molecule-claim-audit.json
+python scripts/run_ai_designed_molecule_regressions.py
 ```
 
 The gateway applies the public Draft 2020-12 schema and format checks before semantic validation. Direct semantic scripts are implementation details and cannot override schema invalidity.
@@ -164,7 +224,7 @@ Kairos Gate does not claim to:
 - provide medical advice, diagnosis, treatment, or patient-level decisions;
 - establish that meditation, sound, music, intention, or an undefined information field directly reprograms cells;
 - prove biological safety from transcriptomic prediction;
-- authorize wet-lab, animal, or human experimentation;
-- represent or speak for Xaira Therapeutics, the X-Cell authors, or the Live-seq authors.
+- authorize wet-lab, animal, agricultural-field, or human experimentation;
+- represent or speak for Xaira Therapeutics, the X-Cell authors, the Live-seq authors, the SynTnpB authors, or their institutions.
 
 The repository is licensed under MIT. Citation metadata is provided in `CITATION.cff`.

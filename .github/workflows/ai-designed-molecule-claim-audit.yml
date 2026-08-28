@@ -1,0 +1,267 @@
+name: AI-Designed Molecule Claim Audit
+
+on:
+  pull_request:
+    paths:
+      - "schemas/ai-designed-molecule-claim-audit.schema.json"
+      - "examples/*.ai-designed-molecule-claim-audit.json"
+      - "scripts/validate_ai_designed_molecule_claim_audit.py"
+      - "scripts/_validate_ai_designed_molecule_claim_audit_core.py"
+      - "scripts/run_ai_designed_molecule_regressions.py"
+      - "scripts/validate_bioevidence_contract.py"
+      - "reports/syntnpb-2026-ai-designed-nuclease-claim-audit.md"
+      - "README.md"
+      - "docs/architecture.md"
+      - "requirements/schema-runtime.txt"
+      - ".github/workflows/ai-designed-molecule-claim-audit.yml"
+  push:
+    paths:
+      - "schemas/ai-designed-molecule-claim-audit.schema.json"
+      - "examples/*.ai-designed-molecule-claim-audit.json"
+      - "scripts/validate_ai_designed_molecule_claim_audit.py"
+      - "scripts/_validate_ai_designed_molecule_claim_audit_core.py"
+      - "scripts/run_ai_designed_molecule_regressions.py"
+      - "scripts/validate_bioevidence_contract.py"
+      - "reports/syntnpb-2026-ai-designed-nuclease-claim-audit.md"
+      - "README.md"
+      - "docs/architecture.md"
+      - "requirements/schema-runtime.txt"
+      - ".github/workflows/ai-designed-molecule-claim-audit.yml"
+
+permissions:
+  contents: read
+
+env:
+  BIOEVIDENCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+jobs:
+  syntnpb-claim-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact pull-request head
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          ref: ${{ env.BIOEVIDENCE_HEAD_SHA }}
+          persist-credentials: false
+
+      - name: Verify checked-out head identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$BIOEVIDENCE_HEAD_SHA"
+          echo "exact_head=$BIOEVIDENCE_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned schema runtime
+        run: python -m pip install --disable-pip-version-check -r requirements/schema-runtime.txt
+
+      - name: Compile claim-audit entrypoints
+        run: |
+          python -m compileall -q \
+            scripts/validate_bioevidence_contract.py \
+            scripts/validate_ai_designed_molecule_claim_audit.py \
+            scripts/_validate_ai_designed_molecule_claim_audit_core.py \
+            scripts/run_ai_designed_molecule_regressions.py
+
+      - name: Validate every AI-designed molecule audit
+        id: positive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t audits < <(
+            find examples -maxdepth 1 -type f \
+              -name '*.ai-designed-molecule-claim-audit.json' -print | sort
+          )
+          test "${#audits[@]}" -gt 0
+          printf '%s\n' "${audits[@]}" > ai-designed-molecule-audit-files.txt
+          : > audits-accepted.txt
+          for audit in "${audits[@]}"; do
+            output="$(mktemp)"
+            python scripts/validate_bioevidence_contract.py \
+              ai-designed-molecule "$audit" | tee "$output"
+            grep -q "^ACCEPT ${audit}$" "$output"
+            grep -q 'contract=ai-designed-molecule' "$output"
+            ! grep -q 'Traceback' "$output"
+            cat "$output" >> audits-accepted.txt
+          done
+          test "$(grep -c '^ACCEPT ' audits-accepted.txt)" -eq "${#audits[@]}"
+
+      - name: Run complete fail-closed regression suite
+        id: regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf ai-designed-molecule-regressions
+          python scripts/run_ai_designed_molecule_regressions.py | tee regression-summary.txt
+          test -f ai-designed-molecule-regressions/results.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          expected = [
+              "protected-supported",
+              "comparator-mismatch",
+              "blank-named-comparator",
+              "comparator-scope-mismatch",
+              "comparator-only-activity",
+              "structured-predicate-mismatch",
+              "publication-mislabeled-f3",
+              "replication-below-f5",
+              "invented-replication-reference",
+              "platform-insufficient-coverage",
+              "platform-whitespace-coverage",
+              "platform-without-replication-state",
+              "unreconciled-denominator",
+              "risk-wrong-endpoint",
+              "f5-risk-without-independence",
+              "mandatory-risks-not-applicable",
+              "observed-mechanism-without-structure",
+              "supported-structure-without-observed-mechanism",
+              "zero-selected-candidates",
+              "structural-assay-relabelled-as-delivery",
+              "partial-impossible-counts",
+              "f5-artifact-kind-mismatch",
+              "positive-nonexact-after-zero-upstream",
+              "retained-activity-with-superiority-endpoint",
+              "superiority-without-selected-variants",
+              "f4-computed-confirmation",
+              "whitespace-source-locator",
+              "computed-f5-replication",
+              "f3-specificity-risk-evidence-accepted",
+              "f4-delivery-risk-evidence-accepted",
+          ]
+          results = json.loads(
+              Path("ai-designed-molecule-regressions/results.json").read_text(encoding="utf-8")
+          )
+          assert [item["case"] for item in results] == expected
+          assert len({item["case"] for item in results}) == len(expected)
+          assert all(item["passed"] for item in results)
+          assert sum(item["expected"] == "BLOCK" for item in results) == 28
+          assert sum(item["expected"] == "ACCEPT" for item in results) == 2
+          print("regression_cases=30")
+          print("regression_block_cases=28")
+          print("regression_accept_cases=2")
+          PY
+          ! grep -R -q 'Traceback' ai-designed-molecule-regressions regression-summary.txt
+
+      - name: Build exact-head acceptance receipt
+        id: receipt
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test '${{ steps.positive.outcome }}' = success
+          test '${{ steps.regressions.outcome }}' = success
+          mapfile -t audits < ai-designed-molecule-audit-files.txt
+          test "${#audits[@]}" -gt 0
+          mapfile -t regression_counts < <(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          results = json.loads(
+              Path("ai-designed-molecule-regressions/results.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          print(len(results))
+          print(sum(item["expected"] == "BLOCK" for item in results))
+          print(sum(item["expected"] == "ACCEPT" for item in results))
+          PY
+          )
+          test "${#regression_counts[@]}" -eq 3
+          schema_version="$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          schema = json.loads(
+              Path("schemas/ai-designed-molecule-claim-audit.schema.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          print(schema["properties"]["schema_version"]["const"])
+          PY
+          )"
+          validator_schema_version="$(
+            PYTHONPATH=scripts python -c \
+              'import validate_ai_designed_molecule_claim_audit as validator; print(validator.SCHEMA_VERSION)'
+          )"
+          test -n "$schema_version"
+          test "$schema_version" = "$validator_schema_version"
+          {
+            echo "contract=ai-designed-molecule"
+            echo "schema_version=$schema_version"
+            echo "head_sha=$BIOEVIDENCE_HEAD_SHA"
+            echo "checked_out_sha=$(git rev-parse HEAD)"
+            echo "workflow_run_id=${GITHUB_RUN_ID}"
+            echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "audit_count=${#audits[@]}"
+            echo "regression_suite=complete"
+            echo "regression_cases=${regression_counts[0]}"
+            echo "regression_block_cases=${regression_counts[1]}"
+            echo "regression_accept_cases=${regression_counts[2]}"
+            echo "publication_reporting_max_level=F2"
+            echo "f3_requires_digested_executable_or_risk_artifact=true"
+            echo "f4_allows_typed_laboratory_risk_confirmation=true"
+            echo "replication_requires_external_f5=true"
+            echo "platform_generalization_requires_dimension_coverage=true"
+            echo "semantic_digest_covers_delegated_core=true"
+            echo "candidate_denominator_reconciliation=required"
+            echo "positive_nonexact_rejects_known_zero_upstream=true"
+            echo "functional_direction_endpoint_binding=required"
+            echo "risk_endpoint_binding=required"
+            echo "f5_risk_independence=required"
+            echo "mandatory_risk_applicability=required"
+            echo "mechanism_structure_binding=required"
+            echo "acceptance_receipt=true"
+            echo "physical_biology_authorized=false"
+            echo "clinical_or_field_use_authorized=false"
+            echo "-- core digests --"
+            sha256sum \
+              schemas/ai-designed-molecule-claim-audit.schema.json \
+              scripts/validate_ai_designed_molecule_claim_audit.py \
+              scripts/_validate_ai_designed_molecule_claim_audit_core.py \
+              scripts/run_ai_designed_molecule_regressions.py \
+              scripts/validate_bioevidence_contract.py \
+              reports/syntnpb-2026-ai-designed-nuclease-claim-audit.md \
+              README.md \
+              docs/architecture.md \
+              ai-designed-molecule-regressions/results.json
+            echo "-- audit digests --"
+            sha256sum "${audits[@]}"
+          } > syntnpb-claim-audit-acceptance-receipt.txt
+          cat syntnpb-claim-audit-acceptance-receipt.txt
+          test "$(git rev-parse HEAD)" = "$BIOEVIDENCE_HEAD_SHA"
+
+      - name: Write workflow diagnostic state
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "head_sha=$BIOEVIDENCE_HEAD_SHA"
+            echo "checked_out_sha=$(git rev-parse HEAD)"
+            echo "job_status=${{ job.status }}"
+            echo "positive=${{ steps.positive.outcome }}"
+            echo "regressions=${{ steps.regressions.outcome }}"
+            echo "receipt=${{ steps.receipt.outcome }}"
+          } > syntnpb-workflow-state.txt
+          cat syntnpb-workflow-state.txt
+
+      - name: Upload claim-audit evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: syntnpb-ai-designed-molecule-audit-${{ env.BIOEVIDENCE_HEAD_SHA }}
+          path: |
+            ai-designed-molecule-audit-files.txt
+            audits-accepted.txt
+            regression-summary.txt
+            ai-designed-molecule-regressions/
+            syntnpb-claim-audit-acceptance-receipt.txt
+            syntnpb-workflow-state.txt
+          if-no-files-found: error
+          retention-days: 30

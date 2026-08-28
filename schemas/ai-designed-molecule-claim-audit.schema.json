@@ -1,0 +1,347 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/safal207/Kairos-Gate-for-X-Cell/schemas/ai-designed-molecule-claim-audit.schema.json",
+  "title": "AI-Designed Molecule Claim Audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "source_publication",
+    "designed_system",
+    "screening_context",
+    "assays",
+    "external_evidence",
+    "claim_audit",
+    "risk_assessment",
+    "mechanism_evidence",
+    "replication_status",
+    "overall_verdict",
+    "next_valid_action",
+    "safety_status"
+  ],
+  "$defs": {
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "endpoint_types": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "molecular_activity",
+          "bounded_comparator_superiority",
+          "structural_characterization",
+          "independent_replication",
+          "platform_generalization",
+          "specificity_off_target",
+          "delivery",
+          "immunogenicity",
+          "toxicity",
+          "durability",
+          "ecological_safety"
+        ]
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_role",
+        "source_url",
+        "source_locator",
+        "derivation",
+        "artifact_kind",
+        "confirmation_type",
+        "artifact_sha256"
+      ],
+      "properties": {
+        "source_role": {"enum": ["primary_publication", "supplementary_material", "structure_record", "derived_artifact", "laboratory_confirmation"]},
+        "source_url": {"type": "string", "format": "uri"},
+        "source_locator": {"type": "string", "minLength": 1},
+        "derivation": {"enum": ["directly_reported", "reconstructed", "computed"]},
+        "artifact_kind": {"enum": ["publication_report", "supplementary_table", "executable_analysis", "reproducibility_bundle", "deposited_structure", "author_confirmation", "independent_replication_record", "risk_assessment_record"]},
+        "confirmation_type": {
+          "oneOf": [
+            {"type": "null"},
+            {"enum": ["repository_record", "author_or_laboratory_confirmation", "independent_laboratory_replication"]}
+          ]
+        },
+        "artifact_sha256": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+          ]
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_classes", "laboratories", "delivery_systems", "organisms", "populations"],
+      "properties": {
+        "target_classes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "pattern": "\\S"}},
+        "laboratories": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "pattern": "\\S"}},
+        "delivery_systems": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "pattern": "\\S"}},
+        "organisms": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "pattern": "\\S"}},
+        "populations": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "pattern": "\\S"}}
+      }
+    },
+    "risk_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence_refs", "limitations"],
+      "properties": {
+        "status": {"enum": ["established", "not_established", "blocked", "not_applicable"]},
+        "evidence_refs": {"$ref": "#/$defs/evidence_refs"},
+        "limitations": {"$ref": "#/$defs/limitations"}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "0.2.0-preview.4"},
+    "case_id": {"type": "string", "minLength": 1},
+    "source_publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "venue", "doi", "publication_status", "published_on", "source_urls"],
+      "properties": {
+        "title": {"type": "string", "minLength": 1},
+        "venue": {"type": "string", "minLength": 1},
+        "doi": {"type": "string", "pattern": "^10\\.[0-9]{4,9}/[-._;()/:A-Za-z0-9]+$"},
+        "publication_status": {"enum": ["peer_reviewed", "preprint", "other"]},
+        "published_on": {"type": ["string", "null"], "format": "date"},
+        "source_urls": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "format": "uri"}}
+      }
+    },
+    "designed_system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["designed_name", "entity_class", "family", "model_role", "generated_entity", "physical_entity_created_by_laboratory", "design_method", "reference_comparator"],
+      "properties": {
+        "designed_name": {"type": "string", "minLength": 1},
+        "entity_class": {"const": "rna_guided_nuclease"},
+        "family": {"const": "TnpB"},
+        "model_role": {"enum": ["sequence_proposal", "ranking", "structure_prediction", "hybrid"]},
+        "generated_entity": {"const": "protein_amino_acid_sequence"},
+        "physical_entity_created_by_laboratory": {"const": true},
+        "design_method": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "sequence_identity_to_reference_percent": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+        "reference_comparator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "comparator_class", "scope"],
+          "properties": {
+            "name": {"type": "string", "minLength": 1},
+            "comparator_class": {"enum": ["wild_type_same_family", "engineered_same_family", "cas9", "cas12", "multiple_editors", "other"]},
+            "scope": {"enum": ["test_context_bounded", "platform_wide", "universal"]}
+          }
+        }
+      }
+    },
+    "screening_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generation_scale", "generated_count", "excluded_before_screen_count", "screened_count", "failed_screen_count", "selected_count", "selected_count_status", "denominator_completeness", "winner_selection_prespecified", "failed_candidate_reporting", "selection_bias_status"],
+      "properties": {
+        "generation_scale": {"enum": ["exact_count_reported", "reported_as_thousands", "reported_as_many", "unknown"]},
+        "generated_count": {"type": ["integer", "null"], "minimum": 0},
+        "excluded_before_screen_count": {"type": ["integer", "null"], "minimum": 0},
+        "screened_count": {"type": ["integer", "null"], "minimum": 0},
+        "failed_screen_count": {"type": ["integer", "null"], "minimum": 0},
+        "selected_count": {"type": ["integer", "null"], "minimum": 0},
+        "selected_count_status": {"enum": ["positive_exact", "positive_nonexact", "zero_exact", "unknown"]},
+        "denominator_completeness": {"enum": ["complete", "partial", "unknown"]},
+        "winner_selection_prespecified": {"type": ["boolean", "null"]},
+        "failed_candidate_reporting": {"enum": ["complete", "partial", "not_reported", "unknown"]},
+        "selection_bias_status": {"enum": ["LOW", "HOLD", "BLOCK"]}
+      },
+      "allOf": [
+        {"if": {"properties": {"selected_count_status": {"const": "positive_exact"}}}, "then": {"properties": {"selected_count": {"type": "integer", "minimum": 1}}}},
+        {"if": {"properties": {"selected_count_status": {"const": "zero_exact"}}}, "then": {"properties": {"selected_count": {"const": 0}}}},
+        {"if": {"properties": {"selected_count_status": {"enum": ["positive_nonexact", "unknown"]}}}, "then": {"properties": {"selected_count": {"type": "null"}}}}
+      ]
+    },
+    "assays": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assay_id", "system", "assay_scope", "tested_subject", "comparator", "biological_unit_status", "independent_biological_n", "result_direction", "evidence_level", "endpoint_types", "provenance", "limitations"],
+        "properties": {
+          "assay_id": {"type": "string", "minLength": 1},
+          "system": {"enum": ["bacterial_cells", "plant_cells", "human_cells", "cryo_em_structure", "other"]},
+          "assay_scope": {"type": "string", "minLength": 1},
+          "tested_subject": {"enum": ["designed_candidates", "selected_variants", "reference_comparator_only", "selected_variant_structure"]},
+          "comparator": {"type": "string", "minLength": 1},
+          "biological_unit_status": {"enum": ["established", "unresolved", "not_applicable"]},
+          "independent_biological_n": {"type": ["integer", "null"], "minimum": 0},
+          "result_direction": {"enum": ["retained_reference_activity", "exceeded_reference_activity", "mixed", "structural_observation", "not_applicable"]},
+          "evidence_level": {"enum": ["F0", "F1", "F2", "F3", "F4"]},
+          "endpoint_types": {"$ref": "#/$defs/endpoint_types"},
+          "provenance": {"$ref": "#/$defs/provenance"},
+          "limitations": {"$ref": "#/$defs/limitations"}
+        }
+      }
+    },
+    "external_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["evidence_id", "evidence_kind", "evidence_level", "endpoint_types", "provenance", "independence", "coverage", "limitations"],
+        "properties": {
+          "evidence_id": {"type": "string", "minLength": 1},
+          "evidence_kind": {"enum": ["independent_replication", "platform_generalization", "risk_assessment", "reproducibility_artifact"]},
+          "evidence_level": {"enum": ["F3", "F4", "F5"]},
+          "endpoint_types": {"$ref": "#/$defs/endpoint_types"},
+          "provenance": {"$ref": "#/$defs/provenance"},
+          "independence": {
+            "oneOf": [
+              {"type": "null"},
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["unrelated_laboratory_identity", "independent_materials", "replication_unit"],
+                "properties": {
+                  "unrelated_laboratory_identity": {"type": "string", "minLength": 1, "pattern": "\\S"},
+                  "independent_materials": {"const": true},
+                  "replication_unit": {"type": "string", "minLength": 1, "pattern": "\\S"}
+                }
+              }
+            ]
+          },
+          "coverage": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/coverage"}]},
+          "limitations": {"$ref": "#/$defs/limitations"}
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": ["evidence_kind"],
+              "properties": {"evidence_kind": {"const": "platform_generalization"}}
+            },
+            "then": {
+              "properties": {
+                "coverage": {
+                  "type": "object",
+                  "properties": {
+                    "target_classes": {"minItems": 2},
+                    "laboratories": {"minItems": 2},
+                    "delivery_systems": {"minItems": 2},
+                    "organisms": {"minItems": 2},
+                    "populations": {"minItems": 2}
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "claim_audit": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim_id", "claim_subject", "claim_predicate", "claim_type", "comparator_scope", "status", "evidence_refs", "limitations"],
+        "properties": {
+          "claim_id": {"type": "string", "minLength": 1},
+          "claim_subject": {"enum": ["designed_molecule", "selected_variants", "selected_variant_structure", "design_platform", "study_findings", "ai_system", "audit_record"]},
+          "claim_predicate": {"enum": ["has_bounded_molecular_activity", "exceeds_named_comparator_in_test_context", "has_selected_variant_structural_contacts", "generalizes_across_targets_labs_delivery_populations", "outperforms_cas9_cas12_or_all_natural_editors", "is_clinically_safe", "has_therapeutic_efficacy", "is_ready_for_agricultural_deployment", "has_unrelated_laboratory_replication", "was_created_and_validated_autonomously_by_ai", "authorizes_physical_biology"]},
+          "claim_type": {"enum": ["molecular_activity", "bounded_comparator_superiority", "structural_characterization", "platform_generalization", "universal_superiority", "clinical_safety", "therapeutic_efficacy", "agricultural_readiness", "independent_replication", "ai_autonomy", "physical_authorization"]},
+          "comparator_scope": {"enum": ["wild_type_same_family", "specific_test_context", "cas9_or_cas12", "all_natural_editors", "not_applicable"]},
+          "status": {"enum": ["supported_with_limits", "descriptive_only", "not_established", "blocked"]},
+          "evidence_refs": {"$ref": "#/$defs/evidence_refs"},
+          "limitations": {"$ref": "#/$defs/limitations"}
+        },
+        "allOf": [
+          {"if": {"properties": {"claim_type": {"const": "molecular_activity"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "has_bounded_molecular_activity"}, "comparator_scope": {"const": "specific_test_context"}}}},
+          {"if": {"properties": {"claim_type": {"const": "bounded_comparator_superiority"}}}, "then": {"properties": {"claim_subject": {"const": "selected_variants"}, "claim_predicate": {"const": "exceeds_named_comparator_in_test_context"}, "comparator_scope": {"const": "wild_type_same_family"}}}},
+          {"if": {"properties": {"claim_type": {"const": "structural_characterization"}}}, "then": {"properties": {"claim_subject": {"const": "selected_variant_structure"}, "claim_predicate": {"const": "has_selected_variant_structural_contacts"}, "comparator_scope": {"const": "specific_test_context"}}}},
+          {"if": {"properties": {"claim_type": {"const": "platform_generalization"}}}, "then": {"properties": {"claim_subject": {"const": "design_platform"}, "claim_predicate": {"const": "generalizes_across_targets_labs_delivery_populations"}, "comparator_scope": {"const": "not_applicable"}}}},
+          {"if": {"properties": {"claim_type": {"const": "universal_superiority"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "outperforms_cas9_cas12_or_all_natural_editors"}, "comparator_scope": {"enum": ["cas9_or_cas12", "all_natural_editors"]}}}},
+          {"if": {"properties": {"claim_type": {"const": "clinical_safety"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "is_clinically_safe"}, "comparator_scope": {"const": "not_applicable"}}}},
+          {"if": {"properties": {"claim_type": {"const": "therapeutic_efficacy"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "has_therapeutic_efficacy"}, "comparator_scope": {"const": "not_applicable"}}}},
+          {"if": {"properties": {"claim_type": {"const": "agricultural_readiness"}}}, "then": {"properties": {"claim_subject": {"const": "designed_molecule"}, "claim_predicate": {"const": "is_ready_for_agricultural_deployment"}, "comparator_scope": {"const": "not_applicable"}}}},
+          {"if": {"properties": {"claim_type": {"const": "independent_replication"}}}, "then": {"properties": {"claim_subject": {"const": "study_findings"}, "claim_predicate": {"const": "has_unrelated_laboratory_replication"}, "comparator_scope": {"const": "not_applicable"}}}},
+          {"if": {"properties": {"claim_type": {"const": "ai_autonomy"}}}, "then": {"properties": {"claim_subject": {"const": "ai_system"}, "claim_predicate": {"const": "was_created_and_validated_autonomously_by_ai"}, "comparator_scope": {"const": "not_applicable"}}}},
+          {"if": {"properties": {"claim_type": {"const": "physical_authorization"}}}, "then": {"properties": {"claim_subject": {"const": "audit_record"}, "claim_predicate": {"const": "authorizes_physical_biology"}, "comparator_scope": {"const": "not_applicable"}}}}
+        ]
+      }
+    },
+    "risk_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["specificity_off_target", "delivery", "immunogenicity", "toxicity", "durability", "ecological_safety"],
+      "properties": {
+        "specificity_off_target": {"$ref": "#/$defs/risk_item"},
+        "delivery": {"$ref": "#/$defs/risk_item"},
+        "immunogenicity": {"$ref": "#/$defs/risk_item"},
+        "toxicity": {"$ref": "#/$defs/risk_item"},
+        "durability": {"$ref": "#/$defs/risk_item"},
+        "ecological_safety": {"$ref": "#/$defs/risk_item"}
+      }
+    },
+    "mechanism_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cryo_em_characterized", "scope", "status", "functional_causality_identified"],
+      "properties": {
+        "cryo_em_characterized": {"type": "boolean"},
+        "scope": {"type": "string", "minLength": 1},
+        "status": {"enum": ["structural_contacts_observed", "mechanistic_hypothesis_only", "not_established"]},
+        "functional_causality_identified": {"const": false}
+      }
+    },
+    "replication_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["same_collaboration_only", "independent_replication", "replication_evidence"],
+      "properties": {
+        "same_collaboration_only": {"type": "boolean"},
+        "independent_replication": {"enum": ["established", "not_found", "not_assessed"]},
+        "replication_evidence": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["unrelated_laboratory_identity", "independent_materials", "replication_unit", "evidence_refs", "evidence_level"],
+              "properties": {
+                "unrelated_laboratory_identity": {"type": "string", "minLength": 1, "pattern": "\\S"},
+                "independent_materials": {"const": true},
+                "replication_unit": {"type": "string", "minLength": 1, "pattern": "\\S"},
+                "evidence_refs": {"$ref": "#/$defs/evidence_refs"},
+                "evidence_level": {"const": "F5"}
+              }
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"independent_replication": {"const": "established"}}},
+          "then": {"properties": {"same_collaboration_only": {"const": false}, "replication_evidence": {"type": "object"}}},
+          "else": {"properties": {"replication_evidence": {"type": "null"}}}
+        }
+      ]
+    },
+    "overall_verdict": {"enum": ["ACCEPT_WITH_LIMITS", "HOLD", "BLOCK"]},
+    "next_valid_action": {"type": "string", "minLength": 1},
+    "safety_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "physical_biology_authorized", "physical_protocol_included", "sequence_instructions_included", "clinical_or_field_use_authorized"],
+      "properties": {
+        "mode": {"const": "computational_documentary_only"},
+        "physical_biology_authorized": {"const": false},
+        "physical_protocol_included": {"const": false},
+        "sequence_instructions_included": {"const": false},
+        "clinical_or_field_use_authorized": {"const": false},
+        "notes": {"type": "string"}
+      }
+    }
+  }
+}
