@@ -415,6 +415,21 @@ def mutate_f4_computed_confirmation(record: dict[str, Any]) -> None:
     record["external_evidence"][0]["provenance"]["derivation"] = "computed"
 
 
+def mutate_whitespace_source_locator(record: dict[str, Any]) -> None:
+    record["assays"][0]["provenance"]["source_locator"] = " \t "
+
+
+def mutate_computed_f5_replication(record: dict[str, Any]) -> None:
+    evidence = external_item(
+        evidence_id="replication-computed-f5",
+        kind="independent_replication",
+        endpoints=["independent_replication"],
+    )
+    evidence["provenance"]["derivation"] = "computed"
+    record["external_evidence"] = [evidence]
+    set_established_replication(record, evidence["evidence_id"])
+
+
 CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
     (
         "protected-supported",
@@ -573,6 +588,18 @@ CASES: list[tuple[str, Mutation, str, tuple[str, ...]]] = [
         ("F4 requires repository, laboratory, or risk-assessment confirmation",),
     ),
     (
+        "whitespace-source-locator",
+        mutate_whitespace_source_locator,
+        "BLOCK",
+        ("source_locator must contain non-whitespace characters",),
+    ),
+    (
+        "computed-f5-replication",
+        mutate_computed_f5_replication,
+        "BLOCK",
+        ("F5 requires a frozen independent-laboratory evidence artifact",),
+    ),
+    (
         "f3-specificity-risk-evidence-accepted",
         mutate_f3_specificity_risk_accepted,
         "ACCEPT",
@@ -613,6 +640,8 @@ EXPECTED_CASE_NAMES = (
     "retained-activity-with-superiority-endpoint",
     "superiority-without-selected-variants",
     "f4-computed-confirmation",
+    "whitespace-source-locator",
+    "computed-f5-replication",
     "f3-specificity-risk-evidence-accepted",
     "f4-delivery-risk-evidence-accepted",
 )

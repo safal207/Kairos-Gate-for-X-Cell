@@ -216,7 +216,7 @@ A cryo-EM structure cannot establish delivery or toxicity. A molecular-activity 
 
 ## Executable regression boundary
 
-The exact-head workflow generates mutation cases from the accepted reference record rather than relying on a manually maintained fixture list. Its frozen 28-case manifest currently proves fail-closed behavior for 26 negative paths:
+The exact-head workflow generates mutation cases from the accepted reference record rather than relying on a manually maintained fixture list. Its frozen 30-case manifest currently proves fail-closed behavior for 28 negative paths:
 
 1. protected claim promoted to supported;
 2. mismatched comparator;
@@ -243,7 +243,9 @@ The exact-head workflow generates mutation cases from the accepted reference rec
 23. a nonexact positive selection after a known zero upstream count;
 24. retained activity mislabeled with a superiority endpoint;
 25. bounded superiority supported only by unselected designed candidates;
-26. a computed F4 artifact self-labeled as laboratory confirmation.
+26. a computed F4 artifact self-labeled as laboratory confirmation;
+27. a whitespace-only provenance source locator;
+28. a computed F5 artifact self-labeled as directly reported independent replication.
 
 Two positive compatibility cases separately prove acceptance of a digested F3
 specificity-risk artifact and a directly reported F4 delivery-risk confirmation.

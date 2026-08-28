@@ -45,7 +45,11 @@ def provenance_valid_for_level(
     confirmation = provenance.get("confirmation_type")
     digest = provenance.get("artifact_sha256")
 
-    core.require(bool(locator), f"{context}: source_locator required", errors)
+    core.require(
+        isinstance(locator, str) and bool(locator.strip()),
+        f"{context}: source_locator must contain non-whitespace characters",
+        errors,
+    )
     if role in {"primary_publication", "supplementary_material", "structure_record"}:
         core.require(
             url in publication_urls,
@@ -124,6 +128,7 @@ def provenance_valid_for_level(
         core.require(external, f"{context}: F5 is reserved for external evidence objects", errors)
         core.require(
             role == "laboratory_confirmation"
+            and derivation == "directly_reported"
             and artifact_kind in {"independent_replication_record", "risk_assessment_record"}
             and confirmation == "independent_laboratory_replication"
             and _valid_digest(digest),
